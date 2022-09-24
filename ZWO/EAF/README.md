@@ -22,4 +22,18 @@ https://astronomy-imaging-camera.com/software-drivers
 - Required: Windows
 - VS2008 SP1 redistributable package 
 
+## Setup
+
+We recommend you **align your EAF in the daytime** and use a distant target such as a building to focus on when setting up the focuser for the first time. This will help you in finding the correct focus position with plenty of light to illuminate the chosen object.
+
+When you have found the correct focus position during the daytime, **make a note of the step count number**. 
+
+https://www.yuque.com/zwopkb/asiair/focus
+
+### Backlash
+
+Page 37 of the manual
+
+
+
 
