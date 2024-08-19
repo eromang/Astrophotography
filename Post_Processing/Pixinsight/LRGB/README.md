@@ -54,7 +54,9 @@ From the RGB masterlight extract
 
 - Auto-strech RGB with STF Auto-Strech of the STF (Command + Stretch)
     - To get details but pay attention to not increase the noise
+    - Target background: 0.1 or 0.15
 - Apply the same stretch on the L channel (only click on the STF strech button)
+- Repeat for Shadows cleaping
 
 ## Delinearization
 
@@ -91,3 +93,4 @@ Same for L or RGB, depending on which channel you started
 ## Reintegrate Stars
 
 https://www.rsastro.com/ReintegrateStars/PixInsight/
+
