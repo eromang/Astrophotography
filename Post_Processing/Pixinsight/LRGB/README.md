@@ -2,6 +2,13 @@
 
 https://www.youtube.com/watch?v=7FtpC5fXTGA&t=1574s
 
+## SubFrameSelector
+
+- FWHM
+- Eccentricity
+- Median
+- Stars
+
 ## Split Channels
 From the RGB masterlight extract
 - Luminance channel

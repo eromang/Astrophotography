@@ -37,6 +37,10 @@ https://astronomy-imaging-camera.com/software-drivers
 - Camera Gain (e-/ADU): 0,25
 - Camera's Read Noise (Electrons) : 1,45
 
+
+CCD Resolution Calculator:
+- For Redcat 51 : 3.1’’/pixel
+
 ![ASI2600MC Full Well](/Hardware/Cameras/ASI2600MCPro/ZWO-Camera-ASI-2600-MC-Pro-Color.jpg)
 
 ![ASI2600MC Wavelength](/Hardware/Cameras/ASI2600MCPro/228bdb512b1405e9e24a5349951fa748-1.jpg.webp)

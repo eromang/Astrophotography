@@ -38,6 +38,9 @@ WIFI with « Wireless Mobile Utility »
 * CMOS sensor
 * Resolution: 6000 x 4000
 
+CCD Resolution Calculator:
+- For NEXSTAR 90SLT : 0.64 ’’/pixel
+
 ### Focus & Metering
 
 #### Focus
