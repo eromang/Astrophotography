@@ -4,7 +4,7 @@
 
 https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
 https://www.youtube.com/watch?v=XCotRiUIWtg&t=3325s
-https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
+    https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
 https://www.youtube.com/watch?v=YcRItb__GcQ&t=1883s
 
 ## Workflow 1
@@ -38,6 +38,8 @@ For broadband filters
 1) Autostretch in linked mode
 2) Unlink
 3) Autostretch
+
+#### ImageSolver
 
 #### Correct the light intensity (Pixinsight 1.9 only)
 
