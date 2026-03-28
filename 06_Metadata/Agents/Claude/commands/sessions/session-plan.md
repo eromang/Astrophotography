@@ -372,9 +372,10 @@ For each unique exposure + temperature combination in the plan:
 3. If no → "Dark frames: NEEDED — {exposure}s at {temp}°C, 25 frames"
 
 For flats:
-1. Check if flats exist for the selected filter
+1. Check if flats exist for the selected filter in the library
 2. If yes → "Flat frames: available (master)"
-3. If no → "Flat frames: NEEDED — 50 frames with {filter}"
+3. If no → "Flat frames: **NEEDED** — 50 frames with {filter}. Capture at end of session before dismounting."
+4. **Important:** Each filter requires its own flat set. Flats from one filter cannot be used for another (different vignetting and dust patterns). Flag prominently if the selected filter has no flats.
 
 Always include dark flats and bias as checklist items.
 

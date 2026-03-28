@@ -22,11 +22,11 @@ Topics to clarify via PixInsight YouTube channel videos or empirical testing. Wh
 
 [[HDR-Workflow]] references MAS but only mono camera examples have been reviewed. Need OSC-specific confirmation of parameter behavior — does color saturation disabled behave the same on Bayer data?
 
-### SPCC Combined Filter Curves for Quad Band
+### SPCC Combined Filter Curves for Quad Band — Partially Resolved
 
 **Search:** `SPCC combined filter curves`, `SPCC dual band`, `SPCC quad band OSC`
 
-Clipping analysis suggests combined filter curves (blending sensor QE with filter transmission) may be more correct than narrowband mode for [[ASI2600MCPro]] + [[Antlia-FQuad]]. Currently step 3.5 of [[QuadBand-OSC-Workflow]] documents narrowband mode — need to verify which approach is right or if both are valid.
+**Update (2026-03-28):** Process icon analysis confirmed the SPCC_Quad icon uses combined filter curves (Sony CMOS × Antlia Quadband per Bayer channel), NOT narrowband mode. Workflow step 3.5 updated to match. Filter curve CSVs found on SSD at `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/`. Remaining question: is there ever a case where narrowband mode would be preferable on OSC + quad band data?
 
 ### DBXtract for Emission Line Separation
 
@@ -123,6 +123,10 @@ WBPP settings present (Winsorized Sigma Clipping, Sigma High ~1.9) but could be 
 - ~~SPCC narrowband mode~~ → Integrated into [[QuadBand-OSC-Workflow]] step 3.5
 - ~~MAS + HDRMT for HDR~~ → Integrated into [[HDR-Workflow]]
 - ~~MGC parameter tuning~~ → Integrated into both workflows (gradient scale, scale factor, structure separation)
-- ~~SPCC QE curve for color sensors~~ → Fixed in [[RGB-Workflow]] step 2.7 (Ideal QE, Sony UV/IR cut)
+- ~~SPCC QE curve for color sensors~~ → Fixed in [[RGB-Workflow]] step 2.7 (Sony IMX QE, confirmed from process icon)
+- ~~SPCC combined filter curves~~ → Confirmed from process icon: uses Sony CMOS × Antlia Quadband per Bayer channel. Step 3.5 updated. Filter CSVs on SSD.
+- ~~Drizzle vs debayerization~~ → Added to [[RGB-Workflow]] Phase 1
+- ~~Gaia DR3/SP catalog requirement~~ → Added to [[RGB-Workflow]] step 2.2
+- ~~BXT/STX/NXT model versions and parameters~~ → Aligned both workflows with actual process icons
 - ~~Drizzle vs debayerization~~ → Added to [[RGB-Workflow]] Phase 1
 - ~~Gaia DR3/SP catalog requirement~~ → Added to [[RGB-Workflow]] step 2.2

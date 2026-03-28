@@ -155,6 +155,23 @@ See [[QuadBand-OSC-Workflow]] for detailed PixelMath formulas.
 
 ---
 
+## PixInsight Filter Curves
+
+Combined filter transmission curves for SPFC/SPCC (Sony CMOS Bayer channels × Antlia Quadband):
+
+| File | Channel |
+|------|---------|
+| `Curves/Antlia-Quadband-Anti-Light-Pollution.csv` | Gray (full filter) |
+| `Curves/Sony-CMOS-R-_-Antlia-Quadband.csv` | Red (Ha + SII) |
+| `Curves/Sony-CMOS-G-_-Antlia-Quadband.csv` | Green (OIII + Hb) |
+| `Curves/Sony-CMOS-B-_-Antlia-Quadband.csv` | Blue (OIII) |
+
+These are the combined per-Bayer-channel curves used by the SPFC and SPCC process icons. They model the actual sensor response (Bayer filter × Antlia Quadband transmission) rather than pure narrowband wavelengths.
+
+**Also on SSD:** `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/`
+
+---
+
 ## Resources
 
 - [Antlia ALP-T Quad Band Filter](https://www.intl.antliafilter.com/alp-t-quad-band-narrowband-filter)
