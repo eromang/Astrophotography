@@ -62,11 +62,30 @@ OIII appears in both green and blue channels but is stronger in blue.
 
 ### 2.2 Gradient Removal
 
-**GraXpert** (recommended) or **DBE**
+**Option A: GraXpert** (recommended for simplicity)
 
-- Do NOT use SPCC/SPFC at this stage — they assume broadband light
-- GraXpert handles narrowband gradients well with AI mode
-- If using DBE: place sample points carefully avoiding nebula regions
+- AI mode handles narrowband gradients well
+- No manual tuning required
+- If using DBE as fallback: place sample points carefully avoiding nebula regions
+
+**Option B: SPFC + MGC** (more control, image-dependent)
+
+1. **SPFC** (SpectrophotometricFluxCalibration)
+   - Enable narrowband filters mode
+   - Sensor: IMX571
+   - Set bandwidths to ~5nm for all channels
+   - Default wavelengths (Ha, OIII) are correct for Quad Band
+
+2. **MGC** (MultiscaleGradientCorrection)
+   - Use MARS DR1 database only (contains Ha and OIII bands)
+   - Assign MARS bands: Ha to red channel, OIII to green and blue channels
+   - Enable "Show gradient model" to verify
+   - Tune scale factors per channel on a preview:
+     - If nebula traces remain → increase scale factor
+     - If nebula appears inverted → decrease scale factor
+   - Gradient scale: 512–1024 depending on gradient complexity (lower = finer, but more risk of nebula interference)
+
+**Which to use:** Try both on a preview. Some images respond better to MGC (especially with strong vignetting), others to GraXpert (especially with complex nebula shapes). Results are image-dependent.
 
 ### 2.3 Star Correction
 
