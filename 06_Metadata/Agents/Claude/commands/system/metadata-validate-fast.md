@@ -17,7 +17,6 @@ Validate YAML frontmatter structure across vault notes. Diagnostic only — no m
 ## Required Fields by Document Type
 
 ### Equipment (`type: equipment`)
-
 | Field | Required | Type |
 |-------|----------|------|
 | `title` | Yes | string |
@@ -29,7 +28,6 @@ Validate YAML frontmatter structure across vault notes. Diagnostic only — no m
 | `tags` | Yes | list |
 
 ### Target (`type: target`)
-
 | Field | Required | Type |
 |-------|----------|------|
 | `title` | Yes | string |
@@ -41,7 +39,6 @@ Validate YAML frontmatter structure across vault notes. Diagnostic only — no m
 | `tags` | Yes | list |
 
 ### Capture Session (`type: capture-session`)
-
 | Field | Required | Type |
 |-------|----------|------|
 | `title` | Yes | string |
@@ -52,7 +49,6 @@ Validate YAML frontmatter structure across vault notes. Diagnostic only — no m
 | `tags` | Yes | list |
 
 ### Processing Session (`type: processing-session`)
-
 | Field | Required | Type |
 |-------|----------|------|
 | `title` | Yes | string |

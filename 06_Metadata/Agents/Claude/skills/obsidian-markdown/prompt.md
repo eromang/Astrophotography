@@ -128,14 +128,12 @@ YAML schemas are defined authoritatively in the template files:
 
 ## Body Structure Patterns
 
-### Equipment specification table
+### Equipment metadata blockquote
 
 ```markdown
-| Specification | Value |
-|---------------|-------|
-| Sensor | Sony IMX571 CMOS |
-| Resolution | 6248 x 4176 |
-| Pixel size | 3.76 um |
+> **Sensor:** Sony IMX571 CMOS
+> **Resolution:** 6248 × 4176
+> **Pixel size:** 3.76 µm
 ```
 
 ### Session planning table
@@ -143,7 +141,7 @@ YAML schemas are defined authoritatively in the template files:
 ```markdown
 | Object | Type | Start | End | Exposure | Frames | Filter | Gain | Temp |
 |--------|------|-------|-----|----------|--------|--------|------|------|
-| M42 | Nebula | 20:29 | 22:30 | 160s | 50 | FQuad | g100 | -10C |
+| M42 | Nebula | 20:29 | 22:30 | 160s | 50 | FQuad | g100 | -10°C |
 ```
 
 ### Capture history table (target notes)
@@ -151,7 +149,7 @@ YAML schemas are defined authoritatively in the template files:
 ```markdown
 | Date | Exposure | Frames | Filter | Gain | Temp |
 |------|----------|--------|--------|------|------|
-| 2025-03-17 | 160s | 30 | FQuad | g100 | -10C |
+| 2025-03-17 | 160s | 30 | FQuad | g100 | -10°C |
 ```
 
 ### Calibration inventory table
