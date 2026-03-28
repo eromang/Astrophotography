@@ -30,7 +30,7 @@ Processing workflow for broadband data captured with the [[Optolong-LPro]] filte
 
 ### WBPP (Weighted Batch Pre-Processing)
 
-- Drizzle: 2
+- Drizzle: **2** (strongly recommended over debayerization for color sensors — drizzle involves no data interpolation, while debayerization interpolates 3 out of 4 pixels per channel, introducing photometric errors)
 - Dark master cosmetic correction
 - Satellite trail removal:
   - Rejection Algorithm: Winsorized Sigma Clipping
@@ -53,6 +53,12 @@ Processing workflow for broadband data captured with the [[Optolong-LPro]] filte
 
 Plate-solve the image for SPCC to work correctly.
 
+- Provide approximate center coordinates, focal length (250mm), pixel size (3.76µm)
+- **Enable Distortion Correction** for better star matching
+- Requires **Gaia DR3/SP** catalog (not DR3 — DR3/SP has the spectroscopic data SPCC needs)
+
+> Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed only if WBPP didn't solve the image.
+
 ### 2.3 Gradient Removal
 
 1. **SPFC** (SpectrophotometricFluxCalibration)
@@ -60,8 +66,21 @@ Plate-solve the image for SPCC to work correctly.
    - Filter: Optolong L-Pro
 
 2. **MGC** (MultiscaleGradientCorrection)
-   - Complex structures: Gradient scale 512 or 384, Structure separation 1–5
-   - Simple structures: Gradient scale 1024 or 2048, Structure separation 1–3
+   - Load MARS DR1 database (Preferences → set default files)
+   - Enable "Show gradient model" to verify (set STF precision to **24 bits** to see posterized model)
+   - **Gradient scale** (most important parameter):
+     - Simple gradients: 1024 or 2048
+     - Complex gradients: 512 or 384
+     - Extreme cases (severe LP, failed flats): 256 or 128 (use sparingly)
+     - Rule: always use the **highest scale that still corrects well** to minimize reference data dependency
+   - **Scale factor** (per-channel, adjust independently):
+     - Default: 1.0
+     - If object traces remain in gradient model → increase
+     - If objects appear inverted → decrease
+     - Typical range: 0.2–1.5 depending on object brightness
+     - Hold **Ctrl** to move all 3 channel sliders simultaneously
+   - **Structure separation**: 1–3 (lower = more cohesion, less overcorrection of bright objects)
+   - After MGC: may need **BackgroundNeutralization** to fix residual color cast
 
 ### 2.4 Star Correction
 
@@ -86,9 +105,11 @@ Plate-solve the image for SPCC to work correctly.
 ### 2.7 Color Calibration
 
 **SPCC** (SpectrophotometricColorCalibration)
-- QE Curve: **IMX571** (Sony sensor in ASI2600MC Pro)
+- Filters: **Sony color sensor filters with UV/IR cut** (R, G, B individually)
+- QE Curve: **Ideal Quantum Efficiency** (not IMX571 — Bayer filter array includes QE implicitly for color sensors)
 - White reference: G2V Star (unless galaxy is the target)
 - If dark region available: select as background region of interest
+- Catalog: requires **Gaia DR3/SP** (with spectroscopic data)
 
 ### 2.8 AutoStretch After Calibration
 

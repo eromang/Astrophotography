@@ -77,13 +77,17 @@ OIII appears in both green and blue channels but is stronger in blue.
    - Default wavelengths (Ha, OIII) are correct for Quad Band
 
 2. **MGC** (MultiscaleGradientCorrection)
-   - Use MARS DR1 database only (contains Ha and OIII bands)
-   - Assign MARS bands: Ha to red channel, OIII to green and blue channels
-   - Enable "Show gradient model" to verify
-   - Tune scale factors per channel on a preview:
+   - Use MARS DR1 database (v1.1+ includes both Ha and **O-III band** data)
+   - Assign MARS bands: **Ha** to red channel, **O-III** to green and blue channels
+   - Enable "Show gradient model" to verify (set STF precision to **24 bits**)
+   - **Gradient scale**: 512–1024 (lower = finer correction, higher = safer)
+   - **Structure separation**: **1** for narrowband images (more cohesion, less overcorrection of bright nebulae)
+   - **Scale factor** tuning per channel on a preview:
      - If nebula traces remain → increase scale factor
      - If nebula appears inverted → decrease scale factor
-   - Gradient scale: 512–1024 depending on gradient complexity (lower = finer, but more risk of nebula interference)
+     - Typical Ha (red) channel: **~0.2–0.5** (bright Ha nebulae need low values)
+     - Typical O-III (green/blue) channels: **~1.4–1.8**
+     - Hold **Ctrl** to move all sliders simultaneously
 
 **Which to use:** Try both on a preview. Some images respond better to MGC (especially with strong vignetting), others to GraXpert (especially with complex nebula shapes). Results are image-dependent.
 
