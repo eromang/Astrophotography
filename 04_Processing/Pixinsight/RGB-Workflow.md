@@ -1,188 +1,178 @@
 ---
-title: "PixInsight RGB Workflow"
+title: "PixInsight RGB Broadband Workflow"
 type: processing-workflow
 software: "PixInsight"
 tags:
   - processing/pixinsight
 ---
 
-# RGB Processing (OSC Processing)
+# RGB Broadband Processing (OSC)
 
-## Ressources
+Processing workflow for broadband data captured with the [[Optolong-LPro]] filter on the [[ASI2600MCPro]] (color/OSC camera). Use this for galaxies, clusters, and reflection nebulae.
 
-https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
-https://www.youtube.com/watch?v=XCotRiUIWtg&t=3325s
-    https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
-https://www.youtube.com/watch?v=YcRItb__GcQ&t=1883s
+> **For emission nebulae with the Quad Band filter**, use the [[QuadBand-OSC-Workflow]] instead.
 
-## Workflow 1
+## Resources
 
-For broadband filters
+- https://www.youtube.com/watch?v=6cFRwgfXUN0&t=306s
+- https://www.youtube.com/watch?v=XCotRiUIWtg&t=3325s
+- https://www.youtube.com/watch?v=YcRItb__GcQ&t=1883s
 
-### SubFrameSelector - Select subs
+---
 
-3.1 ''/pixel
+## Phase 1: Evaluation & Stacking
 
-- FWHM 
-- Eccentricity
-- Median
-- Stars
-- Noise to consider
+### SubFrameSelector
 
-### WBPP - Stack
+- Scale: 3.1"/pixel ([[RedCat-51]] + [[ASI2600MCPro]])
+- Evaluate: FWHM, Eccentricity, Median, Stars, Noise
+- Reject outliers
+
+### WBPP (Weighted Batch Pre-Processing)
 
 - Drizzle: 2
 - Dark master cosmetic correction
-- To remove satellite trails: Light tab / Integration Parameters
-    - Change the Rejection Algorithm to "Winsorized Sigma Clipping"
-    - lower the "Sigma High" value to around 1.9
-    - set Large Scale Pixel Rejection to "High"
+- Satellite trail removal:
+  - Rejection Algorithm: Winsorized Sigma Clipping
+  - Sigma High: ~1.9
+  - Large Scale Pixel Rejection: High
+- Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 
-### Linear phase
+---
 
-#### AutoStretch
+## Phase 2: Linear Processing
+
+### 2.1 AutoStretch (visualization only)
 
 **ScreenTransferFunction**
-1) Autostretch in linked mode
-2) Unlink
-3) Autostretch
+1. Autostretch in linked mode
+2. Unlink
+3. Autostretch
 
-#### ImageSolver
+### 2.2 ImageSolver
 
-#### Correct the light intensity (Pixinsight 1.9 only)
+Plate-solve the image for SPCC to work correctly.
 
-**SPFC**
-- With your sensor and filter
+### 2.3 Gradient Removal
 
-#### Correct gradiant (Pixinsight 1.9 only)
+**PixInsight 1.9+:**
 
-**MGC**
-- Find the accurate value
-    - complexe structures
-        - Gradient scale : 512 or 384
-        - Structure separation to test between 1 to 5
-    - non complexe structures
-        - Gradient scale : 1024 or 2048
-        - Structure separation to test between 1 to 3
+1. **SPFC** (SpectrophotometricFluxCalibration)
+   - Sensor: IMX571
+   - Filter: Optolong L-Pro
 
-#### Correct gradiant (Pixinsight < 1.9 only)
+2. **MGC** (MultiscaleGradientCorrection)
+   - Complex structures: Gradient scale 512 or 384, Structure separation 1–5
+   - Simple structures: Gradient scale 1024 or 2048, Structure separation 1–3
 
-**DBE** or **AutoDBE script**
+**PixInsight < 1.9:**
 
-#### Correct stars distorsions
+- **DBE** (DynamicBackgroundExtraction) or **AutoDBE** script
 
-**BlurXTerminator**
-- CorrectOnly
+### 2.4 Star Correction
 
-#### Sharpen stars
+**BlurXTerminator** — Correct Only
+
+### 2.5 Star Sharpening
 
 **BlurXTerminator**
 - Evaluate PSF Diameter with **PSFImage** render script
-    - Warning long process
+  - Or use Automatic PSF to skip the long evaluation
 - Configuration:
-    - Sharpen stars: 0.20 (0.4)
-    - Adjust star halos: -0.10 (0.3)
-    - PSF Diameter pixels: value of (FWHMx + FWHMy) / 2, from the evaluation
-        - Or Automatic PSF if you want to avoir PSF Image long process
-    - Sharpen Nonstellar: 0.90 (0.6)
+  - Sharpen Stars: 0.20
+  - Adjust Star Halos: -0.10
+  - PSF Diameter: (FWHMx + FWHMy) / 2 from evaluation
+  - Sharpen Nonstellar: 0.90
 
-#### Find background
+### 2.6 Background Reference
 
-**FindBackground script**
-- Exclude dark nebulosity if necessary 
+**FindBackground** script
+- Exclude dark nebulosity if necessary
 
-#### Correct the color calibration 
+### 2.7 Color Calibration
 
-**SPCC**
-- White reference to G2V Star if no galaxy as target
-- With your sensor and filter
-- If necessary and if a dark region in the picture : Select dark background as region of interest
+**SPCC** (SpectrophotometricColorCalibration)
+- QE Curve: **IMX571** (Sony sensor in ASI2600MC Pro)
+- White reference: G2V Star (unless galaxy is the target)
+- If dark region available: select as background region of interest
 
-#### AutoStretch after color calibration
+### 2.8 AutoStretch After Calibration
 
 **ScreenTransferFunction**
-1) Link
-2) Autostretch
+1. Link
+2. Autostretch
 
-#### Remove stars
+### 2.9 Star Removal
 
 **StarXTerminator**
-- Generate Star image selected
-- Large overlap (slow) if lot of stars
+- Generate Star image: selected
+- Large overlap if dense star fields
+- Save the star image for reintegration in Phase 4
 
-#### Remove Noise on stars only
+### 2.10 Noise Reduction (Linear, on starless)
 
 **NoiseXTerminator**
-- Settings to test on preview
-    - Denoise: 0.9
-    - Detail: 0.15
+- Denoise: 0.9
+- Detail: 0.15
+- Test on preview first
 
-### Non Linear phase
+---
 
-#### Statistical Stretch script
+## Phase 3: Non-Linear Processing
 
-**Statistical Astro Stretching**
-- Read the manual :)
-- Boost to 0.15
+### 3.1 Stretch
 
+**Statistical Astro Stretching** script
+- Boost: 0.15
+- Refer to script manual for parameter guidance
 
+### 3.2 Background Neutralization
 
+**PixInsight 1.9+:**
 
-
-#### Background Neutralization (Pixinsight 1.9 only)
-
-**BN**
-- If necessary and if a dark region in the picture : Select dark background as region of interest
+**BN** (BackgroundNeutralization)
+- Select dark background region of interest if available
 
 **ScreenTransferFunction**
-1) Link
-2) Autostretch
-3) Unlink
+1. Link
+2. Autostretch
+3. Unlink
 
-
-
-
-
-
-
-
-#### Gradient Correction (only with Pixinsight < 1.9)
+**PixInsight < 1.9:**
 
 **GradientCorrection**
-- Select automatic convergence
-- Remove structure protection for non bright nebulas (dark)
+- Automatic convergence
+- Remove structure protection for non-bright nebulae
 
-**BN**
-- If necessary and if a dark region in the picture : Select dark background as region of interest
+Then **BN** (BackgroundNeutralization)
+- Select dark background region of interest if available
 
-
-
-#### Stars processing
-
-##### ArcsinhStrech
-
-**ArcsinhStrech**
-- Protect highlights
-- Test stretch factor
-
-
-#### Background Neutralization
-
-**BackgroundNeutralization**
-- Preview on a dark area of the starless image
-
-#### Remove noise
+### 3.3 Final Noise Reduction (on starless)
 
 **NoiseXTerminator**
-- Settings to test on preview
-    - Denoise: 0.9
-    - Detail: 0.20
+- Denoise: 0.9
+- Detail: 0.20
+- Test on preview first
 
+---
 
-    ~(~starless*~stars)
+## Phase 4: Star Processing & Reintegration
 
-### Non Linear phase
+### 4.1 Star Stretch
 
+**ArcsinhStretch** on the star image from step 2.9
+- Protect highlights: enabled
+- Test stretch factor — stars should look natural
 
+### 4.2 Star Reintegration
 
+**PixelMath:**
+```
+~(~starless * ~stars)
+```
 
+### 4.3 Final Adjustments
+
+- **CurvesTransformation** — contrast, saturation, color balance
+- **DarkStructureEnhance** script — optional, for dark nebula lanes
+- **ICCProfileTransformation** — convert to sRGB for export
