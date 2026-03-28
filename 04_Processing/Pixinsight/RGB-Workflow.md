@@ -55,8 +55,6 @@ Plate-solve the image for SPCC to work correctly.
 
 ### 2.3 Gradient Removal
 
-**PixInsight 1.9+:**
-
 1. **SPFC** (SpectrophotometricFluxCalibration)
    - Sensor: IMX571
    - Filter: Optolong L-Pro
@@ -64,10 +62,6 @@ Plate-solve the image for SPCC to work correctly.
 2. **MGC** (MultiscaleGradientCorrection)
    - Complex structures: Gradient scale 512 or 384, Structure separation 1–5
    - Simple structures: Gradient scale 1024 or 2048, Structure separation 1–3
-
-**PixInsight < 1.9:**
-
-- **DBE** (DynamicBackgroundExtraction) or **AutoDBE** script
 
 ### 2.4 Star Correction
 
@@ -128,8 +122,6 @@ Plate-solve the image for SPCC to work correctly.
 
 ### 3.2 Background Neutralization
 
-**PixInsight 1.9+:**
-
 **BN** (BackgroundNeutralization)
 - Select dark background region of interest if available
 
@@ -137,15 +129,6 @@ Plate-solve the image for SPCC to work correctly.
 1. Link
 2. Autostretch
 3. Unlink
-
-**PixInsight < 1.9:**
-
-**GradientCorrection**
-- Automatic convergence
-- Remove structure protection for non-bright nebulae
-
-Then **BN** (BackgroundNeutralization)
-- Select dark background region of interest if available
 
 ### 3.3 Final Noise Reduction (on starless)
 

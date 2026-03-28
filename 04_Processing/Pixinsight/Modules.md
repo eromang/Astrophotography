@@ -8,6 +8,11 @@ tags:
 
 # PixInsight Modules
 
+> **Installed version:** PixInsight Core 1.9.3 Lockhart (x64) build 1646 (2025-04-02)
+> **Location:** `/Applications/PixInsight`
+
+## Module Repositories
+
 https://elveteek.ch/pixinsight-updates/ez-processing-suite/
 https://www.rc-astro.com/BlurXTerminator/PixInsight
 https://www.rc-astro.com/NoiseXTerminator/PixInsight
