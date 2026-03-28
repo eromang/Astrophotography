@@ -62,11 +62,14 @@ Plate-solve the image for SPCC to work correctly.
 ### 2.3 Gradient Removal
 
 1. **SPFC** (SpectrophotometricFluxCalibration)
-   - Sensor: IMX571
+   - QE Curve: Sony IMX411/455/461/533/571
    - Filter: Optolong L-Pro
+   - Catalog: Gaia DR3/SP
+   - PSF growth: 1.75
 
 2. **MGC** (MultiscaleGradientCorrection)
-   - Load MARS DR1 database (Preferences → set default files)
+   - Load MARS DR1 + MARS-U databases (Preferences → set default files)
+   - MARS bands: R, G, B (broadband)
    - Enable "Show gradient model" to verify (set STF precision to **24 bits** to see posterized model)
    - **Gradient scale** (most important parameter):
      - Simple gradients: 1024 or 2048
@@ -89,12 +92,13 @@ Plate-solve the image for SPCC to work correctly.
 ### 2.5 Star Sharpening
 
 **BlurXTerminator**
+- Model: `BlurXTerminator.4.mlpackage`
 - Evaluate PSF Diameter with **PSFImage** render script
   - Or use Automatic PSF to skip the long evaluation
 - Configuration:
   - Sharpen Stars: 0.20
   - Adjust Star Halos: -0.10
-  - PSF Diameter: (FWHMx + FWHMy) / 2 from evaluation
+  - PSF Diameter: **2.30** (or (FWHMx + FWHMy) / 2 from evaluation)
   - Sharpen Nonstellar: 0.90
 
 ### 2.6 Background Reference
@@ -105,11 +109,15 @@ Plate-solve the image for SPCC to work correctly.
 ### 2.7 Color Calibration
 
 **SPCC** (SpectrophotometricColorCalibration)
-- Filters: **Sony color sensor filters with UV/IR cut** (R, G, B individually)
-- QE Curve: **Ideal Quantum Efficiency** (not IMX571 — Bayer filter array includes QE implicitly for color sensors)
-- White reference: G2V Star (unless galaxy is the target)
+- Filters: **Optolong L-Pro** (R, G, B individually)
+- QE Curve: **Sony IMX411/455/461/533/571**
+- White reference: **G2V Star** (unless galaxy is the target)
+- Clustered sources: enabled
+- PSF growth: 1.25
+- Target source count: 8000
+- Neutralize background: enabled
 - If dark region available: select as background region of interest
-- Catalog: requires **Gaia DR3/SP** (with spectroscopic data)
+- Catalog: **Gaia DR3/SP**
 
 ### 2.8 AutoStretch After Calibration
 
@@ -120,15 +128,18 @@ Plate-solve the image for SPCC to work correctly.
 ### 2.9 Star Removal
 
 **StarXTerminator**
+- Model: `StarXTerminator.lite.nonoise.11.mlpackage`
 - Generate Star image: selected
-- Large overlap if dense star fields
+- Overlap: 0.20
 - Save the star image for reintegration in Phase 4
 
 ### 2.10 Noise Reduction (Linear, on starless)
 
 **NoiseXTerminator**
+- Model: `NoiseXTerminator.2.mlpackage`
 - Denoise: 0.9
 - Detail: 0.15
+- Iterations: **2**
 - Test on preview first
 
 ---
@@ -179,6 +190,11 @@ Plate-solve the image for SPCC to work correctly.
 
 ### 4.3 Final Adjustments
 
-- **CurvesTransformation** — contrast, saturation, color balance
+- **CurvesTransformation** — contrast, saturation, color balance (Akima subsplines interpolation)
+- **LocalHistogramEqualization** — optional, increases local contrast:
+  - Radius: 64
+  - Slope limit: 2.0
+  - Histogram bins: 8-bit
+  - Circular kernel: enabled
 - **DarkStructureEnhance** script — optional, for dark nebula lanes
 - **ICCProfileTransformation** — convert to sRGB for export

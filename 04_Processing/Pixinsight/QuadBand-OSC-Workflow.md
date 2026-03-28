@@ -10,7 +10,7 @@ tags:
 
 Processing workflow for narrowband data captured with the [[Antlia-FQuad]] filter on the [[ASI2600MCPro]] (color/OSC camera).
 
-> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. Standard broadband SPCC does not apply directly, but SPCC narrowband mode can be used after channel remapping (see step 3.5). Channel manipulation is required to separate and balance the narrowband signal.
+> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. SPCC can be used with combined filter curves (Sony CMOS + Antlia Quadband per Bayer channel) — see step 3.5. Channel manipulation is required to separate and balance the narrowband signal.
 
 ---
 
@@ -71,10 +71,12 @@ OIII appears in both green and blue channels but is stronger in blue.
 **Option B: SPFC + MGC** (more control, image-dependent)
 
 1. **SPFC** (SpectrophotometricFluxCalibration)
-   - Enable narrowband filters mode
-   - Sensor: IMX571
-   - Set bandwidths to ~5nm for all channels
-   - Default wavelengths (Ha, OIII) are correct for Quad Band
+   - QE Curve: Sony IMX411/455/461/533/571
+   - Filters: **Sony CMOS R/G/B + Antlia Quadband** (combined per-Bayer-channel curves)
+   - Bandwidth: **3nm** for all channels
+   - Wavelengths: Ha (656.3nm) red, OIII (500.7nm) green and blue
+   - Catalog: Gaia DR3/SP
+   - PSF growth: 1.75
 
 2. **MGC** (MultiscaleGradientCorrection)
    - Use MARS DR1 database (v1.1+ includes both Ha and **O-III band** data)
@@ -99,19 +101,21 @@ OIII appears in both green and blue channels but is stronger in blue.
 ### 2.4 Star Sharpening
 
 **BlurXTerminator**
+- Model: `BlurXTerminator.4.mlpackage`
 - Evaluate PSF Diameter with **PSFImage** render script
   - Or use Automatic PSF
 - Configuration:
   - Sharpen Stars: 0.20
   - Adjust Star Halos: -0.10
-  - PSF Diameter: (FWHMx + FWHMy) / 2 from evaluation
+  - PSF Diameter: **2.30** (or (FWHMx + FWHMy) / 2 from evaluation)
   - Sharpen Nonstellar: 0.90
 
 ### 2.5 Star Removal
 
 **StarXTerminator**
+- Model: `StarXTerminator.lite.nonoise.11.mlpackage`
 - Generate Star image: selected
-- Large overlap if dense star fields
+- Overlap: 0.20
 - Keep the star image for later reintegration
 
 > From this point, work on the **starless** image. Stars are processed separately.
@@ -119,8 +123,10 @@ OIII appears in both green and blue channels but is stronger in blue.
 ### 2.6 Noise Reduction (Linear)
 
 **NoiseXTerminator** on starless image
+- Model: `NoiseXTerminator.2.mlpackage`
 - Denoise: 0.9
 - Detail: 0.15
+- Iterations: **2**
 - Test on preview first
 
 ### 2.7 Ha Emission Line Separation (Optional)
@@ -228,16 +234,22 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 
 ### 3.5 Color Calibration (Optional)
 
-After reassembling channels into an HOO composite, SPCC can calibrate the color balance in narrowband filters mode.
+After reassembling channels into an HOO composite, SPCC can calibrate the color balance using combined filter curves.
 
 **SPCC** (SpectrophotometricColorCalibration):
-- Enable narrowband filters mode
-- Filter wavelengths: Ha (656nm) red, OIII (496/500nm) green and blue
-- Bandwidth: ~5nm for all filters
-- White reference: **Photon flux** (preserves relative emission intensities as observed in the sky)
-- Select a background reference area free of nebulosity
+- Filters: **Sony CMOS R/G/B + Antlia Quadband** (combined per-Bayer-channel curves, not narrowband mode)
+- QE Curve: **Sony IMX411/455/461/533/571**
+- White reference: **G2V Star**
+- Bandwidth: **3nm** for all filters
+- Clustered sources: enabled
+- PSF growth: 1.25
+- Target source count: 8000
+- Neutralize background: enabled (select background ROI free of nebulosity)
+- Catalog: **Gaia DR3/SP**
 
-> This is optional — manual color balancing via CurvesTransformation (Phase 4.2) remains the alternative. SPCC narrowband mode provides a physically-calibrated starting point that can reduce manual tweaking.
+> This uses combined filter curves (sensor QE × filter transmission per Bayer channel) rather than pure narrowband mode. This is the correct approach for OSC + quad-band filters — the Bayer matrix mixes the narrowband signals across channels, so combined curves model the actual sensor response more accurately.
+
+> Optional — manual color balancing via CurvesTransformation (Phase 4.2) remains the alternative.
 
 ---
 
@@ -310,7 +322,11 @@ This is a screen blend — combines starless nebula with the star field.
 
 - **CurvesTransformation** — final contrast and saturation tweaks
 - **DarkStructureEnhance** script — optional, enhances dark nebula lanes
-- **LocalHistogramEqualization** — optional, increases local contrast in nebula structure
+- **LocalHistogramEqualization** — optional, increases local contrast in nebula structure:
+  - Radius: 64
+  - Slope limit: 2.0
+  - Histogram bins: 8-bit
+  - Circular kernel: enabled
 - **ICCProfileTransformation** — convert to sRGB for export
 
 ### 6.3 Export
@@ -324,7 +340,7 @@ This is a screen blend — combines starless nebula with the star field.
 
 | Step | Broadband (L-Pro) | Quad Band |
 |------|-------------------|-----------|
-| Color calibration | SPCC with G2V reference | SPCC narrowband mode (optional) — see step 3.5 |
+| Color calibration | SPCC with G2V reference | SPCC with combined filter curves (optional) — see step 3.5 |
 | Gradient removal | SPFC/MGC (PI 1.9) or DBE | GraXpert or SPFC/MGC — see step 2.2 |
 | Channel work | None (natural RGB) | Extract, remap Ha/OIII channels |
 | Color palette | Natural | HOO / Foraxx / manual |
