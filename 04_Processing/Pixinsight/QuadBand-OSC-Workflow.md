@@ -176,6 +176,8 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 
 ### 4.1 Stretch
 
+> **HDR targets** (bright core nebulae like M42, M16, M17): Use [[HDR-Workflow]] instead of GHS.
+
 **GeneralizedHyperbolicStretch (GHS)** — recommended for narrowband
 - Offers more control over midtone transfer than HistogramTransformation
 - Start with Symmetry Point (SP) near the histogram peak

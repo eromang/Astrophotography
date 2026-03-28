@@ -116,6 +116,8 @@ Plate-solve the image for SPCC to work correctly.
 
 ### 3.1 Stretch
 
+> **HDR targets** (bright galaxy nuclei, M31 core): Use [[HDR-Workflow]] instead of Statistical Astro Stretching.
+
 **Statistical Astro Stretching** script
 - Boost: 0.15
 - Refer to script manual for parameter guidance
