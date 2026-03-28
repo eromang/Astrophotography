@@ -1,0 +1,45 @@
+{
+  "name": "AstroVault",
+  "description": "Claude Code + Obsidian for astrophotography knowledge management",
+  "version": "1.0.0",
+  "commands": {
+    "conventions": "commands/command-conventions.md",
+    "system": {
+      "vault-health-fast": {
+        "description": "Comprehensive vault health check (orphans, broken links, routing)",
+        "file": "commands/system/vault-health-fast.md",
+        "shortcut": "vhf"
+      },
+      "metadata-validate-fast": {
+        "description": "Validate YAML frontmatter structure and required fields",
+        "file": "commands/system/metadata-validate-fast.md",
+        "shortcut": "mvf"
+      }
+    }
+  },
+  "skills": {
+    "auto-invoked": {
+      "obsidian-markdown": {
+        "file": "skills/obsidian-markdown/SKILL.md",
+        "trigger": "markdown-file-creation"
+      }
+    },
+    "user-invocable": {
+      "vault-search": {
+        "file": "skills/vault-search/SKILL.md"
+      },
+      "related-notes": {
+        "file": "skills/related-notes/SKILL.md"
+      },
+      "recall": {
+        "file": "skills/recall/SKILL.md"
+      },
+      "sync-claude-sessions": {
+        "file": "skills/sync-claude-sessions/SKILL.md"
+      }
+    }
+  },
+  "preferences": {
+    "default_mode": "normal"
+  }
+}

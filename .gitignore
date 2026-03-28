@@ -1,1 +1,7 @@
 .DS_Store
+.obsidian/
+06_Metadata/Agents/Claude/Claude-Sessions/
+06_Metadata/Agents/Claude/settings.json
+06_Metadata/Agents/Claude/settings.local.json
+06_Metadata/Agents/Claude/skills/recall/scripts/
+06_Metadata/Agents/Claude/skills/sync-claude-sessions/scripts/

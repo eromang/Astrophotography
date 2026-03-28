@@ -1,0 +1,163 @@
+# Claude Session Tags Schema — AstroVault
+# Agent reads this file for valid tags and auto-detection keywords
+
+tags:
+  # === Type of Work ===
+
+  research:
+    description: "Deep investigation of astrophotography topics, techniques, or equipment."
+    keywords:
+      - "research"
+      - "explore"
+      - "find information"
+      - "how to"
+      - "compare"
+    examples:
+      - "Comparing narrowband filters for light-polluted skies"
+      - "Researching optimal gain settings for ASI2600"
+
+  implementation:
+    description: "Building, coding, or executing technical solutions for the vault or workflows."
+    keywords:
+      - "implement"
+      - "build"
+      - "create"
+      - "develop"
+      - "script"
+    examples:
+      - "Creating target tracking templates"
+      - "Building session planning automation"
+
+  planning:
+    description: "Session planning, workflow design, and observation strategy."
+    keywords:
+      - "plan"
+      - "strategy"
+      - "workflow"
+      - "design"
+      - "session"
+      - "tonight"
+    examples:
+      - "Planning March capture sessions for spring targets"
+      - "Designing LRGB processing workflow"
+
+  capture-planning:
+    description: "Specific capture session planning — target selection, timing, exposure strategy."
+    keywords:
+      - "capture"
+      - "tonight"
+      - "session"
+      - "targets"
+      - "exposure"
+      - "moon"
+      - "weather"
+    examples:
+      - "Planning tonight's capture session — M42 and M44"
+      - "Evaluating moon impact on narrowband imaging"
+
+  processing:
+    description: "Post-processing sessions — stacking, calibration, enhancement."
+    keywords:
+      - "process"
+      - "stack"
+      - "pixinsight"
+      - "siril"
+      - "stretch"
+      - "calibration"
+      - "SFS"
+    examples:
+      - "Processing NGC7000 data in PixInsight"
+      - "SubFrameSelector analysis on M42 lights"
+
+  equipment-setup:
+    description: "Hardware setup, configuration, troubleshooting, and maintenance."
+    keywords:
+      - "setup"
+      - "configure"
+      - "focus"
+      - "balance"
+      - "polar align"
+      - "EAF"
+      - "guiding"
+    examples:
+      - "EAF backlash calibration for RedCat 51"
+      - "Troubleshooting guiding drift"
+
+  quick:
+    description: "Short, focused, single-purpose tasks."
+    keywords:
+      - "quick"
+      - "fast"
+      - "simple"
+      - "add"
+      - "update"
+    examples:
+      - "Adding new target to vault"
+      - "Updating calibration library"
+
+  admin:
+    description: "Administrative tasks, vault maintenance, shopping."
+    keywords:
+      - "admin"
+      - "organize"
+      - "clean up"
+      - "buy"
+      - "order"
+    examples:
+      - "Reorganizing vault structure"
+      - "Updating equipment shopping list"
+
+  # === Project Tags ===
+
+  imaging:
+    description: "Capture session work — target selection, exposure strategy, field sessions."
+    keywords:
+      - "capture"
+      - "imaging"
+      - "session"
+      - "exposure"
+      - "frames"
+    examples:
+      - "March 2025 M42 capture session analysis"
+
+  processing-project:
+    description: "Post-processing project work — stacking, calibration, enhancement."
+    keywords:
+      - "process"
+      - "stack"
+      - "workflow"
+      - "master"
+    examples:
+      - "NGC7000 final processing with 23h integration"
+
+  equipment-project:
+    description: "Hardware setup, configuration, and troubleshooting projects."
+    keywords:
+      - "equipment"
+      - "hardware"
+      - "setup"
+      - "upgrade"
+    examples:
+      - "CEM26 firmware upgrade and polar alignment"
+
+  targets:
+    description: "Object research, framing, integration tracking."
+    keywords:
+      - "target"
+      - "object"
+      - "catalog"
+      - "integration"
+    examples:
+      - "Building NGC7000 observation history"
+
+  vault:
+    description: "Vault maintenance, skills development, tooling, and infrastructure."
+    keywords:
+      - "vault"
+      - "skill"
+      - "template"
+      - "health"
+      - "CLAUDE.md"
+    examples:
+      - "Vault reorganization into numbered structure"
+      - "Template creation for session notes"
