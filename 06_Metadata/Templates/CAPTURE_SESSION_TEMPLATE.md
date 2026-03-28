@@ -32,9 +32,9 @@ tags:
 
 ## Planning
 
-| Object | Type | Start | End | Exposure | Frames (planned) | Frames (realized) | Filter | Gain | Temp |
-|--------|------|-------|-----|----------|-------------------|--------------------|--------|------|------|
-| | | | | | | | | | |
+| Object | Type | Start | End | Exposure | Frames (planned) | Frames (realized) | Filter | Gain | Temp | Workflow |
+|--------|------|-------|-----|----------|-------------------|--------------------|--------|------|------|----------|
+| | | | | | | | | | | |
 
 ---
 

@@ -74,6 +74,21 @@ filter_rules:
   planetary_nebula: "Antlia Quad Band"
   supernova_remnant: "Antlia Quad Band"
   reflection_nebula: "Optolong L-Pro"
+
+workflow_rules:
+  emission_nebula: "[[QuadBand-OSC-Workflow]]"
+  galaxy: "[[RGB-Workflow]]"
+  cluster: "[[RGB-Workflow]]"
+  planetary_nebula: "[[QuadBand-OSC-Workflow]]"
+  supernova_remnant: "[[QuadBand-OSC-Workflow]]"
+  reflection_nebula: "[[RGB-Workflow]]"
+  hdr_targets:
+    - M42    # Trapezium core
+    - M16    # Eagle Nebula pillars
+    - M17    # Omega Nebula bar
+    - M31    # Andromeda nucleus
+    - M64    # Black Eye nucleus
+  hdr_suffix: " + [[HDR-Workflow]]"  # append to base workflow for HDR targets
 ```
 
 ---
@@ -245,7 +260,7 @@ tags:
 
 **Body sections:**
 - Conditions: twilight times, moon, weather summary, temperature
-- Planning table: objects with times, exposure, frames, filter, gain, temp
+- Planning table: objects with times, exposure, frames, filter, gain, temp, recommended workflow
 - Calibration: checklist comparing needed darks/flats to Master-Library
 - Notes: any concerns (moon proximity, cloud windows, guiding notes)
 
