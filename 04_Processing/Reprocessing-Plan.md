@@ -15,37 +15,57 @@ Targets with existing data that would benefit from reprocessing with the current
 
 **Effort:** Low | **Gain:** Massive — 4× more data than any existing stack
 
-[[M13-Hercules]] has 66 L-Pro frames across 4 nights (5.5h) that were **never stacked together**. Only a single-night result exists from 2024-06-24.
+[[M13-Hercules]] has 59 usable L-Pro frames across 3 nights (4h 55m) that were **never stacked together**. Only a single-night result exists from 2024-06-24.
+
+Night 3 (2024-07-28, -20°C, 7 frames) is excluded and **deleted from SSD** — no matching 300s/-20°C darks in the library and only 7 frames.
 
 ### Data
 
-| Night | Date | Frames | Exposure | Temp |
-|-------|------|--------|----------|------|
-| 1 | 2024-06-10 | 25 | 300s | -10°C |
-| 2 | 2024-06-24 | 9 | 300s | -10°C |
-| 3 | 2024-07-28 | 7 | 300s | -20°C |
-| 4 | 2024-10-20 | 25 | 300s | -10°C |
-| **Total** | | **66** | | **5h 30m** |
+| Night | Date | Frames | Exposure | Temp | Include? |
+|-------|------|--------|----------|------|----------|
+| 1 | 2024-06-10 | 25 | 300s | -10°C | Yes |
+| 2 | 2024-06-24 | 9 | 300s | -10°C | Yes |
+| ~~3~~ | ~~2024-07-28~~ | ~~7~~ | ~~300s~~ | ~~-20°C~~ | **No** — deleted from SSD |
+| 4 | 2024-10-20 | 25 | 300s | -10°C | Yes |
+| **Total** | | **59** | | **4h 55m** | |
 
-**SSD:** `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/`
+**SSD paths:**
+- Night 1: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20240610-g100-300s-10/Light/`
+- Night 2: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20240624-g100-300s-10/Light/`
+- Night 4: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20241020-g100-300s-10/Light/`
 
 ### Steps
 
-- [ ] Verify Night 1 and Night 2 lights aren't duplicated (same start filenames observed)
-- [ ] Decide on Night 3: at -20°C, needs different darks. Exclude if no 300s/-20°C darks, or include and let WBPP handle dark optimization
-- [ ] Combine all L-Pro nights in WBPP as MultiNights
-- [ ] SubFrameSelector across all nights
-- [ ] Stack with Drizzle 2
-- [ ] Process with [[RGB-Workflow]]: SPFC + MGC → BXT → STX → NXT → SPCC → Stretch → BN
+- [ ] Verify Night 1 and Night 2 lights aren't duplicated (same start filenames `20240625-002422` observed in both)
+- [ ] Copy lights from Night 1, 2, and 4 into WBPP input folder
+- [ ] WBPP: Drizzle 2, calibration with 300s/-10°C darks, L-Pro flats, bias
+- [ ] SubFrameSelector across all 3 nights — reject outliers
+- [ ] Stack as MultiNights
+- [ ] SPFC: Sony IMX QE, Optolong L-Pro filter, Gaia DR3/SP
+- [ ] MGC: MARS DR1 + MARS-U, R/G/B bands, gradient scale 2048, scale factor 0.8
+- [ ] BXT: correct only → then sharpen (PSF 2.30, Stars 0.20, Halos -0.10, Nonstellar 0.90)
+- [ ] STX: lite.nonoise.11, stars=true, overlap 0.20 → save star image
+- [ ] NXT: denoise 0.9, detail 0.15, iterations 2 (on starless)
+- [ ] SPCC: Optolong L-Pro filters, Sony IMX QE, G2V, DR3/SP
+- [ ] Statistical Astro Stretching (boost 0.15)
+- [ ] BackgroundNeutralization
+- [ ] NXT final pass: denoise 0.9, detail 0.20
+- [ ] ArcsinhStretch on stars
+- [ ] PixelMath: `~(~starless * ~stars)`
+- [ ] CurvesTransformation — contrast, saturation
+- [ ] Optional: LHE (radius 64, slope 2.0) for cluster detail
+- [ ] Export TIFF 16-bit + JPEG
 
 ### Calibration
 
 | Frame | Status |
 |-------|--------|
-| Darks 300s/-10°C | Available (master) |
-| Darks 300s/-20°C | **Needed** for Night 3 (or exclude Night 3) |
-| Flats L-Pro | Available (60ms master) |
-| Bias | Available |
+| Darks 300s/-10°C | Available (master on SSD) |
+| Flats L-Pro 60ms | Available (master on SSD) |
+| Dark flats 60ms | Available (master on SSD) |
+| Bias g100 | Available (master on SSD) |
+
+All calibration frames available — ready to process.
 
 ---
 
