@@ -10,7 +10,7 @@ tags:
 
 Processing workflow for narrowband data captured with the [[Antlia-FQuad]] filter on the [[ASI2600MCPro]] (color/OSC camera).
 
-> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. Standard color calibration (SPCC) does not apply — the light is not broadband. Channel manipulation is required to separate and balance the narrowband signal.
+> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. Standard broadband SPCC does not apply directly, but SPCC narrowband mode can be used after channel remapping (see step 3.5). Channel manipulation is required to separate and balance the narrowband signal.
 
 ---
 
@@ -222,6 +222,19 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 - Combine the remapped channels back into an RGB image
 - Color space: RGB
 
+### 3.5 Color Calibration (Optional)
+
+After reassembling channels into an HOO composite, SPCC can calibrate the color balance in narrowband filters mode.
+
+**SPCC** (SpectrophotometricColorCalibration):
+- Enable narrowband filters mode
+- Filter wavelengths: Ha (656nm) red, OIII (496/500nm) green and blue
+- Bandwidth: ~5nm for all filters
+- White reference: **Photon flux** (preserves relative emission intensities as observed in the sky)
+- Select a background reference area free of nebulosity
+
+> This is optional — manual color balancing via CurvesTransformation (Phase 4.2) remains the alternative. SPCC narrowband mode provides a physically-calibrated starting point that can reduce manual tweaking.
+
 ---
 
 ## Phase 4: Non-Linear Processing (Stretching)
@@ -307,8 +320,8 @@ This is a screen blend — combines starless nebula with the star field.
 
 | Step | Broadband (L-Pro) | Quad Band |
 |------|-------------------|-----------|
-| Color calibration | SPCC with G2V reference | Skip — not applicable |
-| Gradient removal | SPFC/MGC (PI 1.9) or DBE | GraXpert or DBE |
+| Color calibration | SPCC with G2V reference | SPCC narrowband mode (optional) — see step 3.5 |
+| Gradient removal | SPFC/MGC (PI 1.9) or DBE | GraXpert or SPFC/MGC — see step 2.2 |
 | Channel work | None (natural RGB) | Extract, remap Ha/OIII channels |
 | Color palette | Natural | HOO / Foraxx / manual |
 | Background neutralization | Before stretch | After stretch |
