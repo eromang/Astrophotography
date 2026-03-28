@@ -107,6 +107,7 @@ Location: Tuntange, Luxembourg (Bortle 4), south-facing balcony (SE to SW).
 
 | Command | Shortcut | Purpose |
 |---------|----------|---------|
+| `/session-plan` | `sp` | Plan a capture session for a given date |
 | `/vault-health-fast` | `vhf` | Vault health check |
 | `/metadata-validate-fast` | `mvf` | YAML frontmatter validation |
 

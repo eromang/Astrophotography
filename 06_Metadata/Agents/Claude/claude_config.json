@@ -1,9 +1,16 @@
 {
   "name": "AstroVault",
   "description": "Claude Code + Obsidian for astrophotography knowledge management",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "commands": {
     "conventions": "commands/command-conventions.md",
+    "sessions": {
+      "session-plan": {
+        "description": "Plan an astrophotography capture session for a given date",
+        "file": "commands/sessions/session-plan.md",
+        "shortcut": "sp"
+      }
+    },
     "system": {
       "vault-health-fast": {
         "description": "Comprehensive vault health check (orphans, broken links, routing)",

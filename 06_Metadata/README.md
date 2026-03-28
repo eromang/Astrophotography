@@ -74,6 +74,7 @@ The `06_Metadata/` folder provides:
 
 | Command | Shortcut | Purpose |
 |---------|----------|---------|
+| `/session-plan` | `sp` | Plan a capture session for a given date |
 | `/vault-health-fast` | `vhf` | Vault health check |
 | `/metadata-validate-fast` | `mvf` | YAML validation |
 
