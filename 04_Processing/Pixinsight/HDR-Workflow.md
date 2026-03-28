@@ -170,6 +170,17 @@ Starting points by target class. Adjust per image based on preview comparisons.
 
 ---
 
+## Exit Point
+
+After completing the HDR stretch + recovery + color enhancement, return to the parent workflow:
+
+| Return to | Resume at |
+|---|---|
+| [[RGB-Workflow]] | Phase 4 — Star Processing & Reintegration |
+| [[QuadBand-OSC-Workflow]] | Phase 5 — Star Processing |
+
+---
+
 ## Future Addition
 
 **Multi-exposure HDR composition** — combining short exposures (e.g., 30s for M42 trapezium) with long exposures (e.g., 300s for outer nebulosity) using HDRComposition or EZ_HDR *before* entering this workflow. This produces a wider dynamic range master stack as input.
