@@ -119,6 +119,39 @@ OIII appears in both green and blue channels but is stronger in blue.
 - Detail: 0.15
 - Test on preview first
 
+### 2.7 Ha Emission Line Separation (Optional)
+
+Remove Ha crosstalk from the green and blue Bayer channels. On the [[ASI2600MCPro]], green and blue pixels are partially sensitive to Ha (656nm), contaminating the OIII signal. This step subtracts the scaled Ha contribution, producing cleaner OIII for channel extraction in Phase 3.
+
+**PixelMath** (uncheck "Use a single expression"):
+
+```
+R: $T
+G: $T - ($T[0] - med($T[0])) * scale_G
+B: $T - ($T[0] - med($T[0])) * scale_B
+```
+
+Where `scale_G` and `scale_B` are camera+filter-specific constants determined once and reused.
+
+**Finding the scale factors (one-time calibration):**
+
+1. Select a preview containing visible Ha nebulosity
+2. Start with a high scale factor (e.g., 0.5) — Ha structures will appear inverted
+3. Decrease gradually until the inversion just disappears
+4. The correct value minimizes Ha traces without overcorrecting
+5. Repeat for each channel (G and B typically need different values)
+
+Once determined, save the PixelMath process icon. These factors are reusable for all images from the [[ASI2600MCPro]] + [[Antlia-FQuad]] combination.
+
+**ASI2600MC Pro + Antlia Quad Band scale factors:**
+
+| Channel | Scale Factor |
+|---------|-------------|
+| Green (scale_G) | TBD — determine on first processing session |
+| Blue (scale_B) | TBD — determine on first processing session |
+
+> Update this table after calibrating. Factors should remain constant unless atmospheric conditions are anomalous.
+
 ---
 
 ## Phase 3: Narrowband Color Balancing
