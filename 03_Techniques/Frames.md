@@ -3,47 +3,185 @@ title: "Calibration Frames"
 type: technique
 tags:
   - technique
+  - processing/calibration
 ---
 
 # Calibration Frames
 
-http://deepskystacker.free.fr/english/faq.htm
+Calibration frames remove systematic noise and optical artifacts from light frames during stacking. Each type corrects a specific defect.
 
-## Light frames
-- Light frames are with light image and defined settings (shutter speed, ISO, aperture).
-- **Temperature is important**.
+---
 
-## Dark frames
-- [Dark frames](https://astrobackyard.com/how-to-take-dark-frames/) are **with the cover** and the **same settings (shutter speed, ISO, aperture) as for lights**. 
-- **Same temperature as for the lights**. 
-- Number of image to take is around 30
+## Light Frames
 
-## Flat frames (white)
-- [Flat frames](https://astrobackyard.com/how-to-take-flat-frames/) are with adapted shutter speed in **A mode**. 
-- ISO and aperture must be the same as for lights. 
-- Number of image to take is around 30. 
-- Remove « blue colored » pictures from the taken pictures
-- Temperature is not important
+The actual images of the sky containing the signal you want to capture.
 
-## Bias frames
-- [Bias frames](https://astrobackyard.com/bias-frames-astrophotography/ ) are with the cover (also on the view finder) with fastest shutter speed
-- ISO and aperture must be the same as for lights
-- Temperature is not important
-- 100 biases frames are sufficient
+| Parameter | Requirement |
+|-----------|-------------|
+| Shutter speed | Set for target (typically 160–300s for deep sky) |
+| Gain/ISO | Fixed (Gain 100 for [[ASI2600MCPro]]) |
+| Temperature | Controlled (cooled to -10°C or -20°C) |
+| Filter | As needed ([[Antlia-FQuad]] or [[Optolong-LPro]]) |
 
-## FWHM
+**Temperature matters** — sensor thermal noise scales with temperature. Cooled cameras should be set to a consistent temperature across all sessions for a given target.
 
-La valeur FWHM (Full Width at Half Maximum) est une mesure de la "largeur" d'une étoile dans une image en termes de pixels. Elle est utilisée pour évaluer la qualité du focus et des conditions d'observation (par exemple, la turbulence atmosphérique ou "seeing"). La FWHM dépend de plusieurs facteurs, y compris la résolution de la caméra, la qualité de l'optique, et les conditions d'observation.
+---
 
-## Eccentricity
+## Dark Frames
 
-L'excentricité (ou eccentricity en anglais) est une mesure utilisée en astrophotographie pour quantifier à quel point les étoiles dans une image sont déformées ou étirées, plutôt que d'être parfaitement circulaires. L'excentricité est une mesure clé pour évaluer la qualité des images en termes de suivi, de collimation, de mise au point, ou de qualité de l'optique.
+Capture the sensor's thermal noise (hot pixels, amp glow) for subtraction from lights.
 
-## Median
+| Parameter | Requirement |
+|-----------|-------------|
+| Lens/cover | **Capped** — no light reaching the sensor |
+| Exposure | **Same as lights** |
+| Gain/ISO | **Same as lights** |
+| Temperature | **Same as lights** (critical) |
+| Recommended count | 25–30 per exposure/temperature combination |
 
-Le terme médian en astrophotographie, particulièrement dans le contexte de l'analyse d'image avec des logiciels comme PixInsight, fait référence à la valeur médiane de l'intensité des pixels dans une image. C'est une mesure statistique qui aide à comprendre la distribution des niveaux de luminosité dans une image, et elle est souvent utilisée pour évaluer le fond de ciel ou pour comparer des niveaux de signal dans des images calibrées.
+**How they work:** Dark frames record only the thermal signal (dark current + fixed-pattern noise). Subtracting them from lights removes these artifacts.
+
+**With a cooled camera:** The [[ASI2600MCPro]] at -10°C produces very consistent darks. A master dark library at each exposure length eliminates the need to reshoot darks every session (see [[Master-Library]]).
+
+> [Reference: How to take dark frames](https://astrobackyard.com/how-to-take-dark-frames/)
+
+---
+
+## Flat Frames
+
+Correct for uneven illumination across the sensor caused by dust, vignetting, and optical path variations.
+
+| Parameter | Requirement |
+|-----------|-------------|
+| Light source | Even illumination (twilight sky, white t-shirt over scope, flat panel) |
+| Exposure | **Adjusted** — aim for histogram peak at ~40–50% (use A mode on DSLR, or auto-exposure in ASIAIR) |
+| Gain/ISO | **Same as lights** |
+| Filter | **Same as lights** (same optical train) |
+| Focus | **Same as lights** — do not refocus between session and flats |
+| Rotation | **Same as lights** — do not rotate camera |
+| Temperature | Not critical |
+| Recommended count | 30–50 |
+
+**How they work:** Flat frames map the illumination pattern of the optical train. Dividing lights by the master flat normalizes the brightness across the field.
+
+**Important:** The optical train must be identical to the lights — same scope, filter, camera orientation, and focus position. Any change invalidates the flats.
+
+> [Reference: How to take flat frames](https://astrobackyard.com/how-to-take-flat-frames/)
+
+---
+
+## Dark Flat Frames
+
+Remove thermal noise and bias from the flat frames themselves.
+
+| Parameter | Requirement |
+|-----------|-------------|
+| Lens/cover | **Capped** |
+| Exposure | **Same as flats** (typically very short, e.g. 60ms) |
+| Gain/ISO | **Same as flats** |
+| Temperature | Not critical (short exposures = negligible thermal noise) |
+| Recommended count | 30–50 |
+
+**How they work:** Dark flats are darks matched to the flat exposure. They remove the bias + minimal dark signal from the flat frames before the master flat is computed.
+
+---
+
+## Bias Frames
+
+Capture the sensor's read noise — the fixed electronic pattern present in every exposure regardless of duration.
+
+| Parameter | Requirement |
+|-----------|-------------|
+| Lens/cover | **Capped** |
+| Exposure | **Shortest possible** (to capture only read noise, no thermal signal) |
+| Gain/ISO | **Same as lights** |
+| Temperature | Not critical |
+| Recommended count | 50–100 |
+
+**How they work:** Bias frames isolate the read noise floor. They are subtracted from darks and flats during calibration.
+
+**Note:** Some stacking software (including PixInsight WBPP) can use dark flats instead of separate bias frames when matched darks are available. Check your workflow.
+
+> [Reference: Bias frames in astrophotography](https://astrobackyard.com/bias-frames-astrophotography/)
+
+---
+
+## Calibration Summary
+
+| Frame | Corrects | Cover | Exposure | Gain | Temp | Count |
+|-------|----------|-------|----------|------|------|-------|
+| Light | — (signal) | Open | Target | Same | Controlled | As many as possible |
+| Dark | Thermal noise, hot pixels | Capped | = Light | = Light | = Light | 25–30 |
+| Flat | Vignetting, dust, uneven illumination | Even light | Auto (~40-50%) | = Light | Any | 30–50 |
+| Dark Flat | Bias + noise in flats | Capped | = Flat | = Flat | Any | 30–50 |
+| Bias | Read noise | Capped | Shortest | = Light | Any | 50–100 |
+
+---
+
+## Calibration Flow
+
+```
+Light - Dark = (Signal + Noise) - Noise = Clean Signal
+Flat - Dark Flat = Clean Flat
+Clean Signal / Clean Flat = Calibrated Frame
+```
+
+Multiple calibrated frames are then **registered** (aligned) and **stacked** (integrated) in WBPP.
+
+---
+
+## Image Quality Metrics
+
+Metrics used by SubFrameSelector to evaluate and reject sub-frames.
+
+### FWHM (Full Width at Half Maximum)
+
+Measures the "width" of stars in pixels. Indicates focus quality and atmospheric seeing.
+
+- **Lower is better** — tighter stars mean better focus/seeing
+- Depends on: camera resolution, optics quality, atmospheric turbulence
+- At 3.1"/pixel ([[RedCat-51]] + [[ASI2600MCPro]]), typical good FWHM: 2–4 pixels
+
+### Eccentricity
+
+Measures how much stars are elongated vs perfectly circular. Values range from 0 (perfect circle) to 1 (line).
+
+- **Lower is better** — circular stars indicate good tracking and optics
+- Caused by: tracking errors, wind, optical tilt, poor polar alignment
+- Target: < 0.5 (ideally < 0.3)
+
+### Median
+
+The median pixel intensity value across the image. Indicates background sky brightness.
+
+- Used to compare sky conditions between sub-frames
+- Higher median = brighter sky (clouds, moon, light pollution)
+- Reject frames with significantly higher median than the set average
+
+### Noise
+
+The standard deviation of pixel values in the background. Indicates overall noise level.
+
+- **Lower is better**
+- High noise frames degrade the final stack
+- Caused by: clouds, high humidity, light pollution, short exposures
+
+### SNR Weight
+
+Combined metric factoring signal, noise, FWHM, and eccentricity. Used by SubFrameSelector to rank frames.
+
+- **Higher is better**
+- Best single metric for overall frame quality
+- Use as the primary rejection/weighting criterion in WBPP
+
+---
 
 ## Drizzle
 
-Le drizzle (ou drizzle integration) est une technique avancée utilisée en astrophotographie pour améliorer la résolution spatiale et la qualité des images finales en combinant plusieurs images sous-échantillonnées. Ce processus est particulièrement utile lorsque les pixels de votre capteur sont relativement grands par rapport aux détails fins que vous souhaitez capturer, ou lorsque vos images d'origine sont sous-échantillonnées en raison d'une courte focale ou d'une petite taille de pixel.
+An advanced stacking technique that improves spatial resolution by combining dithered, undersampled images onto a finer output grid.
 
+- **Drizzle factor 2** is used in both workflows (see [[RGB-Workflow]], [[QuadBand-OSC-Workflow]])
+- Doubles the output resolution (e.g., 6248x4176 becomes 12496x8352)
+- Requires **dithering** during capture — small random shifts between exposures (configured in ASIAIR guiding settings)
+- Most beneficial when imaging scale is undersampled (pixels larger than seeing allows)
+- At 3.1"/pixel with the RedCat 51, drizzle helps recover detail when seeing is good (< 3")
