@@ -77,13 +77,17 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 
 ### 2.2 ImageSolver
 
-Plate-solve the image for SPCC to work correctly.
+Plate-solve the image for SPFC/SPCC to work correctly.
 
-- Provide approximate center coordinates, focal length (250mm), pixel size (3.76µm)
+- Provide approximate center coordinates, focal length (250mm), pixel size:
+  - **3.76 µm** for standard stack (no drizzle or Drizzle 1x)
+  - **1.88 µm** for Drizzle 2x (pixel size halved)
 - **Enable Distortion Correction** for better star matching
-- Requires **Gaia DR3/SP** catalog (not DR3 — DR3/SP has the spectroscopic data SPCC needs)
+- Catalog: **Gaia DR3** for plate solving (DR3/SP is only needed for SPCC spectroscopic data)
 
-> Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed only if WBPP didn't solve the image.
+> Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed if WBPP didn't solve the image or if the autocrop lost the solution.
+
+> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. This is normal — the image orientation may not match the expected coordinates. Let it complete.
 
 ### 2.3 Gradient Removal
 
