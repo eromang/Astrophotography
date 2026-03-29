@@ -149,6 +149,21 @@ Same position as the [[Antlia-FQuad]]. Filter thickness must be accounted for in
 
 ---
 
+## PixInsight Filter Curves
+
+Filter transmission curves for SPFC/SPCC:
+
+| File | Channel |
+|------|---------|
+| `Curves/OPTOLONG-L-PRO-Light-Pollution.csv` | Gray (full filter) |
+| `Curves/Optolong-L-Pro-R.csv` | Red |
+| `Curves/Optolong-L-Pro-G.csv` | Green |
+| `Curves/Optolong-L-Pro-B.csv` | Blue |
+
+**Also on SSD:** `/Volumes/T7/Astrophotography/Filters/Pi Filter 2024/`
+
+---
+
 ## Resources
 
 - [Optolong L-Pro](https://www.optolong.com/cms/document/detail/id/15.html)
