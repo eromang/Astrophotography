@@ -37,9 +37,9 @@ Night 3 (2024-07-28, -20°C, 7 frames) is excluded and **deleted from SSD** — 
 ### Steps
 
 - [ ] Verify Night 1 and Night 2 lights aren't duplicated (same start filenames `20240625-002422` observed in both)
-- [ ] Copy lights from Night 1, 2, and 4 into WBPP input folder
-- [ ] WBPP: Drizzle 2, calibration with 300s/-10°C darks, L-Pro flats, bias
-- [ ] SubFrameSelector across all 3 nights — reject outliers
+- [ ] Copy lights from Night 1, 2, and 4 into working folder
+- [ ] SubFrameSelector: measure all 59 frames (scale 3.10"/px, gain 1.0 e⁻/ADU) — reject outliers by SNR Weight
+- [ ] WBPP: load SFS-approved frames, Drizzle 2, calibration with 300s/-10°C darks, L-Pro flats, bias
 - [ ] Stack as MultiNights
 - [ ] SPFC: Sony IMX QE, Optolong L-Pro filter, Gaia DR3/SP
 - [ ] MGC: MARS DR1 + MARS-U, R/G/B bands, gradient scale 2048, scale factor 0.8
