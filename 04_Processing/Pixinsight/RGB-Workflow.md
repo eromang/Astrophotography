@@ -55,9 +55,9 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 - Drizzle: **2** (strongly recommended over debayerization for color sensors — drizzle involves no data interpolation, while debayerization interpolates 3 out of 4 pixels per channel, introducing photometric errors)
 - Dark master cosmetic correction
 - Satellite trail removal:
-  - Rejection Algorithm: Winsorized Sigma Clipping
+  - Rejection Algorithm: Winsorized Sigma Clipping (or Auto)
   - Sigma High: ~1.9
-  - Large Scale Pixel Rejection: High
+  - Large Scale Pixel Rejection: **High** enabled, layers 2, growth 2
 - Image Registration: **enable Distortion Correction** (max spline points 4000) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2 quality
 - Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 

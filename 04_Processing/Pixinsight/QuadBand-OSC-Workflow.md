@@ -65,9 +65,9 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
 - Dark master cosmetic correction
 - Image Registration: **enable Distortion Correction** (max spline points 4000)
 - Satellite trail removal:
-  - Rejection Algorithm: Winsorized Sigma Clipping
+  - Rejection Algorithm: Winsorized Sigma Clipping (or Auto)
   - Sigma High: ~1.9
-  - Large Scale Pixel Rejection: High
+  - Large Scale Pixel Rejection: **High** enabled, layers 2, growth 2
 - Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 
 ---
