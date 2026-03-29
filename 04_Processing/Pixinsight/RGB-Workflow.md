@@ -86,11 +86,15 @@ Plate-solve the image for SPFC/SPCC to work correctly.
   - **1.88 µm** for Drizzle 2x (pixel size halved)
 - **Enable Distortion Correction** for better star matching
 - Catalog: **Gaia DR3** for plate solving (DR3/SP is only needed for SPCC spectroscopic data)
-- **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation (e.g., 90° from alt-az or camera angle).
+- **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation (e.g., 90° from camera angle).
+- **Advanced Parameters:**
+  - Sensitivity: **0.30** (lower than default 0.50 — detects more stars for matching)
+  - **Try with apparent coordinates on failure:** checked
+  - **Try with exhaustive star matching on failure:** checked
 
 > Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed if WBPP didn't solve the image or if the autocrop lost the solution.
 
-> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. If that also fails, check: (1) "Force values" is unchecked, (2) "Try with exhaustive star matching on failure" is checked in Advanced Parameters, (3) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x).
+> **Troubleshooting RANSAC failures:** If the solve fails with "RANSAC: Unable to find a valid set of star pair matches", verify: (1) "Force values" is unchecked, (2) exhaustive star matching is enabled, (3) sensitivity is 0.30, (4) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x). The most common cause is forcing values on a rotated image.
 
 ### 2.3 Gradient Removal
 

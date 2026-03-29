@@ -86,10 +86,14 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
 - **Enable Distortion Correction** for better star matching
 - Catalog: **Gaia DR3** for plate solving
 - **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation.
+- **Advanced Parameters:**
+  - Sensitivity: **0.30** (lower than default 0.50)
+  - **Try with apparent coordinates on failure:** checked
+  - **Try with exhaustive star matching on failure:** checked
 
 > WBPP normally adds an astrometric solution automatically. ImageSolver is needed if the autocrop lost the solution or if WBPP didn't solve.
 
-> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", check: (1) "Force values" is unchecked, (2) "Try with exhaustive star matching on failure" is checked in Advanced Parameters, (3) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x).
+> **Troubleshooting RANSAC failures:** Verify: (1) "Force values" is unchecked, (2) exhaustive star matching is enabled, (3) sensitivity is 0.30, (4) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x).
 
 ### 2.1 AutoStretch (visualization only)
 
