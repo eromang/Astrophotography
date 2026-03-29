@@ -46,7 +46,18 @@ OIII appears in both green and blue channels but is stronger in blue.
 
 **Evaluate:** FWHM, Eccentricity, Median, Stars, Noise
 **Keyword:** SSWEIGHT (postfix `_a`)
-**Reject outliers** based on SNR Weight (poor seeing, clouds, tracking errors)
+
+**Approval expression:**
+```
+Median < 0.028 && FWHM < 9.5 && Eccentricity < 0.80
+```
+Adjust thresholds per session — check for twilight-contaminated frames (high median/noise) and poor seeing (high FWHM).
+
+**Weighting expression:**
+```
+(1/(FWHM*FWHM)) * SNR * (1 - Eccentricity)
+```
+Prioritizes tight stars (FWHM²), good signal, and round stars.
 
 ### 1.2 WBPP (Weighted Batch Pre-Processing)
 

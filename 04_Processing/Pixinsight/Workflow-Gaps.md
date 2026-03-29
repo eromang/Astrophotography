@@ -62,11 +62,9 @@ Star removal behavior may differ on narrowband OSC data vs broadband. Confirm wh
 
 Workflows use Drizzle 2 but don't cover CFA drizzle details for OSC sensors.
 
-### SubframeSelector Weighting Formulas
+### ~~SubframeSelector Weighting Formulas~~ — Resolved
 
-**Search:** `SubframeSelector weights`, `SubframeSelector formula`
-
-System Parameters now documented in both workflows. Still needed: optimal weighting expressions for frame ranking (FWHM/eccentricity/noise formula).
+Approval and weighting expressions added to both workflows. Weighting: `(1/(FWHM*FWHM)) * SNR * (1 - Eccentricity)`. Tested on NGC 5746 data.
 
 ### BackgroundNeutralization Timing for Narrowband
 

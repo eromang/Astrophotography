@@ -37,7 +37,18 @@ Processing workflow for broadband data captured with the [[Optolong-LPro]] filte
 
 **Evaluate:** FWHM, Eccentricity, Median, Stars, Noise
 **Keyword:** SSWEIGHT (postfix `_a`)
-**Reject outliers** based on SNR Weight
+
+**Approval expression:**
+```
+Median < 0.028 && FWHM < 9.5 && Eccentricity < 0.80
+```
+Adjust thresholds per session — check for twilight-contaminated frames (high median/noise) and poor seeing (high FWHM).
+
+**Weighting expression:**
+```
+(1/(FWHM*FWHM)) * SNR * (1 - Eccentricity)
+```
+Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared because it has the biggest impact on image quality.
 
 ### WBPP (Weighted Batch Pre-Processing)
 
