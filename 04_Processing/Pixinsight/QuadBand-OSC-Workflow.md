@@ -74,6 +74,20 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
 
 ## Phase 2: Linear Processing
 
+### 2.0 ImageSolver (if needed)
+
+Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Option B (SPFC + MGC)** for gradient removal or **step 3.5 (SPCC)** for color calibration.
+
+- Provide approximate center coordinates, focal length (250mm), pixel size:
+  - **3.76 µm** for standard stack (no drizzle or Drizzle 1x)
+  - **1.88 µm** for Drizzle 2x (pixel size halved)
+- **Enable Distortion Correction** for better star matching
+- Catalog: **Gaia DR3** for plate solving
+
+> WBPP normally adds an astrometric solution automatically. ImageSolver is needed if the autocrop lost the solution or if WBPP didn't solve.
+
+> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. This is normal.
+
 ### 2.1 AutoStretch (visualization only)
 
 **ScreenTransferFunction** — display-only, does not modify data. Image remains linear.
