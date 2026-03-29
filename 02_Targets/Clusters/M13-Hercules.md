@@ -36,7 +36,7 @@ tags:
 **Data location:** `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/`
 
 > [!warning] Duplicate data on SSD
-> The 2024 data exists in 3 folders (`20240610`, `20240624`, `20241020`) but all contain the **same 25 frames** from 2024-06-25. Filenames, timestamps, and SFS measurements are identical. Only **25 unique L-Pro frames** exist. Night 2 and Night 4 folders are copies of Night 1.
+> The 2024 data was duplicated across 3 folders (`20240610`, `20240624`, `20241020`) — all contained the same 25 frames from 2024-06-25. Duplicates and empty SFS folder deleted. Canonical folder renamed to `20240625-g100-300s-10`.
 
 > [!note] Deleted data
 > Night 3 (2024-07-28, -20°C, 7 frames) was deleted from SSD — no matching darks, insufficient frames.
