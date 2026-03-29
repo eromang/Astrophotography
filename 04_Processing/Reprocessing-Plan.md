@@ -25,13 +25,14 @@ Targets with existing data that would benefit from reprocessing with the current
 
 ### Data
 
-- 34 frames × 300s = 2h 50m, single night (2024-06-10), -10°C, L-Pro
+- 34 raw → 32 SFS-approved → 28 stacked = 2h 20m, single night (2024-06-10), -10°C, L-Pro
 - **SSD:** `/Volumes/T7/Astrophotography/Objects/Galaxies/ASI2600MC-REDCAT51/NGC5746/2024/20240610-g100-300s-10/`
+- **Results:** `Results_2026/master/masterLight_..._drizzle_2x_autocrop.xisf`
 
 ### Steps
 
-- [ ] Re-stack from raw lights with SubFrameSelector
-- [ ] WBPP with Drizzle 2 (was 1x)
+- [x] SubFrameSelector: 34 → 32 approved (2 twilight frames rejected)
+- [x] WBPP: Drizzle 2x, distortion correction, 28/32 stacked (2 failed local normalization)
 - [ ] SPFC + MGC (replaces ABE×3)
 - [ ] BXT → STX → NXT
 - [ ] SPCC (Optolong L-Pro, Sony IMX QE)
