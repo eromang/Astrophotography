@@ -61,6 +61,8 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 - Image Registration: **enable Distortion Correction** (max spline points 4000) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2 quality
 - Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 
+> **Drizzle 2x changes pixel scale:** output resolution is 1.55"/px (half of native 3.1"/px), pixel size effectively 1.88 µm. This affects ImageSolver and any tool that needs the image scale. WBPP may not plate-solve the drizzled output automatically — run ImageSolver (step 2.2) on the drizzle master if SPFC fails with "no astrometric solution".
+
 ---
 
 ## Phase 2: Linear Processing
@@ -84,10 +86,11 @@ Plate-solve the image for SPFC/SPCC to work correctly.
   - **1.88 µm** for Drizzle 2x (pixel size halved)
 - **Enable Distortion Correction** for better star matching
 - Catalog: **Gaia DR3** for plate solving (DR3/SP is only needed for SPCC spectroscopic data)
+- **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation (e.g., 90° from alt-az or camera angle).
 
 > Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed if WBPP didn't solve the image or if the autocrop lost the solution.
 
-> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. This is normal — the image orientation may not match the expected coordinates. Let it complete.
+> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. If that also fails, check: (1) "Force values" is unchecked, (2) "Try with exhaustive star matching on failure" is checked in Advanced Parameters, (3) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x).
 
 ### 2.3 Gradient Removal
 

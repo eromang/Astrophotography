@@ -70,6 +70,8 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
   - Large Scale Pixel Rejection: **High** enabled, layers 2, growth 2
 - Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 
+> **Drizzle 2x changes pixel scale:** output resolution is 1.55"/px (half of native 3.1"/px), pixel size effectively 1.88 µm. WBPP may not plate-solve the drizzled output — run ImageSolver (step 2.0) on the drizzle master if SPFC fails with "no astrometric solution".
+
 ---
 
 ## Phase 2: Linear Processing
@@ -83,10 +85,11 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
   - **1.88 µm** for Drizzle 2x (pixel size halved)
 - **Enable Distortion Correction** for better star matching
 - Catalog: **Gaia DR3** for plate solving
+- **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation.
 
 > WBPP normally adds an astrometric solution automatically. ImageSolver is needed if the autocrop lost the solution or if WBPP didn't solve.
 
-> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", ImageSolver will automatically retry with mirrored coordinates. This is normal.
+> If the first solve fails with "RANSAC: Unable to find a valid set of star pair matches", check: (1) "Force values" is unchecked, (2) "Try with exhaustive star matching on failure" is checked in Advanced Parameters, (3) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x).
 
 ### 2.1 AutoStretch (visualization only)
 
