@@ -151,9 +151,11 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 2.8 AutoStretch After Calibration
 
-**ScreenTransferFunction**
-1. Link
-2. Autostretch
+**ScreenTransferFunction** — verify color calibration result.
+
+1. **Link** channels (chain link icon)
+2. AutoStretch (nuclear icon) — image should show natural, balanced colors
+3. If colors look off, SPCC may need adjustment
 
 ### 2.9 Star Removal
 
@@ -189,10 +191,11 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 **BN** (BackgroundNeutralization)
 - Select dark background region of interest if available
 
-**ScreenTransferFunction**
-1. Link
-2. Autostretch
-3. Unlink
+**ScreenTransferFunction** — verify background is neutral.
+
+1. **Link** channels (chain link icon)
+2. AutoStretch (nuclear icon) — background should appear neutral gray, not tinted
+3. **Unlink** and AutoStretch again — channels should be similar; if one is brighter, BN may need a different background reference
 
 ### 3.3 Final Noise Reduction (on starless)
 

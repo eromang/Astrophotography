@@ -271,6 +271,11 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 - Combine the remapped channels back into an RGB image
 - Color space: RGB
 
+**ScreenTransferFunction** — verify HOO reassembly.
+
+1. **Link** channels, AutoStretch — should show the HOO color palette (red Ha, teal OIII)
+2. **Unlink**, AutoStretch — check channel balance
+
 ### 3.5 Color Calibration (Optional)
 
 After reassembling channels into an HOO composite, SPCC can calibrate the color balance using combined filter curves.
@@ -319,6 +324,11 @@ Alternative: **HistogramTransformation**
 **BackgroundNeutralization**
 - Select a preview on a dark area free of nebulosity
 - Neutralizes background color cast
+
+**ScreenTransferFunction** — verify background is neutral.
+
+1. **Link** channels, AutoStretch — background should appear neutral, not tinted
+2. **Unlink**, AutoStretch — channels should be similar in the background areas
 
 ### 4.4 Final Noise Reduction
 
