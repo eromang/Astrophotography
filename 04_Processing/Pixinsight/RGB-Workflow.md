@@ -185,9 +185,8 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 ### 2.10 Noise Reduction (Linear, on starless)
 
 **NoiseXTerminator**
-- Model: `NoiseXTerminator.2.mlpackage`
+- Model: `NoiseXTerminator.3.mlpackage` (AI v3 — no Detail parameter; v2 had Detail: 0.15)
 - Denoise: 0.9
-- Detail: 0.15
 - Iterations: **2**
 - Test on preview first
 
@@ -218,7 +217,7 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 **NoiseXTerminator**
 - Denoise: 0.9
-- Detail: 0.20
+- Iterations: 1 (lighter pass on non-linear data)
 - Test on preview first
 
 ---
