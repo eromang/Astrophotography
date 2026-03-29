@@ -61,8 +61,9 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
 
 ### 1.2 WBPP (Weighted Batch Pre-Processing)
 
-- Drizzle: 2
+- Drizzle: **2**
 - Dark master cosmetic correction
+- Image Registration: **enable Distortion Correction** (max spline points 4000)
 - Satellite trail removal:
   - Rejection Algorithm: Winsorized Sigma Clipping
   - Sigma High: ~1.9

@@ -58,6 +58,7 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
   - Rejection Algorithm: Winsorized Sigma Clipping
   - Sigma High: ~1.9
   - Large Scale Pixel Rejection: High
+- Image Registration: **enable Distortion Correction** (max spline points 4000) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2 quality
 - Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
 
 ---
