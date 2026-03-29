@@ -33,9 +33,20 @@ OIII appears in both green and blue channels but is stronger in blue.
 
 ### 1.1 SubFrameSelector
 
-- Scale: 3.1"/pixel ([[RedCat-51]] + [[ASI2600MCPro]])
-- Evaluate: FWHM, Eccentricity, Median, Stars, Noise
-- Reject outliers (poor seeing, clouds, tracking errors)
+**System Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Subframe scale | **3.10** arcsec/pixel |
+| Camera gain | 1.0000 e⁻/ADU |
+| Camera resolution | 16-bit [0,65535] |
+| Site local midnight | **1** hours UTC (CET) / **2** hours UTC (CEST) |
+| Scale unit | Arcseconds |
+| Data unit | Normalized to [0,1] |
+
+**Evaluate:** FWHM, Eccentricity, Median, Stars, Noise
+**Keyword:** SSWEIGHT (postfix `_a`)
+**Reject outliers** based on SNR Weight (poor seeing, clouds, tracking errors)
 
 ### 1.2 WBPP (Weighted Batch Pre-Processing)
 

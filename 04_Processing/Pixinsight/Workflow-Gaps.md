@@ -66,7 +66,7 @@ Workflows use Drizzle 2 but don't cover CFA drizzle details for OSC sensors.
 
 **Search:** `SubframeSelector weights`, `SubframeSelector formula`
 
-Evaluation step lists metrics (FWHM, Eccentricity, Median, Stars, Noise) but not optimal weighting expressions for frame ranking.
+System Parameters now documented in both workflows. Still needed: optimal weighting expressions for frame ranking (FWHM/eccentricity/noise formula).
 
 ### BackgroundNeutralization Timing for Narrowband
 
