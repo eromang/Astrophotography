@@ -96,6 +96,12 @@ Location: Tuntange, Luxembourg (Bortle 4), south-facing balcony (SE to SW).
 
 ---
 
+## Session Context
+
+At the start of a new session, read `06_Metadata/Agents/Claude/Session-Context.md` for a quick overview of the vault state, active work, key files, and processing lessons.
+
+---
+
 ## Claude Code Configuration
 
 - Config: `06_Metadata/Agents/Claude/claude_config.json`
