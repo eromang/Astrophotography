@@ -67,10 +67,13 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 
 ### 2.1 AutoStretch (visualization only)
 
-**ScreenTransferFunction**
-1. Autostretch in linked mode
-2. Unlink
-3. Autostretch
+**ScreenTransferFunction** — display-only, does not modify data. Image remains linear.
+
+1. Click the **nuclear icon** (yellow/black, bottom-left) to AutoStretch in **linked** mode (chain link icon = linked)
+2. **Unlink** channels (click chain link icon at top-left to break the link)
+3. AutoStretch again — shows each channel independently, reveals color imbalances
+
+> Never drag STF to HistogramTransformation until Phase 3 (stretching). All Phase 2 processing must be done on linear data.
 
 ### 2.2 ImageSolver
 
