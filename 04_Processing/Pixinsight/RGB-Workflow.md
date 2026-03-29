@@ -98,6 +98,16 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 2.3 Gradient Removal
 
+> **SPFC + MGC vs GraXpert:** MGC requires MARS reference data covering your field in matching filters. MARS DR1 primarily contains narrowband (Ha, O-III) and luminance (L) data — it may have **no broadband R/G/B coverage** for your field. If MGC fails with "No reference data found for filter 'R'", use **GraXpert** instead. Check MARS coverage before committing to the MGC path.
+
+**Option A: GraXpert** (recommended when MARS lacks broadband coverage)
+
+- AI mode — no manual tuning required
+- Works on any field regardless of MARS coverage
+- Apply after SPFC (flux calibration is still beneficial for SPCC later)
+
+**Option B: SPFC + MGC** (when MARS has coverage)
+
 1. **SPFC** (SpectrophotometricFluxCalibration)
    - QE Curve: Sony IMX411/455/461/533/571
    - Filter: Optolong L-Pro
