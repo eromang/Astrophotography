@@ -11,65 +11,13 @@ Targets with existing data that would benefit from reprocessing with the current
 
 ---
 
-## Priority 1: M13 — Stack All L-Pro Nights
+## ~~Priority 1: M13~~ — Demoted (duplicate data)
 
-**Effort:** Low | **Gain:** Massive — 4× more data than any existing stack
-
-[[M13-Hercules]] has 59 usable L-Pro frames across 3 nights (4h 55m) that were **never stacked together**. Only a single-night result exists from 2024-06-24.
-
-Night 3 (2024-07-28, -20°C, 7 frames) is excluded and **deleted from SSD** — no matching 300s/-20°C darks in the library and only 7 frames.
-
-### Data
-
-| Night | Date | Frames | Exposure | Temp | Include? |
-|-------|------|--------|----------|------|----------|
-| 1 | 2024-06-10 | 25 | 300s | -10°C | Yes |
-| 2 | 2024-06-24 | 9 | 300s | -10°C | Yes |
-| ~~3~~ | ~~2024-07-28~~ | ~~7~~ | ~~300s~~ | ~~-20°C~~ | **No** — deleted from SSD |
-| 4 | 2024-10-20 | 25 | 300s | -10°C | Yes |
-| **Total** | | **59** | | **4h 55m** | |
-
-**SSD paths:**
-- Night 1: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20240610-g100-300s-10/Light/`
-- Night 2: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20240624-g100-300s-10/Light/`
-- Night 4: `/Volumes/T7/Astrophotography/Objects/Globular_Clusters/ASI2600MC-REDCAT51/M13_Cluster/2024/20241020-g100-300s-10/Light/`
-
-### Steps
-
-- [ ] Verify Night 1 and Night 2 lights aren't duplicated (same start filenames `20240625-002422` observed in both)
-- [ ] Copy lights from Night 1, 2, and 4 into working folder
-- [ ] SubFrameSelector: measure all 59 frames (scale 3.10"/px, gain 1.0 e⁻/ADU) — reject outliers by SNR Weight
-- [ ] WBPP: load SFS-approved frames, Drizzle 2, calibration with 300s/-10°C darks, L-Pro flats, bias
-- [ ] Stack as MultiNights
-- [ ] SPFC: Sony IMX QE, Optolong L-Pro filter, Gaia DR3/SP
-- [ ] MGC: MARS DR1 + MARS-U, R/G/B bands, gradient scale 2048, scale factor 0.8
-- [ ] BXT: correct only → then sharpen (PSF 2.30, Stars 0.20, Halos -0.10, Nonstellar 0.90)
-- [ ] STX: lite.nonoise.11, stars=true, overlap 0.20 → save star image
-- [ ] NXT: denoise 0.9, detail 0.15, iterations 2 (on starless)
-- [ ] SPCC: Optolong L-Pro filters, Sony IMX QE, G2V, DR3/SP
-- [ ] Statistical Astro Stretching (boost 0.15)
-- [ ] BackgroundNeutralization
-- [ ] NXT final pass: denoise 0.9, detail 0.20
-- [ ] ArcsinhStretch on stars
-- [ ] PixelMath: `~(~starless * ~stars)`
-- [ ] CurvesTransformation — contrast, saturation
-- [ ] Optional: LHE (radius 64, slope 2.0) for cluster detail
-- [ ] Export TIFF 16-bit + JPEG
-
-### Calibration
-
-| Frame | Status |
-|-------|--------|
-| Darks 300s/-10°C | Available (master on SSD) |
-| Flats L-Pro 60ms | Available (master on SSD) |
-| Dark flats 60ms | Available (master on SSD) |
-| Bias g100 | Available (master on SSD) |
-
-All calibration frames available — ready to process.
+> [!warning] SFS analysis confirmed all 3 night folders contain the **same 25 frames** from 2024-06-25. No multi-night data exists. Only 25 unique L-Pro frames (2h 05m). Reprocessing with current workflow would be a modest improvement (MGC, Drizzle 2, SPCC) but not the massive gain originally expected. **Priority: reshoot with L-Pro, 180s subs, target 4–6h integration.**
 
 ---
 
-## Priority 2: NGC 5746 — Full Reprocess
+## Priority 1 (was 2): NGC 5746 — Full Reprocess
 
 **Effort:** Medium | **Gain:** High — current tools replace ABE×3, Drizzle 2 doubles resolution
 
@@ -99,7 +47,7 @@ All calibration frames available — ready to process.
 
 ---
 
-## Priority 3: M42 ASI2600 — Apply HDR Workflow
+## Priority 2 (was 3): M42 ASI2600 — Apply HDR Workflow
 
 **Effort:** Medium | **Gain:** High — proper HDR replaces manual blend, first test of step 2.7
 
@@ -139,7 +87,7 @@ All calibration frames available — ready to process.
 
 ---
 
-## Priority 4: M31 — Add HDR for Nucleus
+## Priority 3 (was 4): M31 — Add HDR for Nucleus
 
 **Effort:** Medium | **Gain:** Medium — nucleus detail recovery
 
@@ -172,7 +120,7 @@ All calibration frames available — ready to process.
 
 ---
 
-## Priority 5: NGC 2264 D5300 — PI Reprocess with Full Calibration
+## Priority 4 (was 5): NGC 2264 D5300 — PI Reprocess with Full Calibration
 
 **Effort:** Low | **Gain:** Medium — full calibration in PI, rare for D5300 data
 
@@ -197,7 +145,7 @@ All available on SSD in the session folder.
 
 ---
 
-## Priority 6: M42 D5300 2023 — Combine 60s Nights
+## Priority 5 (was 6): M42 D5300 2023 — Combine 60s Nights
 
 **Effort:** Low | **Gain:** Medium — 2h 21m combined from 2 nights
 
