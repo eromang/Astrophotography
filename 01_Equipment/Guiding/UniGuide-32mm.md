@@ -5,6 +5,10 @@ category: guiding
 brand: "William Optics"
 model: "UniGuide 32mm"
 status: active
+purchase_date: 2022-09-16
+purchase_price: "146.02 €"
+purchase_store: "Astroshop"
+purchase_url: "https://www.astroshop.eu"
 tags:
   - equipment/guiding
 ---

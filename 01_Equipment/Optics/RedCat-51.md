@@ -5,6 +5,10 @@ category: optics
 brand: "William Optics"
 model: "RedCat 51 II APO"
 status: active
+purchase_date: 2022-09-16
+purchase_price: "979.02 €"
+purchase_store: "Astroshop"
+purchase_url: "https://www.astroshop.eu"
 tags:
   - equipment/optics
 ---

@@ -95,24 +95,43 @@ With the [[Nikon-D5300]] (3.89 µm pixels, APS-C sensor):
 
 | Accessory | Purpose |
 |-----------|---------|
-| Celestron T2 Adaptor for Nikon | Connect [[Nikon-D5300]] to telescope |
-| Celestron T-Adapter with Barlow Lens | Prime focus + Barlow for extra magnification |
-| Celestron Universal 1.25" T-Adapter | Alternative camera connection |
-| Solomark Phone Adapter | Smartphone afocal photography through eyepiece |
+| [[Celestron-T2-Nikon-Adapter\|Celestron T2 Adapter for Nikon]] | Connect [[Nikon-D5300]] to telescope |
+| [[Celestron-T-Adapter-Barlow\|Celestron T-Adapter with Barlow Lens]] | Prime focus + Barlow for extra magnification |
+| [[Celestron-Universal-T-Adapter\|Celestron Universal 1.25" T-Adapter]] | Alternative camera connection |
+| [[Solomark-Phone-Adapter\|Solomark Phone Adapter]] | Smartphone afocal photography through eyepiece |
 
 ### Filters
 
 | Filter | Purpose |
 |--------|---------|
-| Celestron Moon Filter (1.25") | Reduce lunar glare for visual and imaging |
-| Celestron Oxygen III Narrowband (1.25") | Visual observation of emission nebulae (Veil, Orion) |
+| [[Celestron-Moon-Filter\|Celestron Moon Filter]] (1.25") | Reduce lunar glare for visual and imaging |
+| [[Omegon-OIII\|Omegon OIII]] (1.25") | Visual observation of emission nebulae (Veil, Orion) |
+| [[Optolong-LeNhance\|Optolong L-eNhance]] (1.25") | Dual narrowband (Ha/OIII/Hb) for emission nebula observation |
+
+### Focusing
+
+| Accessory | Purpose |
+|-----------|---------|
+| [[TS-Bahtinov-Mask\|TS Optics Bahtinov Mask]] (85-120mm) | Precise manual focusing via diffraction pattern |
+
+### Dew Prevention
+
+| Accessory | Purpose |
+|-----------|---------|
+| [[TS-Dew-Shield-Cap\|TS Optics Soft Dew Shield Cap]] (95-125mm) | Prevents dew formation on front optic |
+
+### Stability
+
+| Accessory | Purpose |
+|-----------|---------|
+| [[Omegon-Anti-Vibration-Pads\|Omegon Anti-Vibration Pads]] | Dampen vibrations under tripod legs |
 
 ### Power & Connectivity
 
 | Accessory | Purpose |
 |-----------|---------|
-| Celestron AC Adapter (2 Amp) | Mains power for extended sessions |
-| SkyPortal WiFi Module | Wireless control via Celestron SkyPortal app |
+| [[Baader-Outdoor-Power-Supply\|Baader Outdoor Power Supply]] | Mains power for extended sessions |
+| [[Celestron-SkyPortal-WiFi\|SkyPortal WiFi Module]] | Wireless control via Celestron SkyPortal app |
 | Celestron NexStar RS-232 Cable | Hand controller to PC connection |
 | UGREEN USB to RS232 (PL2303) | USB-to-serial for PC control and firmware updates |
 

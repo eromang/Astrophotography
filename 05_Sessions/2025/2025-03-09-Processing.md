@@ -20,12 +20,12 @@ tags:
 
 Exposition: 300s
 Temperature: -20
-Filtre: Ultimate
+Filtre: L-Pro
 Gain: g100
 
 8 nuits:
 - 'Night_1_20240729-g100-300s-20' : 9 FSF
-- 'Night_3_20230805-g100-300s-20' : 32 SFS
+- 'Night_3_20240805-g100-300s-20' : 32 SFS
 - Night_4_20240813-g100-300s-10 : 33 SFS
 - Night_5_20240826-g100-300s-10 : 60 SFS
 - Night_6_20240827-g100-300s-10 : 26 SFS

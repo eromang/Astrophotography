@@ -5,6 +5,10 @@ category: imaging
 brand: "ZWO"
 model: "ASI2600MC Pro"
 status: active
+purchase_date: 2023-10-23
+purchase_price: "2,590.00 €"
+purchase_store: "Astroshop"
+purchase_url: "https://www.astroshop.eu"
 tags:
   - equipment/imaging
 ---

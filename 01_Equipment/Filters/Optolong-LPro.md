@@ -5,6 +5,10 @@ category: filter
 brand: "Optolong"
 model: "L-Pro 2''"
 status: active
+purchase_date: 2022-10-10
+purchase_price: "179.00 €"
+purchase_store: "Astroshop"
+purchase_url: "https://www.astroshop.eu"
 tags:
   - equipment/filter
 ---

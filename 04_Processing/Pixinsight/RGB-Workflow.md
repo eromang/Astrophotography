@@ -52,14 +52,46 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 
 ### WBPP (Weighted Batch Pre-Processing)
 
-- Drizzle: **2** (strongly recommended over debayerization for color sensors — drizzle involves no data interpolation, while debayerization interpolates 3 out of 4 pixels per channel, introducing photometric errors)
-- Dark master cosmetic correction
-- Satellite trail removal:
-  - Rejection Algorithm: Winsorized Sigma Clipping (or Auto)
-  - Sigma High: ~1.9
-  - Large Scale Pixel Rejection: **High** enabled, layers 2, growth 2
-- Image Registration: **enable Distortion Correction** (max spline points 4000) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2 quality
-- Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
+> Full settings reference: [[WBPP-Reference]]. Settings below are the key values for broadband RGB. Adjust per session as needed.
+
+#### Calibration Tab
+
+- Load calibration frames per [[Master-Library]]:
+  - **Bias tab:** bias master + dark flat master (WBPP matches by exposure)
+  - **Darks tab:** dark master matching light exposure and temperature
+  - **Flats tab:** flat frames matching filter and optical train
+- Calibration Settings (Light row): Dark Auto, Flat Auto
+- Cosmetic Correction: **Automatic**, High sigma 10
+- CFA Settings: CFA Images checked, Mosaic pattern Auto, DeBayer method **VNG**
+
+#### Post-Calibration Tab
+
+- **Drizzle:** Enabled, Scale **2**, Fast mode **unchecked**, Drop shrink **0.90**, Function Square
+- Channels: Combined RGB
+- Fast Integration: Enabled (for preview)
+
+#### Lights Tab
+
+- **Subframe Weighting:** PSF Signal Weight
+- **Image Registration:** Enabled
+  - **Distortion Correction:** Enabled (max spline points **4000**) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2x quality
+- **Local Normalization:** Enabled (critical for multi-night stacks)
+- **Image Integration:**
+  - Combination: Average
+  - Rejection Algorithm: **Winsorized Sigma Clipping**
+  - Sigma High: **1.9** (for satellite trail rejection)
+  - Large Scale Pixel Rejection: **High** enabled, layers **2**, growth **2**
+- **Astrometric Solution:**
+  - Coordinates: target RA/DEC (approximate)
+  - Focal distance: **250 mm**
+  - Pixel size: **3.76 µm** (native — Drizzle is applied post-registration)
+  - **Force values: Unchecked** — ASIAIR writes RA/DEC to FITS headers
+
+#### Pipeline Tab
+
+- Output directory: set explicitly
+- Active steps: Subframe Weighting, Image Registration, Local Normalization, Image Integration (all checked)
+- Linear Defects Correction: unchecked
 
 > **Drizzle 2x changes pixel scale:** output resolution is 1.55"/px (half of native 3.1"/px), pixel size effectively 1.88 µm. This affects ImageSolver and any tool that needs the image scale. WBPP may not plate-solve the drizzled output automatically — run ImageSolver (step 2.2) on the drizzle master if SPFC fails with "no astrometric solution".
 
@@ -98,7 +130,7 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 2.3 Gradient Removal
 
-> **SPFC + MGC vs GraXpert:** MGC requires MARS reference data covering your field in matching filters. MARS DR1 primarily contains narrowband (Ha, O-III) and luminance (L) data — it may have **no broadband R/G/B coverage** for your field. If MGC fails with "No reference data found for filter 'R'", use **GraXpert** instead. Check MARS coverage before committing to the MGC path.
+> **SPFC + MGC vs GraXpert:** MGC requires MARS reference data covering your field in matching filters. MARS coverage varies by field — some have broadband R/G/B (e.g., NGC 7000), some don't (e.g., NGC 5746). Always try MGC first; if it fails with "No reference data found for filter 'R'", use **GraXpert** instead. See [[MGC-Reference]] for full tuning guide.
 
 **Option A: GraXpert** (recommended when MARS lacks broadband coverage)
 
@@ -239,11 +271,20 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 4.3 Final Adjustments
 
-- **CurvesTransformation** — contrast, saturation, color balance (Akima subsplines interpolation)
-- **LocalHistogramEqualization** — optional, increases local contrast:
-  - Radius: 64
-  - Slope limit: 2.0
-  - Histogram bins: 8-bit
-  - Circular kernel: enabled
+- **CurvesTransformation** — see [[CurvesTransformation-Reference]] for full guide
+  - Order: Luminance → Saturation → R → G → B (apply after each group)
+  - Interpolation: Akima subsplines
+  - L: S-curve for contrast (up 1/3 from top, down 1/4 from bottom)
+  - S: Shallow boost in upper 1/3
+  - G: Pull down lower 1/3 to fix green cast (common with broadband L-Pro on emission fields)
+  - R: Boost middle for Ha emission targets
+  - B: Pull down lower 1/4 to neutralize space
+- **SCNR** — if green cast persists after CurvesTransformation:
+  - Channel: Green, Amount: 0.5, Protection: Average Neutral
+- **LocalHistogramEqualization** — see [[LHE-Reference]] for full guide. Two-pass approach recommended:
+  - Pass 1 (large structures): Kernel Radius 120–160, Contrast Limit 1.5–2.0, Amount **0.3–0.5**
+  - Pass 2 (small structures): Kernel Radius 40–80, Contrast Limit 1.5–2.0, Amount **0.3–0.5**
+  - Consider masking background with RangeSelection
+  - **Amount at 1.0 is too much** — always reduce to 0.3–0.5
 - **DarkStructureEnhance** script — optional, for dark nebula lanes
 - **ICCProfileTransformation** — convert to sRGB for export

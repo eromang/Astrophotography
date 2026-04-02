@@ -5,6 +5,10 @@ category: filter
 brand: "Antlia"
 model: "ALP-T Quad Band Filter"
 status: active
+purchase_date: 2024-11-30
+purchase_price: "229.58 €"
+purchase_store: "Télescopes et Accessoires"
+purchase_url: "http://www.telescopes-et-accessoires.fr"
 tags:
   - equipment/filter
 ---

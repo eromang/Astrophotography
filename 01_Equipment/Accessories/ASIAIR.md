@@ -5,6 +5,10 @@ category: accessory
 brand: "ZWO"
 model: "ASIAIR Plus"
 status: active
+purchase_date: 2022-04-10
+purchase_price: "$299.00"
+purchase_store: "ZWO ASI"
+purchase_url: "https://www.zwoasi.com"
 tags:
   - equipment/accessory
 ---

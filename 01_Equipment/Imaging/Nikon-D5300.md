@@ -4,7 +4,7 @@ type: equipment
 category: imaging
 brand: "Nikon"
 model: "D5300"
-status: active
+status: retired
 tags:
   - equipment/imaging
 ---

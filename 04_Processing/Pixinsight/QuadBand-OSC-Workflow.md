@@ -61,14 +61,46 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
 
 ### 1.2 WBPP (Weighted Batch Pre-Processing)
 
-- Drizzle: **2**
-- Dark master cosmetic correction
-- Image Registration: **enable Distortion Correction** (max spline points 4000)
-- Satellite trail removal:
-  - Rejection Algorithm: Winsorized Sigma Clipping (or Auto)
-  - Sigma High: ~1.9
-  - Large Scale Pixel Rejection: **High** enabled, layers 2, growth 2
-- Calibration: darks, flats, dark flats, bias (see [[Master-Library]])
+> Full settings reference: [[WBPP-Reference]]. Settings below are the key values for narrowband quad band. Adjust per session as needed.
+
+#### Calibration Tab
+
+- Load calibration frames per [[Master-Library]]:
+  - **Bias tab:** bias master + dark flat master (WBPP matches by exposure)
+  - **Darks tab:** dark master matching light exposure and temperature
+  - **Flats tab:** flat frames matching **[[Antlia-FQuad]]** filter and optical train
+- Calibration Settings (Light row): Dark Auto, Flat Auto
+- Cosmetic Correction: **Automatic**, High sigma 10
+- CFA Settings: CFA Images checked, Mosaic pattern Auto, DeBayer method **VNG**
+
+#### Post-Calibration Tab
+
+- **Drizzle:** Enabled, Scale **2**, Fast mode **unchecked**, Drop shrink **0.90**, Function Square
+- Channels: Combined RGB
+- Fast Integration: Enabled (for preview)
+
+#### Lights Tab
+
+- **Subframe Weighting:** PSF Signal Weight
+- **Image Registration:** Enabled
+  - **Distortion Correction:** Enabled (max spline points **4000**) — corrects [[RedCat-51]] field curvature
+- **Local Normalization:** Enabled (critical for multi-night stacks)
+- **Image Integration:**
+  - Combination: Average
+  - Rejection Algorithm: **Winsorized Sigma Clipping**
+  - Sigma High: **1.9** (for satellite trail rejection)
+  - Large Scale Pixel Rejection: **High** enabled, layers **2**, growth **2**
+- **Astrometric Solution:**
+  - Coordinates: target RA/DEC (approximate)
+  - Focal distance: **250 mm**
+  - Pixel size: **3.76 µm** (native — Drizzle is applied post-registration)
+  - **Force values: Unchecked** — ASIAIR writes RA/DEC to FITS headers
+
+#### Pipeline Tab
+
+- Output directory: set explicitly
+- Active steps: Subframe Weighting, Image Registration, Local Normalization, Image Integration (all checked)
+- Linear Defects Correction: unchecked
 
 > **Drizzle 2x changes pixel scale:** output resolution is 1.55"/px (half of native 3.1"/px), pixel size effectively 1.88 µm. WBPP may not plate-solve the drizzled output — run ImageSolver (step 2.0) on the drizzle master if SPFC fails with "no astrometric solution".
 

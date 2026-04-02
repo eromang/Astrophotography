@@ -5,6 +5,10 @@ category: mount
 brand: "iOptron"
 model: "CEM26"
 status: active
+purchase_date: 2022-09-16
+purchase_price: "1,285.76 €"
+purchase_store: "Astroshop"
+purchase_url: "https://www.astroshop.eu"
 tags:
   - equipment/mount
 ---
@@ -179,6 +183,15 @@ Software in `01_Equipment/Manuals/CEM26/iPolar-Software/`.
 - Requirements: Windows 7 SP1+ with .NET Framework 4.8, ASCOM Platform 6.5 SP1+
 
 Driver files in `01_Equipment/Manuals/CEM26/ASCOM-Driver/`.
+
+---
+
+## Accessories
+
+| Accessory | Purpose |
+|-----------|---------|
+| [[iOptron-LiteRoc-Tripod\|iOptron LiteRoc Tripod]] | Dedicated tripod for CEM26/GEM28 |
+| [[Omegon-Anti-Vibration-Pads\|Omegon Anti-Vibration Pads]] | Dampen vibrations under tripod legs |
 
 ---
 
