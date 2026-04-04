@@ -193,6 +193,7 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
 **StarXTerminator**
 - Model: `StarXTerminator.lite.nonoise.11.mlpackage`
 - Generate Star image: selected
+- Unscreen stars: enabled (produces a better star layer for screen-mode blending in step 6.1)
 - Overlap: 0.20
 - Keep the star image for later reintegration
 
@@ -380,13 +381,21 @@ Alternative: **HistogramTransformation**
 
 Work on the star image saved from step 2.5.
 
-### 5.1 Star Stretch
+### 5.1 Star Reduction (Optional)
+
+**MorphologicalTransformation** — if stars are still too prominent after BXT
+- Operator: Erosion (Minimum)
+- Iterations: 1
+- Size: 5 elements, circular kernel
+- Amount: **0.50** (do not go to 1.0 — stars were already reduced by BXT)
+
+### 5.2 Star Stretch
 
 **ArcsinhStretch**
 - Protect highlights: enabled
 - Test stretch factor — stars should look natural, not blown out
 
-### 5.2 Star Color
+### 5.3 Star Color
 
 **ColorSaturation**
 - Boost star color slightly if desired
