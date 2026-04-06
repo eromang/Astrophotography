@@ -3,9 +3,9 @@ name: session-plan
 description: "Plan an astrophotography capture session for a given date"
 shortcut: sp
 category: sessions
-version: "1.0"
-argument-hint: "<date> (e.g., tonight, tomorrow, 2025-04-15)"
-allowed-tools: WebFetch, Read, Write, Glob, Bash(date:*), Bash(python3:*)
+version: "1.5"
+argument-hint: "<date> [--stellarium] [--location <preset>] (e.g., tonight, tomorrow --stellarium --location burfelt)"
+allowed-tools: WebFetch, Read, Write, Glob, Bash(date:*), Bash(python3:*), Bash(curl:*), Bash(mv:*), Bash(rm:*), Bash(mkdir:*), Bash(ls:*), Bash(find:*), Bash(cat:*)
 ---
 
 # Session Planner
@@ -16,29 +16,159 @@ Plan an astrophotography capture session by fetching real astronomical and weath
 
 ## Input
 
-A date expression:
+A date expression, optionally followed by flags:
+
 - `tonight`, `today` → current date
 - `tomorrow` → next day
 - `YYYY-MM-DD` → specific date
 - `next friday`, `saturday` → resolve to next occurrence
+- `--stellarium` / `-s` → enable Stellarium API integration (cross-check altitudes + capture finder charts)
+- `--location <preset>` / `-l <preset>` → use a named location preset (`balcony`, `schwebach`, `wahl`, `hoscheid`)
+
+Examples:
+- `/session-plan tonight`
+- `/session-plan tomorrow --stellarium`
+- `/session-plan 2026-06-12 -s --location wahl`
+- `/session-plan saturday -l hoscheid -s`
+
+If `--location` is omitted, the command uses the **last-used location** (persisted in state file). If no state exists, falls back to the location marked `default: true` in the config (currently `balcony`).
 
 ---
 
 ## Configuration (Fixed)
 
 ```yaml
-location:
-  name: "Tuntange, Luxembourg"
-  latitude: 49.6
-  longitude: 6.1
-  altitude_m: 310
-  bortle: 4
-  timezone: "Europe/Luxembourg"
+# State persistence file (last-used location, etc.)
+state_file: "06_Metadata/Agents/Claude/state/session-plan-state.json"
 
-visibility_window:
-  azimuth_min: 135  # SE
-  azimuth_max: 225  # SW
-  altitude_min: 10  # degrees above horizon
+# Location presets — selectable via --location flag
+locations:
+  balcony:
+    name: "Tuntange Balcony"
+    latitude: 49.71731
+    longitude: 6.00823
+    altitude_m: 317
+    bortle: 4               # verified via clearoutside.com 2026-04-06
+    sqm: 20.59              # mag/arcsec² (from clearoutside)
+    artificial_mcd: 0.455   # μcd/m² (from clearoutside)
+    timezone: "Europe/Luxembourg"
+    horizon:
+      type: "constrained"
+      azimuth_min: 135   # SE
+      azimuth_max: 225   # SW
+      altitude_min: 10
+    setup_time_min: 15
+    teardown_time_min: 15
+    power_source: "mains"
+    notes: "South-facing balcony, SE-SW window, mains power available"
+    default: true
+
+  schwebach:
+    name: "Schwebach Forest Edge"
+    latitude: 49.745
+    longitude: 5.945
+    altitude_m: 296         # Open-Elevation API verified
+    bortle: 4               # verified via clearoutside.com 2026-04-06
+    sqm: 20.81              # mag/arcsec² — best close site
+    artificial_mcd: 0.340   # 339.95 μcd/m²
+    timezone: "Europe/Luxembourg"
+    horizon:
+      type: "open"
+      altitude_min: 15      # forest clearings — slight elevation needed to clear treeline
+    setup_time_min: 25
+    teardown_time_min: 20
+    power_source: "jackery"
+    notes: "Best CLOSE portable site (12 min drive). 25% darker than balcony (SQM 20.81 vs 20.59). Forest clearings — scout in daytime to find an actual open clearing with horizon clearance. Replaces the previous Quatre-Vents preset which was Bortle 5 (worse than balcony)."
+
+  wahl:
+    name: "Plateau de Wahl (Groussbus-Wal)"
+    latitude: 49.840
+    longitude: 5.918
+    altitude_m: 449         # Open-Elevation API verified
+    bortle: 4               # verified via clearoutside.com 2026-04-06 — top of Bortle 4 range
+    sqm: 21.10              # mag/arcsec²
+    artificial_mcd: 0.221   # 220.6 μcd/m²
+    timezone: "Europe/Luxembourg"
+    horizon:
+      type: "open"
+      altitude_min: 15      # forest patches E and S add ~10-15° obstruction in those quadrants — refine after first visit
+    setup_time_min: 45
+    teardown_time_min: 30
+    power_source: "jackery"
+    notes: |
+      BEST VALUE dark site (30 min drive, 52% less LP than balcony, SQM 21.10).
+      Located between Grosbous and Wahl villages — Plus Code: RWR9+262 Groussbus-Wal.
+      Open agricultural plateau ~449m, large open area extending N/NE.
+      CAVEAT: small Kinigshaff hamlet ~300-500m W (~15-20 houses) — partial forest buffer mitigates but does not eliminate local LP.
+      Forest patches E and S of pin provide partial wind shelter but obstruct horizon ~10-15° in those directions.
+      Larger villages (Wahl, Grosbous) are >1 km away.
+      Access via small rural roads: Bousserwee (S), Ringbaach (N), Rue Nicolas Grang (W) — minimal night traffic.
+      First visit: scout the exact rig location. Pin is at field edge near forest. A more central spot
+      ~200m N (around 49.842, 5.920) would be further from Kinigshaff hamlet and have a cleaner horizon.
+      Find a roadside parking spot or designated pullout — pin location is in agricultural fields.
+      Verified via Google Maps satellite 2026-04-06 (terrain confirmed open plateau, hamlet caveat noted).
+
+  burfelt:
+    name: "Burfelt Viewpoint (Rastplatz mit Aussicht)"
+    latitude: 49.913
+    longitude: 5.926
+    altitude_m: 407         # Open-Elevation API verified
+    bortle: 4               # verified via clearoutside.com 2026-04-06
+    sqm: 21.06              # mag/arcsec²
+    artificial_mcd: 0.235   # 234.76 μcd/m²
+    timezone: "Europe/Luxembourg"
+    horizon:
+      type: "open"
+      altitude_min: 10
+    setup_time_min: 35
+    teardown_time_min: 25
+    power_source: "jackery"
+    notes: |
+      DESIGNATED VIEWPOINT site (40 min drive, 48% less LP than balcony, SQM 21.06).
+      Located on a forested ridge above Esch-sur-Sûre lake — Plus Code: WW7G+695 Esch-sur-Sûre.
+      THREE labeled viewpoint features in the immediate area:
+        - Rastplatz mit Aussicht (rest area with view) — designated parking
+        - Esch-sur-Sûre Veduta dall'alto (panoramic viewpoint)
+        - View Spot
+      Pin lands in a small open clearing surrounded by forest. Built-in horizon clearance — no scouting required.
+      ACCESS: CR316 (Um Knupp) provides road access, designated parking at the rest area.
+      HORIZON: Open S/SW (toward lake and Esch-sur-Sûre), forest backdrop on N/E (blocks northern LP).
+      CAVEAT: Esch-sur-Sûre town (~250 inhabitants) is in the valley directly S — most direct light blocked
+      by terrain, but some sky glow above the town. Minor impact on low-altitude S targets (M16/M17 transit ~26°).
+      Hydroelectric dam visible to S — typically not lit at night.
+      USE WHEN: First portable sessions, when reliable infrastructure matters more than absolute darkness,
+      when targets transit at >30° altitude (sky glow from town stays below the target).
+      DON'T USE WHEN: Imaging M16/M17 (low S transits) — prefer Wahl's clearer S horizon for those.
+      Verified via Google Maps satellite + clearoutside 2026-04-06.
+
+  hoscheid:
+    name: "Plateau de Hoscheid (Parc Hosingen)"
+    latitude: 49.967
+    longitude: 6.080
+    altitude_m: 452         # Open-Elevation API verified
+    bortle: 4               # verified via clearoutside.com 2026-04-06 — DARKEST site within reach
+    sqm: 21.23              # mag/arcsec² — just shy of Bortle 3 (~21.30 threshold)
+    artificial_mcd: 0.178   # 177.92 μcd/m² — 61% less than balcony
+    timezone: "Europe/Luxembourg"
+    horizon:
+      type: "open"
+      altitude_min: 10      # forest perimeter on N/E adds ~5-15° obstruction in those quadrants — refine after first visit
+    setup_time_min: 45
+    teardown_time_min: 30
+    power_source: "jackery"
+    notes: |
+      DARKEST site within reach (45 min drive, 61% less LP than balcony, SQM 21.23, just shy of Bortle 3).
+      Located inside Parc Hosingen Naturpark — Plus Code: X38J+Q2R. 
+      Terrain: large open clearing (~400×200m) with what appears to be a grass airstrip in the centre — ideal level ground.
+      Oval perimeter access road suggests vehicle parking at the SE corner where the pin sits.
+      Forest backdrop N and E (advantageous: blocks stray light from any nearby settlement).
+      Open S and W — productive transit window completely clear.
+      Far from villages (Hoscheid ~1 km N, separated by forest).
+      Use for dedicated dark-sky projects (faint reflection nebulae, Sh2-240 Simeis 147, faint galaxies)
+      where the extra 15 min drive vs Wahl is justified by the ×1.6 SNR gain over balcony.
+      First visit: scout the exact rig location — pin is at SE parking spot, but moving ~50m into the
+      clearing centre (~49.9678, 6.0782) gives a cleaner horizon if needed.
+      Verified via Google Maps satellite 2026-04-06.
 
 equipment:
   camera: "ASI2600MC Pro"
@@ -89,15 +219,142 @@ workflow_rules:
     - M31    # Andromeda nucleus
     - M64    # Black Eye nucleus
   hdr_suffix: " + [[HDR-Workflow]]"  # append to base workflow for HDR targets
+
+stellarium:
+  api_url: "http://localhost:8090"
+  fov_deg: 5.4               # RedCat 51 horizontal FOV
+  screenshot_dir: "~/Pictures/Stellarium"  # default macOS location
+  altitude_warning_deg: 1.0  # warn if internal vs Stellarium altitude differs by more than this
+  finder_chart_dir: "05_Sessions/{year}/Finder-Charts"
 ```
 
 ---
 
 ## Workflow
 
-### Step 1: Parse Date
+### Step 1: Parse Date, Flags, and Resolve Location
 
-Resolve the input to an ISO date (YYYY-MM-DD). If ambiguous, ask the user.
+Parse the argument string for:
+
+1. **`--stellarium` / `-s` flag** — set `stellarium_enabled = true`. Strip from input.
+2. **`--location <name>` / `-l <name>` flag** — set `location_arg = <name>`. Strip the flag and its value from input.
+3. **Date expression** — what remains. Resolve to an ISO date (YYYY-MM-DD). If ambiguous, ask the user.
+
+#### Resolve the active location
+
+Order of precedence:
+
+1. If `--location <name>` was provided → use that preset
+2. Otherwise, read state file `06_Metadata/Agents/Claude/state/session-plan-state.json`:
+   ```bash
+   STATE_FILE="06_Metadata/Agents/Claude/state/session-plan-state.json"
+   if [ -f "$STATE_FILE" ]; then
+     LAST_LOC=$(python3 -c "import json; print(json.load(open('$STATE_FILE')).get('last_location', ''))")
+   fi
+   ```
+   If `last_location` exists and is a valid preset → use it
+3. Otherwise, fall back to the location in the `locations:` config marked `default: true`
+
+Validate the resolved location exists in the `locations:` config. If the user passed an unknown name → error: "Unknown location preset 'X'. Available: balcony, schwebach, wahl, burfelt, hoscheid".
+
+#### Persist last-used location
+
+After the location is resolved (and BEFORE the rest of the workflow runs), write the state file:
+
+```bash
+mkdir -p "06_Metadata/Agents/Claude/state"
+python3 -c "
+import json, datetime
+state = {
+    'last_location': '${RESOLVED_LOCATION}',
+    'last_used': datetime.datetime.now().isoformat(),
+    'last_command': '/session-plan ${ORIGINAL_ARGS}'
+}
+with open('${STATE_FILE}', 'w') as f:
+    json.dump(state, f, indent=2)
+"
+```
+
+#### Bind active location to runtime variables
+
+For the rest of the workflow, use these variables (extracted from the chosen location's config block):
+
+```
+LOC_NAME       = locations[active].name
+LOC_LAT        = locations[active].latitude
+LOC_LON        = locations[active].longitude
+LOC_ALT        = locations[active].altitude_m
+LOC_BORTLE     = locations[active].bortle
+LOC_SQM        = locations[active].sqm
+LOC_ARTIFICIAL = locations[active].artificial_mcd
+LOC_HORIZON    = locations[active].horizon
+LOC_SETUP      = locations[active].setup_time_min
+LOC_TEARDOWN   = locations[active].teardown_time_min
+LOC_POWER      = locations[active].power_source
+```
+
+#### Auto-fetch sky quality from clearoutside.com (verification)
+
+After binding the location, fetch the **current** Bortle/SQM values from clearoutside as a sanity check against the stored preset values:
+
+```bash
+# Coordinates rounded to 2 decimal places (clearoutside accepts low precision)
+LAT2=$(printf "%.2f" "${LOC_LAT}")
+LON2=$(printf "%.2f" "${LOC_LON}")
+
+CO_HTML=$(curl -sf -m 10 "https://clearoutside.com/forecast/${LAT2}/${LON2}?view=current")
+
+# Extract: SQM, Bortle class, total brightness, artificial brightness
+LIVE_DATA=$(echo "$CO_HTML" | python3 -c "
+import sys, re, json
+html = sys.stdin.read()
+m = re.search(r'<strong>([0-9.]+)</strong> Magnitude\.\s*&nbsp;<strong>Class\s*(\d+)</strong>\s*Bortle\.\s*&nbsp;<strong>([0-9.]+)</strong>\s*mcd/m<sup>2</sup>\s*Brightness\.\s*&nbsp;<strong>([0-9.]+)</strong>\s*μcd/m<sup>2</sup>\s*Artificial Brightness', html)
+if m:
+    print(json.dumps({'sqm': float(m.group(1)), 'bortle': int(m.group(2)), 'total_mcd': float(m.group(3)), 'artificial_mcd_um': float(m.group(4))}))
+else:
+    print('{}')
+")
+```
+
+##### Comparison logic
+
+```
+LIVE_BORTLE = parsed.bortle
+LIVE_SQM = parsed.sqm
+
+if LIVE_BORTLE != LOC_BORTLE:
+    print warning:
+      "⚠️ Bortle mismatch for {LOC_NAME}: preset says {LOC_BORTLE}, clearoutside says {LIVE_BORTLE}.
+       Using live value ({LIVE_BORTLE}) for this session.
+       Consider updating the preset in session-plan.md."
+    LOC_BORTLE = LIVE_BORTLE  # use the live value
+
+if abs(LIVE_SQM - LOC_SQM) > 0.3:
+    print info:
+      "ℹ️ SQM drift: preset {LOC_SQM}, live {LIVE_SQM}. Light pollution model may have updated."
+```
+
+##### Failure handling
+
+- **Network failure / timeout** → log warning, fall back to stored `LOC_BORTLE` from the preset
+- **Regex parse failure** (clearoutside HTML format changed) → same fallback, log error
+- **Missing SQM/Bortle in preset** → require live fetch; if it fails, abort with clear error
+
+##### Why clearoutside?
+
+- Free, no API key required
+- Uses the [Falchi 2016 World Atlas](http://cires1.colorado.edu/artificial-sky/) light pollution data (same source as lightpollutionmap.info)
+- Returns SQM, Bortle class, total brightness, and artificial brightness in one HTML response
+- Bonus: also returns astro/nautical/civil twilight, moon rise/set, and a 7-day cloud forecast — could replace sunrise-sunset.org in a future version
+
+#### Example parsing
+
+| Input | date | stellarium | location |
+|-------|------|------------|----------|
+| `tonight` | today | false | last-used (or balcony if first run) |
+| `tomorrow --stellarium` | tomorrow | true | last-used |
+| `2026-06-12 -s --location quatre-vents` | 2026-06-12 | true | quatre-vents |
+| `saturday -l balcony` | next Sat | false | balcony |
 
 ### Step 2: Fetch Astronomical Data
 
@@ -106,7 +363,7 @@ Execute these WebFetch calls in parallel:
 #### 2a. Twilight Times
 
 ```
-GET https://api.sunrise-sunset.org/json?lat=49.6&lng=6.1&date={DATE}&formatted=0
+GET https://api.sunrise-sunset.org/json?lat={LOC_LAT}&lng={LOC_LON}&date={DATE}&formatted=0
 ```
 
 Extract from response:
@@ -117,7 +374,7 @@ Extract from response:
 #### 2b. Weather Forecast
 
 ```
-GET https://api.open-meteo.com/v1/forecast?latitude=49.6&longitude=6.1&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility,relative_humidity_2m,wind_speed_10m,temperature_2m&timezone=Europe/Luxembourg&start_date={DATE}&end_date={DATE_PLUS_1}
+GET https://api.open-meteo.com/v1/forecast?latitude={LOC_LAT}&longitude={LOC_LON}&hourly=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility,relative_humidity_2m,wind_speed_10m,temperature_2m&timezone=Europe/Luxembourg&start_date={DATE}&end_date={DATE_PLUS_1}
 ```
 
 Extract hourly data for the night window (twilight to twilight):
@@ -185,13 +442,16 @@ Algorithm:
 4. Azimuth = arctan2(-sin(HA), tan(dec)*cos(lat) - sin(lat)*cos(HA))
 ```
 
-Filter objects:
+Filter objects (horizon constraints come from `LOC_HORIZON` of the active location):
+
 - **Angular size ≥ 30'** — objects smaller than 30' are too small for the RedCat 51 FOV (5.4° × 3.6°). Exclude them entirely. See [[Seasonal-Calendar]] for the full list of suitable targets.
-- **Altitude > 10°** during at least 1 hour of the night
-- **Azimuth between 135° and 225°** (SE to SW) during their best window
+- **Altitude > LOC_HORIZON.altitude_min** during at least 1 hour of the night
+- **Azimuth filter:**
+  - If `LOC_HORIZON.type == "constrained"` → require `azimuth_min ≤ az ≤ azimuth_max` (e.g., balcony: 135°–225°)
+  - If `LOC_HORIZON.type == "open"` → no azimuth restriction (full 360° access, e.g., dark site)
 - **Not within 30° of moon** (if moon illumination > 50%)
 - **Magnitude < 10** (visible with the setup)
-- **Declination check:** Objects at Dec > 55° have very brief south window time (<1h) from latitude 49.6°. Objects at Dec 35°–50° transit near zenith but still get ~1.5–2.5h — viable with multi-night accumulation.
+- **Declination check (constrained horizon only):** Objects at Dec > 55° have very brief south window time (<1h) from latitude 49.6°. Objects at Dec 35°–50° transit near zenith but still get ~1.5–2.5h — viable with multi-night accumulation. **Skip this check at open-horizon locations** — high-declination targets (Heart/Soul, IC 1396, M81/M82) become viable.
 
 Sort remaining objects by:
 1. Hours available above 30° altitude (more = better)
@@ -230,6 +490,126 @@ frames = floor(effective_minutes * 60 / exposure_seconds)
 total_exposure = frames * exposure_seconds
 ```
 
+#### 5d. Stellarium Integration (only if `--stellarium` flag is set)
+
+**Skip this entire step if `stellarium_enabled` is false.**
+
+##### 5d.1 Probe Stellarium API
+
+```bash
+curl -sf -m 3 http://localhost:8090/api/main/status
+```
+
+If the call fails:
+- Print warning: "⚠️ Stellarium API unreachable on http://localhost:8090. Skipping cross-check and finder charts. Start Stellarium and enable Remote Control plugin (F2 → Plugins → Remote Control → Configure → Server enabled)."
+- Set `stellarium_enabled = false` and continue with normal flow.
+
+If the call succeeds:
+- Parse the response and **save the original state**:
+  ```
+  original_jday = response.time.jday
+  original_isTimeNow = response.time.isTimeNow
+  original_fov = response.view.fov
+  ```
+- These will be restored at the end of step 5d.
+
+##### 5d.2 Cross-Check Altitude Per Target
+
+For each selected target (1 to N), at its **peak altitude time** (mid-window):
+
+1. Convert peak time to Julian Day:
+   ```python
+   from datetime import datetime, timezone
+   dt_utc = peak_time_local.astimezone(timezone.utc)
+   jday = (dt_utc.timestamp() / 86400.0) + 2440587.5
+   ```
+
+2. Set Stellarium time:
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/time --data "time=${jday}"
+   ```
+
+3. Focus on target:
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/focus --data "target=${designation}"
+   ```
+
+4. Read object info:
+   ```bash
+   sleep 1.0  # CRITICAL: Stellarium needs ~1s to settle after focus,
+              # otherwise alt/az may reflect a previous selection
+   curl -sf -m 3 "http://localhost:8090/api/objects/info?format=json"
+   ```
+
+5. Compare:
+   ```
+   delta = abs(internal_altitude - stellarium.altitude)
+   if delta > altitude_warning_deg (1.0°):
+       warn user about discrepancy with both values
+   else:
+       use stellarium.altitude as authoritative for the report
+   
+   record stellarium.airmass for the planning table
+   record stellarium.above-horizon as sanity check
+   ```
+
+##### 5d.3 Capture Finder Chart Per Target
+
+For each target:
+
+1. Set FOV to the RedCat 51 field of view:
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/fov --data "fov=5.4"
+   ```
+
+2. Note the highest existing screenshot number BEFORE capture:
+   ```bash
+   ls ~/Pictures/Stellarium/stellarium-*.png 2>/dev/null | sort | tail -1
+   ```
+
+3. Trigger screenshot:
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/stelaction/do --data "id=actionSave_Screenshot_Global"
+   sleep 1.5  # screenshot is async, wait for file write
+   ```
+
+4. Find the new file (highest number not in the pre-capture list):
+   ```bash
+   find ~/Pictures/Stellarium -name "stellarium-*.png" -mmin -1 | sort | tail -1
+   ```
+
+5. Move/rename to the finder charts directory:
+   ```bash
+   FINDER_DIR="05_Sessions/${year}/Finder-Charts"
+   mkdir -p "${FINDER_DIR}"
+   mv "${captured_file}" "${FINDER_DIR}/${date}-${designation}-finder.png"
+   ```
+
+##### 5d.4 Restore Stellarium State
+
+After all targets are processed:
+
+1. Restore time to "now" (real-time tracking):
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/stelaction/do --data "id=actionReturn_To_Current_Time"
+   ```
+
+2. Restore the original FOV:
+   ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/fov --data "fov=${original_fov}"
+   ```
+
+##### 5d.5 Error Handling
+
+If any single curl call fails mid-loop:
+- Log the failure for that specific target
+- Continue with the next target (don't abort the entire integration)
+- At the end, summarize which targets failed Stellarium queries
+
+If the screenshot file isn't found after the timeout:
+- Skip the finder chart for that target but keep the cross-check data
+- Note in the session file that the chart is unavailable
+
 ### Step 6: Generate Session File
 
 Write to `05_Sessions/{year}/{date}-Capture.md` using the CAPTURE_SESSION_TEMPLATE format.
@@ -242,7 +622,12 @@ Read the template from `06_Metadata/Templates/CAPTURE_SESSION_TEMPLATE.md` first
 title: "{date} Capture Session"
 type: capture-session
 date: {date}
-location: "Tuntange, Luxembourg"
+location: "{LOC_NAME}"
+location_preset: "{location_id}"   # e.g., balcony or quatre-vents
+location_coords: "{LOC_LAT}, {LOC_LON}"
+location_altitude_m: {LOC_ALT}
+bortle: {LOC_BORTLE}
+power_source: "{LOC_POWER}"
 twilight_evening: "{HH:MM}"
 twilight_morning: "{HH:MM}"
 moon_phase: "{phase_name}"
@@ -262,11 +647,62 @@ tags:
 ---
 ```
 
+**Location section** (always included, just after Conditions):
+
+```markdown
+## Location
+
+| Parameter | Value |
+|-----------|-------|
+| **Site** | {LOC_NAME} |
+| **Coordinates** | {LOC_LAT}, {LOC_LON} |
+| **Altitude** | {LOC_ALT} m |
+| **Bortle class** | {LOC_BORTLE} |
+| **Horizon** | {open / constrained az_min-az_max} |
+| **Setup time** | {LOC_SETUP} min |
+| **Teardown time** | {LOC_TEARDOWN} min |
+| **Power source** | {LOC_POWER} |
+| **Notes** | {LOC_NOTES} |
+
+{LOC_NOTES_AS_TEXT}
+```
+
+If `LOC_POWER == "jackery"`, append a power budget warning section linking to [[Jackery-Explorer-500]] with the season-appropriate runtime estimate from that note.
+
 **Body sections:**
 - Conditions: twilight times, moon, weather summary, temperature
 - Planning table: objects with times, exposure, frames, filter, gain, temp, recommended workflow
+- **Stellarium cross-check** (only if `--stellarium` was used): table comparing internal vs Stellarium altitudes per target, with deltas
+- **Finder charts** (only if `--stellarium` was used): one section per target with the captured PNG embedded
 - Calibration: checklist comparing needed darks/flats to Master-Library
 - Notes: any concerns (moon proximity, cloud windows, guiding notes)
+
+**Finder chart embed format** (only if charts were captured):
+
+```markdown
+## Finder Charts
+
+### M42 — Orion Nebula
+![[2026-06-12-M42-finder.png]]
+*Captured at 22:30 CEST — alt 35.2°, az 195.4°, FOV 5.4° (RedCat 51 framing)*
+
+### NGC 7000 — North America Nebula
+![[2026-06-12-NGC7000-finder.png]]
+*Captured at 23:45 CEST — alt 84.1°, az 180.2°, FOV 5.4°*
+```
+
+**Stellarium cross-check table format:**
+
+```markdown
+## Stellarium Cross-Check
+
+| Target | Internal alt | Stellarium alt | Δ | Stellarium az | Airmass | Status |
+|--------|-------------|----------------|---|---------------|---------|--------|
+| M42 | 35.0° | 35.21° | 0.21° | 195.4° | 1.74 | ✓ |
+| NGC 7000 | 83.5° | 84.10° | 0.60° | 180.2° | 1.01 | ✓ |
+```
+
+If any delta exceeds 1°, mark with ⚠️ and add a note explaining the likely cause (timezone, epoch, or location discrepancy).
 
 ### Step 7: Report to User
 
@@ -395,8 +831,18 @@ Always include dark flats and bias as checklist items.
 
 | Error | Response |
 |-------|----------|
-| API timeout / failure | Warn user, continue with calculable data (twilight can be estimated, weather unknown) |
+| Sunrise/Open-Meteo API timeout/failure | Warn user, continue with calculable data (twilight can be estimated, weather unknown) |
 | No visible objects | Report "no suitable targets visible" with reason (wrong season, moon too bright, etc.) |
 | All targets fully integrated | Report status, offer to suggest targets for additional integration time |
 | Cloud cover > 80% all night | Warn "poor conditions forecast" but generate plan anyway (forecast may change) |
 | Date in the past | Warn but allow (useful for post-session documentation) |
+| Stellarium API unreachable (with `--stellarium`) | Print activation hint, disable Stellarium step, continue normally |
+| Stellarium screenshot file not found | Skip the chart for that target, keep cross-check data, note in session file |
+| Altitude delta > 1° between internal and Stellarium | Mark with ⚠️ in cross-check table, suggest checking timezone/location |
+| `actionReturn_To_Current_Time` fails | Set time explicitly via `POST /api/main/time` with current JD as fallback |
+| Unknown `--location` preset | Error: list valid presets from `locations:` config and abort |
+| State file missing | First-run: use the location marked `default: true`, create state file after success |
+| State file corrupted | Warn user, use default location, overwrite state with current selection |
+| `--location` provided but preset has missing fields | Validate required fields (lat, lon, alt, bortle, horizon); abort if any missing |
+| clearoutside.com unreachable / parse fails | Warn user, fall back to stored `bortle`/`sqm` from the preset config |
+| Live Bortle differs from preset by ≥1 class | Warn in output, use live value, suggest updating the preset |

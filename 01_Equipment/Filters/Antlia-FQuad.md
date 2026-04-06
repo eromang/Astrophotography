@@ -144,6 +144,54 @@ The filter is part of the backfocus chain — its thickness must be accounted fo
 
 ---
 
+## Filter Orientation
+
+Filter orientation matters. The filter is asymmetric: one side carries the dichroic (interference) coating, the other is anti-reflective (AR) coated.
+
+### The Rule
+
+> **Coated/dichroic side faces the telescope (light source).**
+> **Anti-reflective side faces the camera/sensor.**
+
+### Why It Matters
+
+The camera sensor reflects ~5–10% of incoming light. If that reflected light hits the dichroic coating, it bounces back to the sensor and creates **halos and ghost reflections around bright stars** (Trapezium, Deneb, Vega, etc.).
+
+With the AR side facing the sensor, only ~0.3% of light reflects back — the halo loop is broken.
+
+| Side | Faces | Reflection back to sensor | Effect |
+|------|-------|---------------------------|--------|
+| Coated (dichroic) | Telescope | — | Filters incoming light correctly |
+| Anti-reflective | Camera | ~0.3% | Halos eliminated |
+
+### How to Identify the Coated Side
+
+Hold the filter at ~30deg to a desk lamp or LED:
+
+| Appearance | Side |
+|------------|------|
+| Mirror-like, colorful sheen (rainbow / blue-green tint) | **Coated** — faces telescope |
+| Dark, almost black, very low reflection | **Anti-reflective** — faces camera |
+
+The Antlia filter cell has markings indicating orientation — verify both via markings and the visual reflectivity test.
+
+### Installation in the EFW
+
+When mounting in the [[ZWO-EFW-5x2]]:
+
+1. Place the wheel face-down (telescope side down)
+2. Screw filter in with the **AR side facing up** (toward where the camera will mount)
+3. The coated side ends up facing down — toward the telescope when the wheel is installed in the train
+4. Verify orientation with the visual reflectivity test before closing the wheel cover
+
+> [!tip] Photo before installing
+> Take a clear photo of each filter showing the marked side before screwing them into the wheel. Avoids needing to disassemble the EFW later to verify orientation.
+
+> [!warning] Symptom of reversed filter
+> Faint diffuse halos around bright stars (especially Trapezium in M42, Deneb in NGC 7000). If you see these, check filter orientation before blaming optics or processing.
+
+---
+
 ## Color Palettes
 
 With this filter on a color camera, several color palette options are available in processing:

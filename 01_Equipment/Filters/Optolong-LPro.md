@@ -153,6 +153,80 @@ Same position as the [[Antlia-FQuad]]. Filter thickness must be accounted for in
 
 ---
 
+## Filter Orientation
+
+Filter orientation matters. The filter is asymmetric: one side carries the dichroic (interference) coating that performs the light pollution rejection, the other is anti-reflective (AR) coated.
+
+### The Rule
+
+> **Coated/dichroic side faces the telescope (light source).**
+> **Anti-reflective side faces the camera/sensor.**
+
+### Why It Matters
+
+The camera sensor reflects ~5–10% of incoming light. If that reflected light hits the dichroic coating, it bounces back to the sensor and creates **halos and ghost reflections around bright stars** (Vega, Deneb, Sirius, etc.). This is particularly visible on broadband targets like [[M45-Pleiades]] where many bright stars are present.
+
+With the AR side facing the sensor, only ~0.3% of light reflects back — the halo loop is broken.
+
+| Side | Faces | Reflection back to sensor | Effect |
+|------|-------|---------------------------|--------|
+| Coated (dichroic) | Telescope | — | Filters incoming light correctly |
+| Anti-reflective | Camera | ~0.3% | Halos eliminated |
+
+### How to Identify the Coated Side (this specific filter)
+
+Both faces of the L-Pro show colored reflections — visual identification is **not symmetric like narrowband filters**, but the colors differ:
+
+| Side | Dominant color under angled light | Identification |
+|------|----------------------------------|----------------|
+| **Yellow / gold** (warm sheen) | Reflects sodium (~589nm) and mercury (~546nm) — the wavelengths the filter rejects | **COATED (dichroic)** → faces TELESCOPE |
+| **Purple / blue / magenta** (cool sheen) | Residual AR coating reflection in the passband | **AR-coated** → faces CAMERA |
+
+> [!info] Why yellow = coated side
+> The L-Pro is a light pollution rejection filter. It blocks sodium-vapor (yellow, 589nm) and mercury-vapor (green-yellow, 546nm). The dichroic coating *reflects* what it rejects — so the surface appearing **yellow under ambient light is reflecting sodium light back at you**. This is the coated face.
+
+### Marking the Filter
+
+Both sides show reflections, so it's easy to forget which is which after handling. Recommended:
+
+1. Mark the **yellow/coated side** with a tiny dot of permanent marker on the **metal cell ring** (never on the glass)
+2. Store reference photos of both faces in `01_Equipment/Manuals/Optolong-LPro/`
+3. The marked side always faces the telescope
+
+### Installation in the EFW
+
+When mounting in the [[ZWO-EFW-5x2]]:
+
+1. Place the wheel face-down (telescope side down)
+2. Screw filter in with the **purple/blue (AR) side facing up** — toward where the camera will mount
+3. The yellow (coated) side ends up facing down — toward the telescope when the wheel is installed in the train
+4. Verify the marked side faces the telescope before closing the wheel cover
+
+```
+   Optical train (L-Pro):
+   ══════════════════════
+   
+   RedCat 51                                    ASI2600MC Pro
+       │                                              ▲
+       ▼                                              │
+   ┌──────────────────────────────────────────────────┐
+   │     M48 adapter → spacers → FILTER → spacers     │
+   │                              ║║║                 │
+   │                          ┌───╨╨╨───┐             │
+   │                          │ YELLOW  │ ◄── faces   │
+   │                          │  side   │     scope   │
+   │                          ├─────────┤             │
+   │                          │ PURPLE  │ ◄── faces   │
+   │                          │  side   │     camera  │
+   │                          └─────────┘             │
+   └──────────────────────────────────────────────────┘
+```
+
+> [!warning] Symptom of reversed filter
+> Faint diffuse halos around bright stars — particularly noticeable on M45 Pleiades, M44 Beehive, and any field with bright stars. If you see these, check filter orientation before blaming optics or processing.
+
+---
+
 ## PixInsight Filter Curves
 
 Filter transmission curves for SPFC/SPCC:
