@@ -186,15 +186,19 @@ Algorithm:
 ```
 
 Filter objects:
+- **Angular size ≥ 30'** — objects smaller than 30' are too small for the RedCat 51 FOV (5.4° × 3.6°). Exclude them entirely. See [[Seasonal-Calendar]] for the full list of suitable targets.
 - **Altitude > 10°** during at least 1 hour of the night
 - **Azimuth between 135° and 225°** (SE to SW) during their best window
 - **Not within 30° of moon** (if moon illumination > 50%)
 - **Magnitude < 10** (visible with the setup)
+- **Declination check:** Objects at Dec > 55° have very brief south window time (<1h) from latitude 49.6°. Objects at Dec 35°–50° transit near zenith but still get ~1.5–2.5h — viable with multi-night accumulation.
 
 Sort remaining objects by:
 1. Hours available above 30° altitude (more = better)
 2. Need for more integration (vault-aware priority)
-3. Angular size suitable for FOV (prefer objects > 20')
+3. Angular size (larger = better framing)
+
+**If no objects ≥ 30' are visible** in the azimuth window for the given date, report "no suitable targets for this setup" and suggest calibration frames or reprocessing instead. Do not propose small galaxies/clusters as targets.
 
 ### Step 5: Select Targets and Filter
 
@@ -294,71 +298,77 @@ Embedded catalog of ~50 deep sky objects suitable for the RedCat 51 FOV.
 
 ### Emission Nebulae (Quad Band)
 
-| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | Constellation |
-|-------------|------|----------|-----------|-----|----------|---------------|
-| M42 | Orion Nebula | 05:35 | -05:23 | 4.0 | 85x60 | Orion |
-| M43 | De Mairan's Nebula | 05:36 | -05:16 | 9.0 | 20x15 | Orion |
-| NGC7000 | North America Nebula | 20:59 | +44:32 | 4.0 | 120x100 | Cygnus |
-| IC5070 | Pelican Nebula | 20:51 | +44:24 | 8.0 | 60x50 | Cygnus |
-| NGC2244 | Rosette Nebula | 06:32 | +04:52 | 4.8 | 80x60 | Monoceros |
-| IC1396 | Elephant's Trunk | 21:39 | +57:30 | 3.5 | 170x140 | Cepheus |
-| IC1805 | Heart Nebula | 02:33 | +61:27 | 6.5 | 150x150 | Cassiopeia |
-| IC1848 | Soul Nebula | 02:51 | +60:25 | 6.5 | 150x75 | Cassiopeia |
-| NGC6960 | Western Veil | 20:46 | +30:43 | 7.0 | 70x6 | Cygnus |
-| NGC6992 | Eastern Veil | 20:56 | +31:43 | 7.0 | 60x8 | Cygnus |
-| NGC6888 | Crescent Nebula | 20:12 | +38:21 | 7.4 | 18x12 | Cygnus |
-| NGC7380 | Wizard Nebula | 22:47 | +58:08 | 7.2 | 25x30 | Cepheus |
-| M16 | Eagle Nebula | 18:19 | -13:47 | 6.0 | 35x28 | Serpens |
-| M17 | Omega Nebula | 18:21 | -16:11 | 6.0 | 46x37 | Sagittarius |
-| NGC2264 | Cone Nebula / Christmas Tree | 06:41 | +09:53 | 3.9 | 60x30 | Monoceros |
-| IC443 | Jellyfish Nebula | 06:17 | +22:31 | 12.0 | 50x40 | Gemini |
-| Sh2-129 | Flying Bat Nebula | 21:12 | +59:55 | — | 200x120 | Cepheus |
-| NGC281 | Pacman Nebula | 00:53 | +56:37 | 7.4 | 35x30 | Cassiopeia |
-| Sh2-240 | Simeis 147 | 05:39 | +28:00 | — | 180 | Taurus |
-| NGC1499 | California Nebula | 04:04 | +36:25 | 5.0 | 145x40 | Perseus |
+| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | FOV | Constellation |
+|-------------|------|----------|-----------|-----|----------|-----|---------------|
+| M42 | Orion Nebula | 05:35 | -05:23 | 4.0 | 85x60 | YES | Orion |
+| M43 | De Mairan's Nebula | 05:36 | -05:16 | 9.0 | 20x15 | no | Orion |
+| NGC7000 | North America Nebula | 20:59 | +44:32 | 4.0 | 120x100 | YES | Cygnus |
+| IC5070 | Pelican Nebula | 20:51 | +44:24 | 8.0 | 60x50 | YES | Cygnus |
+| NGC2244 | Rosette Nebula | 06:32 | +04:52 | 4.8 | 80x60 | YES | Monoceros |
+| IC1396 | Elephant's Trunk | 21:39 | +57:30 | 3.5 | 170x140 | YES | Cepheus |
+| IC1805 | Heart Nebula | 02:33 | +61:27 | 6.5 | 150x150 | YES | Cassiopeia |
+| IC1848 | Soul Nebula | 02:51 | +60:25 | 6.5 | 150x75 | YES | Cassiopeia |
+| NGC6960 | Western Veil | 20:46 | +30:43 | 7.0 | 70x6 | YES | Cygnus |
+| NGC6992 | Eastern Veil | 20:56 | +31:43 | 7.0 | 60x8 | YES | Cygnus |
+| NGC6888 | Crescent Nebula | 20:12 | +38:21 | 7.4 | 18x12 | no | Cygnus |
+| NGC7380 | Wizard Nebula | 22:47 | +58:08 | 7.2 | 25x30 | no | Cepheus |
+| M16 | Eagle Nebula | 18:19 | -13:47 | 6.0 | 35x28 | YES | Serpens |
+| M17 | Omega Nebula | 18:21 | -16:11 | 6.0 | 46x37 | YES | Sagittarius |
+| NGC2264 | Cone Nebula / Christmas Tree | 06:41 | +09:53 | 3.9 | 60x30 | YES | Monoceros |
+| IC443 | Jellyfish Nebula | 06:17 | +22:31 | 12.0 | 50x40 | YES | Gemini |
+| Sh2-129 | Flying Bat Nebula | 21:12 | +59:55 | — | 200x120 | YES | Cepheus |
+| NGC281 | Pacman Nebula | 00:53 | +56:37 | 7.4 | 35x30 | YES | Cassiopeia |
+| Sh2-240 | Simeis 147 | 05:39 | +28:00 | — | 180 | YES | Taurus |
+| NGC1499 | California Nebula | 04:04 | +36:25 | 5.0 | 145x40 | YES | Perseus |
 
 ### Galaxies (L-Pro)
 
-| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | Constellation |
-|-------------|------|----------|-----------|-----|----------|---------------|
-| M31 | Andromeda Galaxy | 00:43 | +41:16 | 3.4 | 178x63 | Andromeda |
-| M33 | Triangulum Galaxy | 01:34 | +30:39 | 5.7 | 73x45 | Triangulum |
-| M51 | Whirlpool Galaxy | 13:30 | +47:12 | 8.4 | 11x7 | Canes Venatici |
-| M81 | Bode's Galaxy | 09:56 | +69:04 | 6.9 | 27x14 | Ursa Major |
-| M82 | Cigar Galaxy | 09:56 | +69:41 | 8.4 | 11x5 | Ursa Major |
-| M101 | Pinwheel Galaxy | 14:03 | +54:21 | 7.9 | 29x27 | Ursa Major |
-| M104 | Sombrero Galaxy | 12:40 | -11:37 | 8.0 | 9x4 | Virgo |
-| M106 | | 12:19 | +47:18 | 8.4 | 19x8 | Canes Venatici |
-| NGC4565 | Needle Galaxy | 12:36 | +25:59 | 9.6 | 16x2 | Coma Berenices |
-| M86 | | 12:26 | +12:57 | 8.9 | 9x7 | Virgo |
-| NGC4435 | The Eyes | 12:28 | +13:05 | 10.8 | 3x2 | Virgo |
-| M64 | Black Eye Galaxy | 12:57 | +21:41 | 8.5 | 10x5 | Coma Berenices |
-| M63 | Sunflower Galaxy | 13:16 | +42:02 | 8.6 | 13x8 | Canes Venatici |
-| NGC891 | | 02:23 | +42:21 | 9.9 | 14x3 | Andromeda |
+> **Most galaxies are too small for the RedCat 51.** Only M31 and M33 have angular sizes ≥ 30'. The others are kept in the catalog for reference but must NOT be proposed as session targets.
+
+| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | FOV | Constellation |
+|-------------|------|----------|-----------|-----|----------|-----|---------------|
+| M31 | Andromeda Galaxy | 00:43 | +41:16 | 3.4 | 178x63 | YES | Andromeda |
+| M33 | Triangulum Galaxy | 01:34 | +30:39 | 5.7 | 73x45 | YES | Triangulum |
+| M51 | Whirlpool Galaxy | 13:30 | +47:12 | 8.4 | 11x7 | no | Canes Venatici |
+| M81 | Bode's Galaxy | 09:56 | +69:04 | 6.9 | 27x14 | no | Ursa Major |
+| M82 | Cigar Galaxy | 09:56 | +69:41 | 8.4 | 11x5 | no | Ursa Major |
+| M101 | Pinwheel Galaxy | 14:03 | +54:21 | 7.9 | 29x27 | no | Ursa Major |
+| M104 | Sombrero Galaxy | 12:40 | -11:37 | 8.0 | 9x4 | no | Virgo |
+| M106 | | 12:19 | +47:18 | 8.4 | 19x8 | no | Canes Venatici |
+| NGC4565 | Needle Galaxy | 12:36 | +25:59 | 9.6 | 16x2 | no | Coma Berenices |
+| M86 | | 12:26 | +12:57 | 8.9 | 9x7 | no | Virgo |
+| NGC4435 | The Eyes | 12:28 | +13:05 | 10.8 | 3x2 | no | Virgo |
+| M64 | Black Eye Galaxy | 12:57 | +21:41 | 8.5 | 10x5 | no | Coma Berenices |
+| M63 | Sunflower Galaxy | 13:16 | +42:02 | 8.6 | 13x8 | no | Canes Venatici |
+| NGC891 | | 02:23 | +42:21 | 9.9 | 14x3 | no | Andromeda |
 
 ### Clusters (L-Pro)
 
-| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | Constellation |
-|-------------|------|----------|-----------|-----|----------|---------------|
-| M13 | Hercules Cluster | 16:42 | +36:28 | 5.8 | 20 | Hercules |
-| M44 | Beehive Cluster | 08:40 | +19:59 | 3.7 | 95 | Cancer |
-| M5 | Rose Cluster | 15:19 | +02:05 | 5.7 | 23 | Serpens |
-| M3 | | 13:42 | +28:23 | 6.2 | 18 | Canes Venatici |
-| M92 | | 17:17 | +43:08 | 6.4 | 14 | Hercules |
-| M15 | | 21:30 | +12:10 | 6.2 | 18 | Pegasus |
-| M45 | Pleiades | 03:47 | +24:07 | 1.6 | 110 | Taurus |
-| NGC869 | Double Cluster (h) | 02:19 | +57:09 | 5.3 | 30 | Perseus |
-| NGC884 | Double Cluster (chi) | 02:22 | +57:07 | 6.1 | 30 | Perseus |
-| M35 | | 06:09 | +24:20 | 5.3 | 28 | Gemini |
+> **Only M44 (Beehive), M45 (Pleiades), and NGC 869/884 (Double Cluster) are large enough** for the RedCat 51. Globular clusters (M13, M3, M5, etc.) are too small.
+
+| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | FOV | Constellation |
+|-------------|------|----------|-----------|-----|----------|-----|---------------|
+| M13 | Hercules Cluster | 16:42 | +36:28 | 5.8 | 20 | no | Hercules |
+| M44 | Beehive Cluster | 08:40 | +19:59 | 3.7 | 95 | YES | Cancer |
+| M5 | Rose Cluster | 15:19 | +02:05 | 5.7 | 23 | no | Serpens |
+| M3 | | 13:42 | +28:23 | 6.2 | 18 | no | Canes Venatici |
+| M92 | | 17:17 | +43:08 | 6.4 | 14 | no | Hercules |
+| M15 | | 21:30 | +12:10 | 6.2 | 18 | no | Pegasus |
+| M45 | Pleiades | 03:47 | +24:07 | 1.6 | 110 | YES | Taurus |
+| NGC869 | Double Cluster (h) | 02:19 | +57:09 | 5.3 | 30 | YES | Perseus |
+| NGC884 | Double Cluster (chi) | 02:22 | +57:07 | 6.1 | 30 | YES | Perseus |
+| M35 | | 06:09 | +24:20 | 5.3 | 28 | no | Gemini |
 
 ### Planetary Nebulae (Quad Band preferred)
 
-| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | Constellation |
-|-------------|------|----------|-----------|-----|----------|---------------|
-| M27 | Dumbbell Nebula | 19:60 | +22:43 | 7.5 | 8x6 | Vulpecula |
-| M57 | Ring Nebula | 18:54 | +33:02 | 8.8 | 1.4x1.0 | Lyra |
-| NGC7293 | Helix Nebula | 22:30 | -20:50 | 7.6 | 25x20 | Aquarius |
-| M76 | Little Dumbbell | 01:42 | +51:34 | 10.1 | 3x2 | Perseus |
+> **All planetary nebulae are too small** for the RedCat 51. None should be proposed as session targets.
+
+| Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | FOV | Constellation |
+|-------------|------|----------|-----------|-----|----------|-----|---------------|
+| M27 | Dumbbell Nebula | 19:60 | +22:43 | 7.5 | 8x6 | no | Vulpecula |
+| M57 | Ring Nebula | 18:54 | +33:02 | 8.8 | 1.4x1.0 | no | Lyra |
+| NGC7293 | Helix Nebula | 22:30 | -20:50 | 7.6 | 25x20 | no | Aquarius |
+| M76 | Little Dumbbell | 01:42 | +51:34 | 10.1 | 3x2 | no | Perseus |
 
 ---
 

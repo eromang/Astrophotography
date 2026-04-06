@@ -14,6 +14,7 @@ Personal astrophotography knowledge base managed with [Obsidian](https://obsidia
 | Autofocuser | ZWO EAF |
 | Filters | Antlia Quad Band, Optolong L-Pro |
 | Controller | ZWO ASIAIR |
+| Wishlist | ZWO EFW 5×2" filter wheel (2026 revision), COOWOO Dew Heater |
 
 **Location:** Tuntange, Luxembourg (Bortle 4)
 
@@ -30,22 +31,45 @@ Personal astrophotography knowledge base managed with [Obsidian](https://obsidia
 
 ## Targets
 
-| Object | Type | Integration |
-|--------|------|-------------|
-| NGC 7000 (North America Nebula) | Nebula | 23h 15m |
-| M42 (Orion Nebula) | Nebula | In progress |
-| NGC 2244 (Rosette Nebula) | Nebula | In progress |
-| M13 (Hercules Cluster) | Cluster | In progress |
-| M44 (Beehive Cluster) | Cluster | In progress |
-| M5 (Rose Cluster) | Cluster | In progress |
-| M86 | Galaxy | In progress |
-| NGC 4435 (The Eyes) | Galaxy | In progress |
+### Captured (with integration data)
+
+| Object | Type | Integration | Filter |
+|--------|------|-------------|--------|
+| NGC 7000 (North America Nebula) | Nebula | 23h 15m | L-Pro |
+| M44 (Beehive Cluster) | Cluster | ~7h | Quad Band |
+| M42 (Orion Nebula) | Nebula | ~6h + 1,234 D5300 frames | Quad Band |
+| M45 (Pleiades) | Cluster | ~4h | Quad Band |
+| M31 (Andromeda) | Galaxy | 3h 17m | L-Pro |
+| NGC 2244 (Rosette Nebula) | Nebula | 1h 42m | Quad Band |
+
+### Planned Campaigns (2026)
+
+| Campaign | Months | Filter | Primary Targets |
+|----------|--------|--------|-----------------|
+| [M16 Eagle](05_Sessions/2026/Campaigns/M16-Campaign-2026.md) | Jun–Aug | Quad Band | M16 (Pillars of Creation) |
+| [Cygnus Complex](05_Sessions/2026/Campaigns/Cygnus-Campaign-2026.md) | Sep–Oct | Quad Band | NGC 7000 (QB), IC 5070, Veil Nebula |
+| [Autumn Broadband](05_Sessions/2026/Campaigns/Autumn-Broadband-Campaign-2026.md) | Sep–Nov | L-Pro | M33, M31, M45 |
+| [Simeis 147](05_Sessions/2026/Campaigns/Simeis147-Campaign-2026.md) | Oct–Dec | Quad Band | Sh2-240 (supernova remnant) |
+| [Winter Emission](05_Sessions/2026/Campaigns/Winter-Emission-Campaign-2026.md) | Oct–Dec | Quad Band | M42, Rosette, NGC 2264, IC 443, NGC 1499 |
+
+See [`03_Techniques/Seasonal-Calendar.md`](03_Techniques/Seasonal-Calendar.md) for the full monthly target calendar.
+
+## Techniques
+
+- **[Signal-to-Noise Ratio (SNR)](03_Techniques/SNR.md)** — Noise model, quality benchmarks, integration planning
+- **[Seasonal Target Calendar](03_Techniques/Seasonal-Calendar.md)** — Month-by-month targets for the RedCat 51 from Luxembourg
+- **[Calibration Frames](03_Techniques/Frames.md)** — Darks, flats, bias, and image quality metrics
+- **[Equipment Capabilities](03_Techniques/Capabilities.md)** — What the current rig can and cannot do
+- **[EAF Autofocus Workflow](03_Techniques/EAF-Workflow.md)**
+- **[Pixel Binning](03_Techniques/Pixel-Binning.md)**
 
 ## Processing Workflows
 
+- **PixInsight Quad Band OSC** — Narrowband pipeline for emission nebulae
 - **PixInsight RGB** — Full OSC pipeline with SubFrameSelector, WBPP, BlurXTerminator, NoiseXTerminator
-- **PixInsight LRGB** — Two workflows: classic DBE and modern GraXpert approaches
+- **PixInsight HDR** — For bright core + faint nebulosity blending (M42, M16, M17, M31)
 - **SIRIL** — 7-step RGB post-processing pipeline
+- **[Calibration Master Library](04_Processing/Calibration/Master-Library.md)** — Dark/flat/bias inventory
 
 ## Claude Code Integration
 
