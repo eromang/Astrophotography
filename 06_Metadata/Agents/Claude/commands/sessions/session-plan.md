@@ -74,11 +74,11 @@ locations:
     timezone: "Europe/Luxembourg"
     horizon:
       type: "open"
-      altitude_min: 15      # forest clearings — slight elevation needed to clear treeline
+      altitude_min: 15      # open agricultural plateau — conservative buffer, can lower to 10° after first visit
     setup_time_min: 25
     teardown_time_min: 20
     power_source: "jackery"
-    notes: "Best CLOSE portable site (12 min drive). 25% darker than balcony (SQM 20.81 vs 20.59). Forest clearings — scout in daytime to find an actual open clearing with horizon clearance. Replaces the previous Quatre-Vents preset which was Bortle 5 (worse than balcony)."
+    notes: "Best CLOSE portable site with meaningful SNR gain (9 min drive — verified by car 2026-04-07, previously listed as 12 min). 25% darker than balcony (SQM 20.81 vs 20.59). Open agricultural plateau (NOT forest clearings as the name implies — nearest forest is 400m NW). Wide open S/E/W horizon. CAVEAT: CR24 / Dikrecherstrooss main road ~150m N → park well off road, position rig ~100m S of pin to shield from passing headlights. Replaces the previous Quatre-Vents preset which was Bortle 5 (worse than balcony)."
 
   wahl:
     name: "Plateau de Wahl (Groussbus-Wal)"
@@ -96,7 +96,7 @@ locations:
     teardown_time_min: 30
     power_source: "jackery"
     notes: |
-      BEST VALUE dark site (30 min drive, 52% less LP than balcony, SQM 21.10).
+      FASTEST dark site (23 min drive — verified by car 2026-04-07, previously listed as 30 min — 52% less LP than balcony, SQM 21.10). Best for short sessions <2 h where round-trip overhead matters; for sessions ≥3 h, prefer hoscheid (+10 min one-way for ×1.11 SNR gain over Wahl).
       Located between Grosbous and Wahl villages — Plus Code: RWR9+262 Groussbus-Wal.
       Open agricultural plateau ~449m, large open area extending N/NE.
       CAVEAT: small Kinigshaff hamlet ~300-500m W (~15-20 houses) — partial forest buffer mitigates but does not eliminate local LP.
@@ -124,7 +124,7 @@ locations:
     teardown_time_min: 25
     power_source: "jackery"
     notes: |
-      DESIGNATED VIEWPOINT site (40 min drive, 48% less LP than balcony, SQM 21.06).
+      DESIGNATED VIEWPOINT site (34 min drive — verified by car 2026-04-07, previously listed as 40 min — 48% less LP than balcony, SQM 21.06). NOTE: Burfelt is now nearly tied with Hoscheid on drive time (34 vs 33 min) but Hoscheid has substantially darker SQM (21.23 vs 21.06, ×1.16 SNR gain). Burfelt's only remaining structural advantage is the designated viewpoint infrastructure (signage, parking, no scouting needed). Use only for FIRST 1-2 portable trips before Hoscheid is scouted; after that, prefer hoscheid for any session.
       Located on a forested ridge above Esch-sur-Sûre lake — Plus Code: WW7G+695 Esch-sur-Sûre.
       THREE labeled viewpoint features in the immediate area:
         - Rastplatz mit Aussicht (rest area with view) — designated parking
@@ -157,15 +157,19 @@ locations:
     teardown_time_min: 30
     power_source: "jackery"
     notes: |
-      DARKEST site within reach (45 min drive, 61% less LP than balcony, SQM 21.23, just shy of Bortle 3).
+      DARKEST site within reach (33 min drive — verified by car 2026-04-07, previously listed as 45 min — 61% less LP than balcony, SQM 21.23, just shy of Bortle 3).
       Located inside Parc Hosingen Naturpark — Plus Code: X38J+Q2R. 
       Terrain: large open clearing (~400×200m) with what appears to be a grass airstrip in the centre — ideal level ground.
       Oval perimeter access road suggests vehicle parking at the SE corner where the pin sits.
       Forest backdrop N and E (advantageous: blocks stray light from any nearby settlement).
       Open S and W — productive transit window completely clear.
       Far from villages (Hoscheid ~1 km N, separated by forest).
-      Use for dedicated dark-sky projects (faint reflection nebulae, Sh2-240 Simeis 147, faint galaxies)
-      where the extra 15 min drive vs Wahl is justified by the ×1.6 SNR gain over balcony.
+      DARKEST site within reach. After Wahl was also re-verified at 23 min (down from 30), Hoscheid is
+      +10 min vs Wahl (33 vs 23) for +12% darker sky and ×1.11 SNR gain over Wahl. The +20 min round-trip
+      overhead is justified for sessions ≥3 h where the ×1.11 SNR gain dominates the lost imaging time.
+      For short sessions <2 h, prefer wahl (saves 20 min round-trip). Use Hoscheid for dedicated projects
+      (faint reflection nebulae, Sh2-240 Simeis 147, faint galaxies) — the ×1.6 SNR gain over balcony
+      makes 4h here ≈ 10h at the balcony.
       First visit: scout the exact rig location — pin is at SE parking spot, but moving ~50m into the
       clearing centre (~49.9678, 6.0782) gives a cleaner horizon if needed.
       Verified via Google Maps satellite 2026-04-06.
