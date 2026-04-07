@@ -134,9 +134,12 @@ None of this replaces the thing astrophotography is actually about: sitting outs
 
 That hour back, multiplied by maybe 30 sessions a year, is something like a full extra night of imaging. For free, in time you would have spent staring at forecasts.
 
-If you want to see the actual command file, both the implementation and the user-facing guide are in my vault on GitHub:
+If you want to see the actual command file, both the implementation and the user-facing guide are public in my Astrophotography vault on GitHub:
 
-- `06_Metadata/Agents/Claude/commands/sessions/session-plan.md` — the full prompt definition
-- `06_Metadata/Agents/Claude/commands/sessions/session-plan-USAGE.md` — the user-facing reference guide
+**Repo:** [github.com/eromang/Astrophotography](https://github.com/eromang/Astrophotography)
+
+- [`06_Metadata/Agents/Claude/commands/sessions/session-plan.md`](https://github.com/eromang/Astrophotography/blob/main/06_Metadata/Agents/Claude/commands/sessions/session-plan.md) — the full prompt definition
+- [`06_Metadata/Agents/Claude/commands/sessions/session-plan-USAGE.md`](https://github.com/eromang/Astrophotography/blob/main/06_Metadata/Agents/Claude/commands/sessions/session-plan-USAGE.md) — the user-facing reference guide
+- [`03_Techniques/Dark-Sky-Sites.md`](https://github.com/eromang/Astrophotography/blob/main/03_Techniques/Dark-Sky-Sites.md) — the verified dark sites doc that the location presets pull from
 
 Steal whatever's useful.
