@@ -92,7 +92,7 @@ Active imaging setup:
 - **Filters:** Antlia Quad Band, Optolong L-Pro
 - **Controller:** ASIAIR
 
-Location: Tuntange, Luxembourg (Bortle 4), south-facing balcony (SE to SW).
+Location: Tuntange, Luxembourg (Bortle 4), south-facing balcony covering azimuth 120°–302° (ESE through S to WNW, ~180° sweep) with a verified horizon profile (see [[Dark-Sky-Sites]]).
 
 ---
 

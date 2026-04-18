@@ -74,7 +74,7 @@ After every successful run, the resolved location is saved to the state file so 
 | **Altitude** | 317 m |
 | **Bortle** | 4 (SQM 20.59) |
 | **Drive time** | 0 (home) |
-| **Horizon** | Constrained: az 135°–225° (SE–SW), alt > 10° |
+| **Horizon** | Profile: az 120°–302° (~180° sweep) with per-az altitude floor (25° at az 120° SE building, 5° at S, 13° at WNW trees) — verified Stellarium AR 2026-04-18 |
 | **Setup time** | 15 min |
 | **Power** | Mains |
 | **SNR multiplier** | ×1.00 (baseline) |
@@ -295,9 +295,10 @@ This catches drift if the underlying light pollution data is updated, or if a pr
 
 ### Horizon-aware visibility
 
-Constrained horizon (`balcony`):
-- Targets must be in az 135°–225° during the dark window
-- High-Dec targets (>55°) likely rejected (brief south window)
+Profile horizon (`balcony`):
+- Targets must be in az 120°–302° during the dark window AND above the per-azimuth floor (25° at az 120° SE building, 5° at S, 13° at WNW trees — interpolated linearly)
+- High-Dec targets (>55°) likely rejected (brief visible window)
+- SE-rising low targets (M16/M17) lose ~15–20 min/night to the SE building
 
 Open horizon (`schwebach`, `wahl`, `burfelt`, `hoscheid`):
 - Full 360° azimuth — high-Dec targets unlocked

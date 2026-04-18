@@ -7,9 +7,9 @@ tags:
 
 # Seasonal Target Calendar — RedCat 51
 
-Objects >30' angular size suitable for the [[RedCat-51]] FOV (5.4° × 3.6°), visible from the south-facing balcony (azimuth 135°–225°) in Tuntange, Luxembourg.
+Objects >30' angular size suitable for the [[RedCat-51]] FOV (5.4° × 3.6°), visible from the south-facing balcony (azimuth 120°–302° with verified horizon profile, see [[Dark-Sky-Sites]]) in Tuntange, Luxembourg.
 
-> **Balcony constraint:** Objects with Dec > 55° transit too high and spend very little time in the south window. Objects at Dec 35°–50° transit near zenith but still pass through the south corridor for ~1.5–2.5h per night (confirmed with [[NGC7000-North-America]] imaging runs).
+> **Balcony constraint:** ~180° azimuth sweep (ESE through S to WNW), but with per-azimuth altitude floors: 25° at az 120° (left building), 5° at S, 13° at WNW (trees). Objects with Dec > 55° transit too high and spend very little time in the visible window. Objects at Dec 35°–50° transit near zenith but pass through the south corridor for ~1.5–2.5 h per night. Objects at Dec < 0° rising in the SE (M16/M17) lose ~15–20 min/night to the SE building peak (~25° at az 120°).
 
 ---
 
@@ -67,7 +67,7 @@ Dark hours: ~9h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: 
 
 ## April–May — Dead Season
 
-No large targets in the SE–SW azimuth window. Spring sky is dominated by small galaxies (Virgo cluster, Leo) — too small for 250mm. Best use of time:
+No large targets transit south at usable altitude during the dark window. Spring sky is dominated by small galaxies (Virgo cluster, Leo) — too small for 250mm. Best use of time:
 
 - **Reprocessing** existing data
 - **Calibration frames** (120s -10°C darks needed)
@@ -214,8 +214,10 @@ Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 
 ## Notes
 
-- South-facing balcony limits azimuth to 135°–225° (SE to SW). Objects at Dec > 55° (IC 1396, IC 1805, IC 1848, Sh2-129) transit too high for useful south window time.
-- Objects at Dec 35°–50° (NGC 7000, IC 5070, M31) transit near zenith but get ~1.5–2.5h in the south corridor — viable with multi-night accumulation.
-- **Sweet spot:** Dec -10° to +35° gives the longest south window (3–5h+).
+- South-facing balcony covers azimuth **120°–302°** (~180° sweep, ESE through S to WNW) with verified per-azimuth altitude floor (25° at az 120° peak building, 5° at S, 13° at WNW trees — see [[Dark-Sky-Sites]]).
+- Objects at Dec > 55° (IC 1396, IC 1805, IC 1848, Sh2-129) transit too high to spend useful time in the visible window.
+- Objects at Dec 35°–50° (NGC 7000, IC 5070, M31) transit near zenith but get ~1.5–2.5 h in the south corridor — viable with multi-night accumulation.
+- **Sweet spot:** Dec -10° to +35° gives the longest visible window (3–5 h+).
+- **Watch out:** SE-rising low targets (M16/M17, Dec < 0°) lose ~15–20 min/night to the SE neighbour's building (~25° altitude floor at az 120°).
 - The [[Antlia-FQuad]] filter is preferred for emission nebulae and moonlit nights. [[Optolong-LPro]] for galaxies, clusters, and reflection nebulae.
 - Camera temperature: -10°C (April–September), -20°C (October–March).

@@ -302,7 +302,7 @@ The headline number is **×1.05 SNR multiplier** — essentially within the mode
 
 **However**, this site has two structural advantages the balcony cannot match:
 
-1. **Open horizon in N/E/W quadrants** — the balcony's S-window constraint (135°–225°) blocks roughly half the sky. Targets at Dec > +50° (Heart/Soul, IC 1396, M81/M82, NGC 7000) get full-night access here, vs zero from the balcony.
+1. **Open horizon in N/E/W quadrants** — the balcony's azimuth window (120°–302°) blocks the entire N hemisphere (302°–120° clockwise). Targets at Dec > +50° (Heart/Soul, IC 1396, M81/M82, NGC 7000) get full-night access here, vs zero from the balcony.
 2. **3 min total drive overhead** (one-way, verified) — vs Schwebach 9 min × 2 = 18 min round trip. For a 3-hour imaging window, 12 min savings is still meaningful but smaller than the original "19 min" estimate.
 
 **Recommended use cases (where this site wins):**
@@ -382,9 +382,25 @@ This is a genuine **5th preset candidate** alongside `balcony`/`schwebach`/`wahl
 
 - ⚠️ **N12 main road immediately adjacent** (route shield "12" visible) — bus stops at the door, street-level LP from headlights and streetlights
 - ⚠️ **Village density medium** — multiple businesses within 200m (Holtz Sound, Ergotherapie Claudine Bausch, Coaching/Médiation, Crèche "An Dicksen", Kinésithérapie Harsch Conny). Typical Luxembourgish village LP profile.
-- ✓ **Mitigation: S-facing balcony with constrained horizon** (~135°–225° azimuth) — points **away from the village core** toward the open valley S/SE/SW. The horizon constraint that limits target choice is also what makes this site work despite being inside a populated village.
+- ✓ **Mitigation: S-facing balcony with verified horizon profile** (~120°–302° azimuth, ~180° sweep) — points **away from the village core** toward the open valley S/SE/SW. The horizon constraint that limits target choice is also what makes this site work despite being inside a populated village.
 - ✓ **Mains power** — no Jackery budget concerns, run all night without restraint
 - ✓ **Zero setup overhead** — rig stays semi-permanently configured, immediate go/no-go on weather windows
+
+**Verified horizon profile (Stellarium Mobile AR, 2026-04-18 — star-anchored to Adhara/Sirius/Spica/Pleiades):**
+
+| Azimuth | Direction | Floor | What's there |
+|---|---|---|---|
+| 120° | ESE (left edge) | **25°** | Left neighbour's building peak — biggest obstruction |
+| 135° | SE | 15° | Building tapering down |
+| 150° | SSE | 10° | Tapering further |
+| 180° | S | 5° | Open, distant houses |
+| **210°** | **SSW** | **3°** | **Most open direction** (Adhara visible at alt 1.6°) |
+| 234° | SW (centre) | 5° | Open across the road |
+| 270° | W | 10° | Trees start |
+| 300° | WNW | 13° | Tree line |
+| 302° | WNW (right edge) | 15° | Right wall blocks beyond |
+
+Linear interpolation between points. **Practical implication:** SE-rising low targets (M16/M17 entering at az 120–135°) lose ~15–20 min/night to the building. South-transit targets at altitude ≥ 25° get full window. Beyond az 302°, the right-side wall blocks completely (no NW/N/NE access).
 
 **Why it's the default preset despite Bortle 4 / SQM 20.59:** the access advantage (zero drive, mains power, no scouting, weather-flexible) is so large that for the **70%+ of nights** when the target transits through the constrained S-window, the balcony beats every portable site on a total-clear-time basis. Portable sites only win when (a) the target needs N/E/W/zenith access the balcony cannot reach, (b) the target is faint enough to need ×1.4+ SNR gain, or (c) there's a multi-night dark-sky trip already planned. See the [[#Practical Decision Tree|decision tree]] for the full logic.
 

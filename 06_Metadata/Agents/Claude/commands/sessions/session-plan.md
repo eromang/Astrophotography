@@ -3,7 +3,7 @@ name: session-plan
 description: "Plan an astrophotography capture session for a given date"
 shortcut: sp
 category: sessions
-version: "1.5"
+version: "1.6"
 argument-hint: "<date> [--stellarium] [--location <preset>] (e.g., tonight, tomorrow --stellarium --location burfelt)"
 allowed-tools: WebFetch, Read, Write, Glob, Bash(date:*), Bash(python3:*), Bash(curl:*), Bash(mv:*), Bash(rm:*), Bash(mkdir:*), Bash(ls:*), Bash(find:*), Bash(cat:*)
 ---
@@ -53,14 +53,33 @@ locations:
     artificial_mcd: 0.455   # μcd/m² (from clearoutside)
     timezone: "Europe/Luxembourg"
     horizon:
-      type: "constrained"
-      azimuth_min: 135   # SE
-      azimuth_max: 225   # SW
-      altitude_min: 10
+      type: "profile"            # per-azimuth altitude floor (linear interpolation between points)
+      azimuth_min: 120           # left edge (ESE) — beyond this, balcony wall blocks
+      azimuth_max: 302           # right edge (WNW) — beyond this, building wall blocks
+      altitude_min: 3            # absolute minimum (lowest profile point) — fallback for legacy checks
+      profile:                   # verified Stellarium Mobile AR check 2026-04-18, star-anchored
+        - {az: 120, alt: 25}     # Left neighbour's building peak (Spica check at az 108°)
+        - {az: 135, alt: 15}     # Building tapering down
+        - {az: 150, alt: 10}
+        - {az: 180, alt: 5}      # South — open, distant houses
+        - {az: 210, alt: 3}      # SSW — most open direction (Adhara check at alt 1.6°)
+        - {az: 240, alt: 5}      # (Sirius check at alt 10.9° — well above silhouette)
+        - {az: 270, alt: 10}     # Trees start in W
+        - {az: 300, alt: 13}     # Tree line WNW (Pleiades check at alt 16°)
+        - {az: 302, alt: 15}     # Right wall edge
     setup_time_min: 15
     teardown_time_min: 15
     power_source: "mains"
-    notes: "South-facing balcony, SE-SW window, mains power available"
+    notes: |
+      South-facing balcony with full view from ESE (120°) through S to WNW (302°), ~180° azimuth sweep.
+      Verified horizon profile (Stellarium Mobile AR check 2026-04-18, anchored to known star altitudes
+      Adhara/Sirius/Spica/Pleiades):
+        - Left neighbour's building peaks ~25° at az 120°, tapers to 15° at 135°, 10° at 150°
+        - S sector (az 180°-240°) is most open — only 3-5° distant terrain/houses
+        - W trees rise 10-15° from az 270° onwards
+      Mains power, no setup overhead beyond gear deployment.
+      Best for: emission nebulae transiting south at altitude ≥ 25°.
+      Worst for: SE-rising low targets (M16/M17 lose ~15-20 min/night to the SE building obstruction).
     default: true
 
   schwebach:
@@ -449,13 +468,33 @@ Algorithm:
 Filter objects (horizon constraints come from `LOC_HORIZON` of the active location):
 
 - **Angular size ≥ 30'** — objects smaller than 30' are too small for the RedCat 51 FOV (5.4° × 3.6°). Exclude them entirely. See [[Seasonal-Calendar]] for the full list of suitable targets.
-- **Altitude > LOC_HORIZON.altitude_min** during at least 1 hour of the night
-- **Azimuth filter:**
-  - If `LOC_HORIZON.type == "constrained"` → require `azimuth_min ≤ az ≤ azimuth_max` (e.g., balcony: 135°–225°)
-  - If `LOC_HORIZON.type == "open"` → no azimuth restriction (full 360° access, e.g., dark site)
+- **Altitude > horizon_floor(az)** during at least 1 hour of the night, where `horizon_floor` depends on the location's `horizon.type`:
+  - `"open"` → `horizon_floor = altitude_min` for all azimuths (full 360° access, e.g., dark site)
+  - `"constrained"` → `horizon_floor = altitude_min` if `azimuth_min ≤ az ≤ azimuth_max`, else 90° (blocked)
+  - `"profile"` → if `azimuth_min ≤ az ≤ azimuth_max`, linearly interpolate between adjacent `profile` entries; else 90° (blocked). Used by `balcony` (verified per-azimuth obstruction map).
 - **Not within 30° of moon** (if moon illumination > 50%)
 - **Magnitude < 10** (visible with the setup)
-- **Declination check (constrained horizon only):** Objects at Dec > 55° have very brief south window time (<1h) from latitude 49.6°. Objects at Dec 35°–50° transit near zenith but still get ~1.5–2.5h — viable with multi-night accumulation. **Skip this check at open-horizon locations** — high-declination targets (Heart/Soul, IC 1396, M81/M82) become viable.
+- **Declination check (constrained / profile horizons only):** Objects at Dec > 55° have very brief south window time (<1h) from latitude 49.6°. Objects at Dec 35°–50° transit near zenith but still get ~1.5–2.5h — viable with multi-night accumulation. **Skip this check at open-horizon locations** — high-declination targets (Heart/Soul, IC 1396, M81/M82) become viable.
+
+#### Reference: `horizon_floor(az, horizon)` algorithm
+
+```python
+def horizon_floor(az, h):
+    if h.type == "open":
+        return h.altitude_min
+    if not (h.azimuth_min <= az <= h.azimuth_max):
+        return 90  # blocked outside the azimuth window
+    if h.type == "constrained":
+        return h.altitude_min
+    # type == "profile": linear interpolation between adjacent (az, alt) points
+    pts = sorted(h.profile, key=lambda p: p["az"])
+    for i in range(len(pts) - 1):
+        a1, h1 = pts[i]["az"], pts[i]["alt"]
+        a2, h2 = pts[i+1]["az"], pts[i+1]["alt"]
+        if a1 <= az <= a2:
+            return h1 + (h2 - h1) * (az - a1) / (a2 - a1)
+    return 90  # outside profile range
+```
 
 Sort remaining objects by:
 1. Hours available above 30° altitude (more = better)
@@ -662,7 +701,7 @@ tags:
 | **Coordinates** | {LOC_LAT}, {LOC_LON} |
 | **Altitude** | {LOC_ALT} m |
 | **Bortle class** | {LOC_BORTLE} |
-| **Horizon** | {open / constrained az_min-az_max} |
+| **Horizon** | {open / constrained az_min-az_max / profile az_min-az_max with N points} |
 | **Setup time** | {LOC_SETUP} min |
 | **Teardown time** | {LOC_TEARDOWN} min |
 | **Power source** | {LOC_POWER} |
@@ -784,12 +823,13 @@ Embedded catalog of ~50 deep sky objects suitable for the RedCat 51 FOV.
 
 ### Clusters (L-Pro)
 
-> **Only M44 (Beehive), M45 (Pleiades), and NGC 869/884 (Double Cluster) are large enough** for the RedCat 51. Globular clusters (M13, M3, M5, etc.) are too small.
+> **Wide-field clusters that fit the RedCat 51**: M44 (Beehive), M45 (Pleiades), NGC 869/884 (Double Cluster), and Mel 111 (Coma Star Cluster). Mel 111 is *larger* than the FOV at 4.6° — use ~45° camera rotation. Globular clusters (M13, M3, M5, etc.) are too small.
 
 | Designation | Name | RA (h:m) | DEC (d:m) | Mag | Size (') | FOV | Constellation |
 |-------------|------|----------|-----------|-----|----------|-----|---------------|
 | M13 | Hercules Cluster | 16:42 | +36:28 | 5.8 | 20 | no | Hercules |
 | M44 | Beehive Cluster | 08:40 | +19:59 | 3.7 | 95 | YES | Cancer |
+| Mel111 | Coma Star Cluster | 12:24 | +25:51 | 1.8 | 275 | partial (4.6° vs 5.4°×3.6° FOV — rotate camera ~45°) | Coma Berenices |
 | M5 | Rose Cluster | 15:19 | +02:05 | 5.7 | 23 | no | Serpens |
 | M3 | | 13:42 | +28:23 | 6.2 | 18 | no | Canes Venatici |
 | M92 | | 17:17 | +43:08 | 6.4 | 14 | no | Hercules |
