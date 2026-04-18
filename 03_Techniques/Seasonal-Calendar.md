@@ -9,6 +9,10 @@ tags:
 
 Objects >30' angular size suitable for the [[RedCat-51]] FOV (5.4° × 3.6°), visible from the south-facing balcony (azimuth 120°–302° with verified horizon profile, see [[Dark-Sky-Sites]]) in Tuntange, Luxembourg.
 
+![[balcony-yearly-visibility.png]]
+
+*Yearly visibility heatmap — hours per night each target is above the balcony's horizon profile during astronomical dark. Bright yellow = 6–8 h/night (prime season), dark blue = brief/marginal, black rows = never visible (too far north for the 120°–302° window). The mid-May → late-July gap is when Luxembourg has no astronomical dark at all (sun stays above -18°).*
+
 > **Balcony constraint:** ~180° azimuth sweep (ESE through S to WNW), but with per-azimuth altitude floors: 25° at az 120° (left building), 5° at S, 13° at WNW (trees). Objects with Dec > 55° transit too high and spend very little time in the visible window. Objects at Dec 35°–50° transit near zenith but pass through the south corridor for ~1.5–2.5 h per night. Objects at Dec < 0° rising in the SE (M16/M17) lose ~15–20 min/night to the SE building peak (~25° at az 120°).
 
 ---
