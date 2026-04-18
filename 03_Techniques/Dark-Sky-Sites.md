@@ -406,6 +406,10 @@ Linear interpolation between points. **Practical implication:** SE-rising low ta
 
 *Polar sky chart: blue wedge = visible sky (az 120°–302°), brown ring = per-azimuth obstruction floor, dark half = blocked (behind/around balcony). Concentric rings are altitude (zenith at center, horizon at edge).*
 
+![[balcony-horizon-panorama.png]]
+
+*Horizon silhouette panorama (standing-on-balcony view): az on x-axis, altitude on y-axis. Orange line = obstruction floor, brown fill = buildings/trees, dark walls = blocked regions outside the 120°–302° window. Reference stars plotted at their 2026-04-18 21:59 CEST positions (the Stellarium AR verification snapshot).*
+
 **Why it's the default preset despite Bortle 4 / SQM 20.59:** the access advantage (zero drive, mains power, no scouting, weather-flexible) is so large that for the **70%+ of nights** when the target transits through the constrained S-window, the balcony beats every portable site on a total-clear-time basis. Portable sites only win when (a) the target needs N/E/W/zenith access the balcony cannot reach, (b) the target is faint enough to need ×1.4+ SNR gain, or (c) there's a multi-night dark-sky trip already planned. See the [[#Practical Decision Tree|decision tree]] for the full logic.
 
 - 📍 [Google Maps](https://www.google.com/maps?q=49.71731,6.00823)
