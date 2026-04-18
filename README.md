@@ -27,6 +27,7 @@ Personal astrophotography knowledge base managed with [Obsidian](https://obsidia
 04_Processing/    Post-processing workflows for PixInsight and SIRIL, calibration library
 05_Sessions/      Capture and processing session logs
 06_Metadata/      Templates, Claude Code skills/commands, administrative files
+scripts/          Matplotlib chart generators (FOV atlas etc.) — run from repo root
 ```
 
 ## Targets
@@ -58,6 +59,9 @@ See [`03_Techniques/Seasonal-Calendar.md`](03_Techniques/Seasonal-Calendar.md) f
 
 - **[Signal-to-Noise Ratio (SNR)](03_Techniques/SNR.md)** — Noise model, quality benchmarks, integration planning
 - **[Seasonal Target Calendar](03_Techniques/Seasonal-Calendar.md)** — Month-by-month targets for the RedCat 51 from Luxembourg
+- **[Campaign Timeline](03_Techniques/Campaign-Timeline.md)** — Mermaid Gantt + live Dataview log of every capture session (2023 → present)
+- **[Integration Budget](03_Techniques/Integration-Budget.md)** — Live Dataview bar chart: hours accumulated per target, split by filter
+- **[FOV Atlas](03_Techniques/FOV-Atlas.md)** — RedCat 51 FOV rectangles overlaid on the full sky, plus Stellarium Oculars workflow
 - **[Calibration Frames](03_Techniques/Frames.md)** — Darks, flats, bias, and image quality metrics
 - **[Equipment Capabilities](03_Techniques/Capabilities.md)** — What the current rig can and cannot do
 - **[EAF Autofocus Workflow](03_Techniques/EAF-Workflow.md)**
@@ -76,8 +80,9 @@ See [`03_Techniques/Seasonal-Calendar.md`](03_Techniques/Seasonal-Calendar.md) f
 This vault includes [Claude Code](https://claude.ai/claude-code) infrastructure for AI-assisted knowledge management:
 
 - **5 skills** — Obsidian markdown formatting, vault search, related notes, session recall, session sync
-- **2 commands** — Vault health check, metadata validation
+- **3 commands** — `/session-plan` (capture planning with optional Stellarium cross-check), `/vault-health-fast`, `/metadata-validate-fast`
 - **5 templates** — Capture session, processing session, equipment, target, todo
+- **Chart generators** — `scripts/fov_atlas.py` (FOV atlas PNG); Dataview blocks in Campaign-Timeline and Integration-Budget notes regenerate live from session frontmatter
 
 See [`CLAUDE.md`](CLAUDE.md) for conventions and [`06_Metadata/README.md`](06_Metadata/README.md) for full documentation.
 

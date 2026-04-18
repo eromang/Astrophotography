@@ -531,6 +531,7 @@ dithering_overhead = 0.10  # 10%
 effective_minutes = available_minutes * (1 - dithering_overhead)
 frames = floor(effective_minutes * 60 / exposure_seconds)
 total_exposure = frames * exposure_seconds
+planned_integration_minutes = round(total_exposure / 60)   # feeds the `integrations:` frontmatter
 ```
 
 #### 5d. Stellarium Integration (only if `--stellarium` flag is set)
@@ -685,10 +686,24 @@ equipment:
 targets:
   - "[[{target_1}]]"
   - "[[{target_2}]]"
+integrations:
+  - target: "[[{target_1}]]"
+    filter: "[[{target_1_filter}]]"
+    minutes: {target_1_planned_minutes}
+  - target: "[[{target_2}]]"
+    filter: "[[{target_2_filter}]]"
+    minutes: {target_2_planned_minutes}
 tags:
   - session/capture
 ---
 ```
+
+**`integrations` rules for generation:**
+
+- One entry per `(target, filter)` pair planned for the night (single-filter sessions → one entry per target; multi-filter nights → one entry per filter used on that target).
+- `minutes` = `round(total_exposure / 60)` from step 5c — i.e. planned integration, not the raw available window.
+- Do not emit an `integrations` block if `targets` is empty (dead-season sessions). Leave the field out entirely.
+- On post-capture updates, replace planned `minutes` with realized (`subs_accepted × exposure_seconds / 60`, rounded).
 
 **Location section** (always included, just after Conditions):
 

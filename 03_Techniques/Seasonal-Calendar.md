@@ -17,6 +17,8 @@ Objects >30' angular size suitable for the [[RedCat-51]] FOV (5.4° × 3.6°), v
 
 *Dark window + moon calendar. **Top panel**: blue area = total astronomical dark hours per night, orange fill = of which the moon is above horizon, green line = **moonless dark hours (the best metric for broadband imaging)**. **Middle panel**: moon illumination % (0 = new, 100 = full), with new moons (black dots) and full moons (yellow dots) marked. **Bottom panel**: moon phase strip. The green line peaks every ~29.5 days — those are the moonless windows to target. Note the midsummer zero-dark gap and how the Apr 20–23 Mel 111 campaign sits immediately after the Apr 17 new moon.*
 
+See [[Campaign-Timeline]] for the Markwhen session timeline (2023 → 2026), and [[Integration-Budget]] for live hours-per-target bars rendered from session frontmatter.
+
 > **Balcony constraint:** ~180° azimuth sweep (ESE through S to WNW), but with per-azimuth altitude floors: 25° at az 120° (left building), 5° at S, 13° at WNW (trees). Objects with Dec > 55° transit too high and spend very little time in the visible window. Objects at Dec 35°–50° transit near zenith but pass through the south corridor for ~1.5–2.5 h per night. Objects at Dec < 0° rising in the SE (M16/M17) lose ~15–20 min/night to the SE building peak (~25° at az 120°).
 
 ---

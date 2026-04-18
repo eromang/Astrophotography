@@ -90,3 +90,21 @@ External SSD: `/Volumes/T7/Astrophotography/`
 ## Target Notes
 
 20 objects documented in `02_Targets/` with capture history, SSD paths, and result images. See each target note for session details and processing status.
+
+---
+
+## Data Views & Atlases
+
+Live, derived views — don't duplicate, route analytics questions here.
+
+| Note | What it shows | Source of truth |
+|---|---|---|
+| `03_Techniques/Integration-Budget.md` | Hours per target, split by filter, as unicode bars | `integrations:` array in `05_Sessions/**/*.md` |
+| `03_Techniques/Campaign-Timeline.md` | Mermaid Gantt per target + Dataview chronological log of every capture session | Same `integrations:` array |
+| `03_Techniques/FOV-Atlas.md` | RedCat 51 FOV rectangles overlaid on the full sky (balcony-reachable vs blocked), plus Stellarium Oculars workflow | `scripts/fov_atlas.py` — inline `CATALOG` + `ra_deg`/`dec_deg` from `02_Targets/` |
+| `03_Techniques/Seasonal-Calendar.md` | Month-by-month target selection, yearly visibility heatmap, dark-window calendar | Static; charts regenerated via matplotlib |
+
+**Conventions:**
+- Adding/updating integration hours → edit `integrations:` in the relevant session file; Dataview views refresh live.
+- Adding a new target to the FOV atlas → either inline to `scripts/fov_atlas.py::CATALOG` or add `ra_deg`/`dec_deg`/`size_arcmin` to `02_Targets/{Name}.md` frontmatter, then run `python3 scripts/fov_atlas.py`.
+- `/session-plan --stellarium {date}` cross-checks altitudes against Stellarium's API (localhost:8090) and captures per-target finder charts at 5.4° FOV into `05_Sessions/{year}/Finder-Charts/`.

@@ -15,6 +15,10 @@ equipment:
   guider: "[[ASI385MC]]"
   guidescope: "[[UniGuide-32mm]]"
 targets: []
+integrations:
+  - target: ""
+    filter: "[[Antlia-FQuad]]"
+    minutes: 0
 tags:
   - session/capture
 ---
