@@ -17,6 +17,31 @@ Objects >30' angular size suitable for the [[RedCat-51]] FOV (5.4° × 3.6°), v
 
 ---
 
+## Season-at-a-Glance
+
+High-level overview complementing the monthly detail below:
+
+| Season | Prime targets | Notes |
+|---|---|---|
+| **Jan–Mar (winter)** | M42, NGC 2244 Rosette, NGC 2264 Cone, IC 443 Jellyfish, Sh2-240 Simeis, NGC 1499 California, M45 Pleiades | Best balcony season — many 6–8 h/night targets, Quad Band dominant |
+| **Mar–May (spring)** | [[Mel111-Coma\|Mel 111 Coma]], [[M44-Beehive\|M44 Beehive]] | "Galaxy season" for the wider sky, but galaxies are all < 30' — Mel 111 and M44 are the viable wide-field options, both L-Pro broadband |
+| **Mid-May → late-Jul** | — | **No astronomical dark** at Luxembourg's latitude. Use time for reprocessing, calibration, equipment maintenance |
+| **Aug–Oct (autumn)** | NGC 6960/6992 Veil, NGC 7000 North America, IC 5070 Pelican, M31 Andromeda, M33 Triangulum | Cygnus cornucopia + Andromeda rises. Mostly Quad Band for Cygnus, L-Pro for galaxies |
+| **Oct–Dec (late autumn / early winter)** | M31, M33, M45 Pleiades, M42 Orion returning | Transition to deep winter targets |
+
+## Never visible from balcony (permanently blocked)
+
+The following wide-field targets have Dec too high (> 55°) or sit entirely in the blocked N hemisphere — not reachable from the balcony's 120°–302° window at any time of year. For these, go portable (see [[Dark-Sky-Sites]] → `schwebach` / `wahl` / `hoscheid`):
+
+- NGC 869 / NGC 884 — Double Cluster (Per, Dec +57°)
+- IC 1396 — Elephant's Trunk (Cep, Dec +57.5°)
+- IC 1805 — Heart Nebula (Cas, Dec +61°)
+- IC 1848 — Soul Nebula (Cas, Dec +60°)
+- Sh2-129 — Flying Bat (Cep, Dec +60°)
+- M81 / M82 — UMa galaxies (Dec +69°, also too small for RedCat)
+
+---
+
 ## January — Deep Winter
 
 Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
