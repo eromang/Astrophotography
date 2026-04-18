@@ -41,6 +41,14 @@ tags:
 - [[RGB-Workflow]]
 - Star reduction (BlurXTerminator) advised — bright cluster will saturate γ Com etc.
 
+## Visibility from Tuntange Balcony
+
+![[balcony-mel111-trajectory.png]]
+
+*Mel 111 trajectory through the balcony sky on 2026-04-20 (nights Apr 21/22/23 are nearly identical, ~4 min earlier each). Colour gradient = time of night (blue early → pink dawn). The cluster enters visible sky at 22:42 in the SE at ~61° altitude, transits south at 00:02 CEST at 66° altitude, and exits in the WSW at 04:27 (twilight). All but the entry hour stays well clear of the balcony's altitude floor.*
+
+---
+
 ## Notes
 
 - Very large open cluster (~4.6° actual extent) — **larger than RedCat 51 FOV** (5.4° × 3.6°). Use ~45° camera rotation so cluster fits diagonally
