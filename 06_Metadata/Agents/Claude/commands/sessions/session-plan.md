@@ -445,9 +445,7 @@ Read `04_Processing/Calibration/Master-Library.md`:
 
 #### 3c. Camera Temperature
 
-Determine from the month of the target date:
-- April–September → -10°C
-- October–March → -20°C
+**Always -10°C** (standardized 2026-04-19 — see [[ASIAIR]] camera profile and [[Master-Library]] for rationale). Do not vary by season.
 
 ### Step 4: Calculate Object Visibility
 

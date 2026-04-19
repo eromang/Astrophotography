@@ -89,7 +89,7 @@ When calibration succeeds, the crosshair turns **green** and the RA/Dec graph be
 - Add a Lights block: exposure (typically 300 s on the QuadBand from Bortle 4), count, gain (HCG — see below), bin 1, interval 0.
 - **File name**: clear the default and enter `{Target}{Night#}{Filter}` — e.g. `Orion1Quad`. This is non-negotiable for organisation in [[WBPP-Reference|WBPP]] later.
 - **Gain**: in main camera settings, tap the small `M` next to the gain slider. This auto-selects the camera's HCG breakpoint (Gain 100 for the [[ASI2600MCPro]]). Below HCG → banding artefacts; well above HCG → highlight clipping.
-- **Cooling**: -20 °C (winter) or -10 °C (summer) per [[ASI2600MCPro]] notes. In hot conditions where the TEC fan saturates, **prefer a stable warmer setpoint over an unstable cold one** — calibration frames must match the lights' actual sensor temperature, not the requested one.
+- **Cooling**: -10 °C year-round per [[ASI2600MCPro]] notes (standardized 2026-04-19 — see [[ASIAIR]] camera profile for rationale). In hot conditions where the TEC fan saturates, **prefer a stable warmer setpoint over an unstable cold one** — calibration frames must match the lights' actual sensor temperature, not the requested one.
 - **Meridian flip**: see [[#Meridian flip safety|safety section]] below.
 - Hit the circle button. After the first sub completes, **zoom in on stars** to verify focus before walking away.
 

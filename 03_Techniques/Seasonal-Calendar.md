@@ -50,7 +50,7 @@ The following wide-field targets have Dec too high (> 55°) or sit entirely in t
 
 ## January — Deep Winter
 
-Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
+Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -10°C | Exposure: 300s
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -69,7 +69,7 @@ Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 
 ## February — Late Winter
 
-Dark hours: ~11h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
+Dark hours: ~11h | **Filter: [[Antlia-FQuad]]** | Temp: -10°C | Exposure: 300s
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -86,7 +86,7 @@ Dark hours: ~11h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 
 ## March — Transition
 
-Dark hours: ~9h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: -20°C | Exposure: 300s (QB) / 180s (LP)
+Dark hours: ~9h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: -10°C | Exposure: 300s (QB) / 180s (LP)
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -100,13 +100,27 @@ Dark hours: ~9h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: 
 
 ---
 
-## April–May — Dead Season
+## April — Spring Wide-Field Window
 
-No large targets transit south at usable altitude during the dark window. Spring sky is dominated by small galaxies (Virgo cluster, Leo) — too small for 250mm. Best use of time:
+Dark hours: ~7h dropping to ~5h | **Filter: [[Optolong-LPro]]** | Temp: -10°C | Exposure: 120s
+
+| Object | Size | Alt | Window | Filter | Notes |
+|--------|------|-----|--------|--------|-------|
+| **[[Mel111-Coma]]** Coma Star Cluster | 275' | 66° | ~5h | LP | Prime time — transits ~midnight CEST. Cluster fills the FOV; rotate ~45° for diagonal coverage |
+| **[[M44-Beehive]]** | 95' | 60° | ~3-4h | LP | Early evening, sets late night. Good companion target to Mel 111 |
+
+> **April is the last L-Pro broadband window of spring** before the mid-May → late-July dark gap. Use it. Spring sky is otherwise dominated by small galaxies (Virgo cluster, Leo) — too small for 250mm.
+
+---
+
+## Early May → Early June — Dead Window
+
+After Mel 111 / M44 set into evening twilight (~early May) and before summer Milky Way targets become viable in late June, there's a ~6 week dead window. Compounded by the fact that astronomical dark **shrinks to zero** by ~June 5 (sun stays above -18° at midnight) and doesn't return until ~July 6. Best use of time:
 
 - **Reprocessing** existing data
-- **Calibration frames** (120s -10°C darks needed)
-- **Equipment maintenance** (collimation, flat panel, firmware updates)
+- **Calibration refresh** if any sub lengths are missing from the master library
+- **Equipment maintenance** (collimation, flat panel, firmware updates, dew strap inspection)
+- **Planning** the autumn campaign (Aug onward — NGC 7000, Veil, M31, etc.)
 
 ---
 
@@ -174,7 +188,7 @@ Dark hours: ~9h | **Filter: [[Antlia-FQuad]]** | Temp: -10°C | Exposure: 300s
 
 ## October — Autumn Richness
 
-Dark hours: ~10h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: -20°C | Exposure: 300s (QB) / 180s (LP)
+Dark hours: ~10h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp: -10°C | Exposure: 300s (QB) / 180s (LP)
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -194,7 +208,7 @@ Dark hours: ~10h | **Filter: [[Antlia-FQuad]]** or **[[Optolong-LPro]]** | Temp:
 
 ## November — Winter Preview
 
-Dark hours: ~12h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
+Dark hours: ~12h | **Filter: [[Antlia-FQuad]]** | Temp: -10°C | Exposure: 300s
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -214,7 +228,7 @@ Dark hours: ~12h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 
 ## December — Deep Winter
 
-Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
+Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -10°C | Exposure: 300s
 
 | Object | Size | Alt | Window | Filter | Notes |
 |--------|------|-----|--------|--------|-------|
@@ -238,9 +252,10 @@ Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 | **Jan** | **M42**, Rosette, Simeis 147, M45, M44 | QB + LP | 13h |
 | **Feb** | M42, Rosette, Simeis 147, Jellyfish, M44 | QB + LP | 11h |
 | **Mar** | **M44**, M42 (early), Rosette (early) | QB + LP | 9h |
-| **Apr–May** | None (reprocess/calibrate) | — | 5–7h |
-| **Jun** | M16, M17 (low) | QB | 4h |
-| **Jul** | Veil Nebula, M16/M17 | QB | 5h |
+| **Apr** | **Mel 111**, M44 (broadband wide-field) | LP | 5–7h |
+| **Early May → Early Jun** | Dead window (target gap + diminishing dark) | — | 4h → 0h |
+| **Jun** | M16, M17 (low) — late June only as dark returns | QB | ~0–2h |
+| **Jul** | Veil Nebula, M16/M17 — viable from mid-Jul | QB | 2–5h |
 | **Aug** | **NGC 7000**, Veil, IC 5070 | QB | 7h |
 | **Sep** | NGC 7000, Veil, M33, M31, M45 | QB + LP | 9h |
 | **Oct** | **Simeis 147**, M45, M42, Rosette, M33, Veil | QB + LP | 10h |
@@ -255,4 +270,4 @@ Dark hours: ~13h | **Filter: [[Antlia-FQuad]]** | Temp: -20°C | Exposure: 300s
 - **Sweet spot:** Dec -10° to +35° gives the longest visible window (3–5 h+).
 - **Watch out:** SE-rising low targets (M16/M17, Dec < 0°) lose ~15–20 min/night to the SE neighbour's building (~25° altitude floor at az 120°).
 - The [[Antlia-FQuad]] filter is preferred for emission nebulae and moonlit nights. [[Optolong-LPro]] for galaxies, clusters, and reflection nebulae.
-- Camera temperature: -10°C (April–September), -20°C (October–March).
+- Camera temperature: **-10°C year-round** (standardized 2026-04-19 — see [[ASIAIR]] camera profile for rationale).

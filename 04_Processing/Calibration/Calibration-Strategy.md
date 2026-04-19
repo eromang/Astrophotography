@@ -43,33 +43,29 @@ Only one calibration frame type depends on the filter:
 
 Darks are the highest-value frames to pre-build: time-consuming (25 × exposure per set) and completely independent of the optical train. Shoot on any cloudy night, rainy evening, or during the day with the lens cap on.
 
-### Target Matrix (Gain 100)
+### Target Matrix (Gain 100, -10°C year-round)
 
-| Exposure | Use case | -10°C (Apr–Sep) | -20°C (Oct–Mar) |
-|---|---|---|---|
-| 120s | Clusters (L-Pro) | Needed | Needed |
-| 180s | Galaxies (L-Pro) | Have 25 ✓ | **Needed** |
-| 300s | Emission nebulae (Quad Band) | Needed | Needed |
+| Exposure | Use case | Status |
+|---|---|---|
+| 120s | Clusters / bright Quad targets ([[Optolong-LPro]] / [[Antlia-FQuad]]) | ✅ Have 25 (built 2026-04-19) |
+| 160s | Legacy reprocessing | ✅ Have 26 |
+| 180s | Galaxies ([[Optolong-LPro]]) / shoulder Quad | ✅ Have 25 |
+| 220s | Legacy reprocessing | ✅ Have 25 |
+| 300s | Emission nebulae ([[Antlia-FQuad]]) | ✅ Have master |
 
-Legacy exposures (160s, 220s at -10°C) are available but only needed if reprocessing older data.
+> **Cooling standard (2026-04-19):** Standardized on **-10°C year-round** — see [[ASIAIR]] camera profile for rationale. At Bortle 4 the dark-current penalty vs -20°C is below the sky-noise floor; the operational simplicity of a single dark library wins. -20°C entries in [[Master-Library]] are kept for legacy reprocessing only and will not be refreshed.
 
-### Priority Order
+### Status
 
-1. **180s at -20°C** — needed for galaxy sessions (Oct–Mar)
-2. **300s at -20°C** — needed for winter Quad Band sessions
-3. **300s at -10°C** — needed for summer Quad Band sessions
-4. **120s at -20°C** — winter cluster sessions
-5. **120s at -10°C** — summer cluster sessions
+Dark library is **complete** for all standard sub lengths (10ms, 30s, 60s, 120s, 160s, 180s, 220s, 300s) at -10°C / Gain 100. No outstanding captures needed under the current cooling standard.
 
-### Time Estimates
+### Time Estimates (for reference / future re-shoots)
 
 | Set | Frames | Time |
 |---|---|---|
 | 25 × 120s | 25 | ~55 min |
 | 25 × 180s | 25 | ~85 min |
 | 25 × 300s | 25 | ~140 min |
-
-Total to build complete library (6 sets): **~9 hours** of dark frame acquisition. Can be spread across multiple cloudy nights.
 
 ### Procedure
 

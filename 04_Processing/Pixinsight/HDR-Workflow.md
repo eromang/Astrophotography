@@ -21,7 +21,7 @@ Use this workflow when a standard stretch either clips the bright core or leaves
 | Target Type | Example | HDR Challenge |
 |---|---|---|
 | Bright core emission nebula | [[M42-Orion]], M16, M17 | Bright ionized core vs faint outer Ha |
-| Galaxy with bright nucleus | M31, [[M64]] | Nucleus saturates before spiral arms appear |
+| Galaxy with bright nucleus | [[M31-Andromeda]], M64 | Nucleus saturates before spiral arms appear |
 | Supernova remnant | NGC 6960/6992 (Veil) | Bright filaments vs faint diffuse emission |
 
 ---

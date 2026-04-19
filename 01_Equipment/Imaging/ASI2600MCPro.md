@@ -27,8 +27,7 @@ Primary deep sky imaging camera. Cooled color (OSC) CMOS camera with the Sony IM
 | Parameter | Value |
 |-----------|-------|
 | Gain | 100 (Unity gain) |
-| Cooling (summer) | -10°C |
-| Cooling (winter) | -20°C |
+| Cooling | -10°C year-round (standardized 2026-04-19 — see [[ASIAIR]] camera profile for rationale) |
 | Output format | FITS 16-bit |
 
 ### Why Gain 100?
