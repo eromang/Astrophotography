@@ -30,16 +30,18 @@ Dark frames must match light frame **exposure + gain + temperature** exactly. Fi
 | 10ms | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
 | 30s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
 | 60s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 120s | g100 | -10°C | — | — | — | — | Needed |
-| 120s | g100 | -20°C | — | — | — | — | Needed |
+| 120s | g100 | -10°C | 25 | Yes | 2026-04-19 | `Dark/DARK11-BIN1-120s-10/` | Available |
+| 120s | g100 | -20°C | — | — | — | — | Deprecated — see cooling standard note |
 | 160s | g100 | -10°C | 26 | Yes | 2025-03 | `Dark/FQuad/DARK9` | Available |
-| 160s | g100 | -20°C | — | — | — | — | Needed |
+| 160s | g100 | -20°C | — | — | — | — | Deprecated |
 | 180s | g100 | -10°C | 25 | Yes | 2025-03 | `Dark/FQuad/DARK8` | Available |
-| 180s | g100 | -20°C | 20 | No | 2024-12 | `Dark/FQuad/DARK5` | **Incomplete (20/25 raws, no master)** |
+| 180s | g100 | -20°C | 20 | No | 2024-12 | `Dark/FQuad/DARK5` | Deprecated (incomplete legacy set) |
 | 220s | g100 | -10°C | 25 | Yes | 2025-03 | `Dark/FQuad/DARK7` | Available |
-| 220s | g100 | -20°C | — | — | — | — | Needed |
+| 220s | g100 | -20°C | — | — | — | — | Deprecated |
 | 300s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 300s | g100 | -20°C | — | — | — | — | **Needed (priority)** |
+| 300s | g100 | -20°C | — | — | — | — | Deprecated |
+
+> **Cooling standard (2026-04-19):** Standardized on **-10 °C year-round** — see [[ASIAIR]] camera profile for rationale. At Bortle 4 the dark-current penalty vs -20 °C is below the sky-noise floor; the operational simplicity of a single dark library wins. -20 °C entries above are kept for reference / legacy reprocessing only and will not be refreshed.
 
 ### Usage Map
 
@@ -129,18 +131,9 @@ Only requires: capped sensor, shortest exposure, matching gain. Temperature not 
 
 ## Complete Needs Summary
 
-### Frames to acquire outside sessions (priority order)
+### Frames to acquire outside sessions
 
-| # | Frame | Exposure | Temp | Raws needed | Time | Priority |
-|---|-------|----------|------|-------------|------|----------|
-| 1 | Dark | 180s | -20°C | **5 more** (have 20, need 25) + stack master | ~15 min | **High** — complete existing set |
-| 2 | Dark | 300s | -20°C | 25 | ~140 min | **High** — winter Quad Band sessions |
-| 3 | Dark | 120s | -10°C | 25 | ~55 min | Medium — summer cluster sessions |
-| 4 | Dark | 120s | -20°C | 25 | ~55 min | Medium — winter cluster sessions |
-| 5 | Dark | 160s | -20°C | 25 | ~70 min | Low — legacy reprocessing |
-| 6 | Dark | 220s | -20°C | 25 | ~100 min | Low — legacy reprocessing |
-
-**Total time for priority 1–4:** ~4.5 hours
+**None outstanding** under the -10 °C year-round standard. The 120 s @ -10 °C dark was captured 2026-04-19 (25 raws in `Dark/DARK11-BIN1-120s-10/`, master in `Masters/Dark/`), closing the last gap. All standard sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) are now covered. -20 °C entries are deprecated under the new cooling standard.
 
 ### Frames that are complete
 
@@ -153,6 +146,7 @@ Only requires: capped sensor, shortest exposure, matching gain. Temperature not 
 | Dark 180s, -10°C | Complete (master + 25 raws) |
 | Dark 220s, -10°C | Complete (master + 25 raws) |
 | Dark 300s, -10°C | Complete (master) |
+| Dark 120s, -10°C | Complete (master + 25 raws, 2026-04-19) |
 | Dark 10ms, 30s, 60s, -10°C | Complete (masters) |
 | Flat [[Antlia-FQuad]] 50ms | Complete (30 raws + master, Dec 2024) |
 | Flat [[Antlia-FQuad]] 60ms | Complete (50 raws + master, Mar 2025) |

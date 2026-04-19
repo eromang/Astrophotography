@@ -102,7 +102,7 @@ Content is mixed English and French. Preserve original language of existing cont
 ## Equipment Context
 
 Active imaging setup:
-- **Camera:** ZWO ASI2600MC Pro (Gain 100, -10°C summer / -20°C winter)
+- **Camera:** ZWO ASI2600MC Pro (Gain 100, -10°C year-round)
 - **Telescope:** William Optics RedCat 51 (250mm f/4.9)
 - **Mount:** iOptron CEM26
 - **Guide camera:** ZWO ASI385MC

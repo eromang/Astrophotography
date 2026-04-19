@@ -128,9 +128,11 @@ Configured in the ASIAIR app for [[ASI2600MCPro]]:
 | Gain preset | Medium (M) |
 | Gain value | 100 |
 | Main scope focal length | 249 mm ([[RedCat-51]]) |
-| Cooling target | -10 °C (summer) / -20 °C (winter) |
+| Cooling target | -10 °C year-round (standardized 2026-04-19 — see note below) |
 | Cooling preset buttons | -20 °C / -10 °C / 0 °C |
 | Anti-dew | ON |
+
+> **Cooling standard (2026-04-19):** -10 °C year-round, replacing the prior "-10 °C summer / -20 °C winter" rule. At Bortle 4, dark current at -10 °C is ~3 % of the LPro sky background and ~10 % of the Quad sky background — well below sky-limited noise. -20 °C bought ~1–2 % SNR and required a parallel dark library; not worth the complexity. Standardizing on -10 °C means a single dark library, faster cool-downs, and no ambient-temperature surprises.
 
 ### File Name Convention
 
