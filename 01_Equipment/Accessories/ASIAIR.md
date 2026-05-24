@@ -180,8 +180,8 @@ Configured in the ASIAIR app for [[ASI385MC]] on the [[UniGuide-32mm]]:
 | Gain preset | High (H) |
 | Gain value | 300 |
 | Guide scope focal length | 120 mm (UniGuide 32 mm aperture, f/3.75) |
-| Calibration Step | 2000 ms |
-| Max DEC Duration | 2000 ms |
+| Calibration Step | 1000 ms (lowered from 2000 ms on 2026-04-19 — better-sized step for [[iOptron-CEM26]]) |
+| Max DEC Duration | 1500 ms (lowered from 2000 ms on 2026-04-19 — reduces DEC backlash overshoot) |
 | Max RA Duration | 2000 ms |
 | Auto Restore Calibration | OFF |
 
@@ -190,11 +190,11 @@ Configured in the ASIAIR app for [[ASI385MC]] on the [[UniGuide-32mm]]:
 | Setting | Value | Meaning |
 |---|---|---|
 | Guide Stability | 2" — 5 s — 60 s | Settle threshold 2", must be stable 5 s, 60 s timeout |
-| Dither | 2 pixel — 1 | 2 px dither distance (presets: 1 / 2 / 5 / 10 / 30), every 1 frame (interval customizable) |
+| Dither | 5 pixel — 1 | 5 px dither distance (raised from 2 px on 2026-04-19 — better breaks OSC walking-noise patterns); presets: 1 / 2 / 5 / 10 / 30; every 1 frame (interval customizable) |
 | Dither only in RA | OFF | Dither happens in both RA and DEC (correct for OSC) |
 | Dark Library | ON | Built 2026-04-19 for [[ASI385MC]], stored at `eMMC/GuidingDarkLibrary`. Rebuild only if guide camera is swapped |
 | Guide Camera Bin 2 | ON | Bins guide cam 2×2 for sensitivity (effective scale ≈ 12.9 "/px) |
-| Corrected Trigger Acc. (min-move) | 0.1 px | No correction issued if guide star offset < 0.1 px |
+| Corrected Trigger Acc. (min-move) | 0.2 px | Raised from 0.1 px on 2026-04-19 — avoids chasing seeing at Bortle 4. No correction issued if guide star offset < 0.2 px |
 
 ---
 

@@ -134,7 +134,7 @@ To stretch the battery further on portable sessions:
 | Add Jackery Explorer 240 | +240 Wh | ~3.5 kg | ~€200 | Extends to ~12 h winter sessions |
 | Upgrade to Jackery Explorer 1000 | 1002 Wh | replaces current | ~€800 | Any-season full nights |
 | Solar panel SolarSaga 60W | regen | ~3 kg | ~€200 | Multi-night camping (4–6h sun = full recharge) |
-| Solar panel SolarSaga 100W | regen | ~5 kg | ~€350 | Faster recharge for longer trips |
+| Solar panel SolarSaga 100W | regen | ~5 kg | ~€249 (de.jackery.com, verified 2026-04-18) | Faster recharge for longer trips |
 
 ---
 
