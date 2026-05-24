@@ -74,8 +74,8 @@ Center-balanced equatorial mount. Primary mount for deep sky imaging with the [[
 
 | Port | Type |
 |------|------|
-| WiFi | Built-in |
-| USB | Mount control |
+| WiFi | Built-in (APSTA mode — see [[#WiFi Configuration]]) |
+| USB | Mount control (USB-Serial via Go2Nova 8409, 115200 8N1, no flow control — verified via WiFi module web admin 2026-05-24) |
 | Autoguide | ST-4 compatible |
 | Hand controller | Go2Nova 8409 |
 | PC control | ASCOM compatible |
@@ -159,6 +159,82 @@ See also: [[EAF-Workflow]] for the complete imaging session procedure.
 
 ---
 
+## WiFi Configuration
+
+The mount's built-in WiFi (via the Go2Nova 8409 hand controller, HBX8409 module) is configured in **APSTA mode** — it simultaneously broadcasts its own access point AND joins the home WiFi as a station. This is configured via the module's hidden web admin (not exposed in iOptron's official UI).
+
+> [!warning] Community knowledge — not iOptron-supported
+> APSTA / STA configuration is done via the underlying USR-WIFI232-class module's web admin (Web Ver 1.0.14 as of 2026-05-24). iOptron's official manual only exposes AP mode. An iOptron firmware update *may* wipe these settings — re-apply if so. Worst-case recovery: 8409 hand controller § 5.4.10 → Wi-Fi Option → **Restore to Factory** reverts to AP-only on `10.10.100.254`.
+
+### Current configuration (2026-05-24)
+
+| Mode | Network | IP | Status |
+|---|---|---|---|
+| **AP (fallback)** | `HBX8409_DF5E72` (WPA2PSK / AES, secured 2026-05-24) | `10.10.100.254` | Always available — connect directly to this SSID if home WiFi is down |
+| **STA (home)** | `BleiftDoheem` | **`192.168.178.87`** | DHCP reservation pinned on Fritz!Box → permanent. Signal 88%. |
+
+WiFi module MACs: AP `30:EA:E7:DF:5E:72`, STA `34:EA:E7:DF:5E:72`.
+Mount control port: **`8899`** (same on both interfaces).
+TCP idle timeout: 300 s (5 min) — clients that go silent longer than this get disconnected and must reconnect.
+
+### How WiFi mount control actually works
+
+The WiFi module is a **TCP-to-Serial bridge** — it doesn't speak the mount protocol itself; it just forwards bytes:
+
+```
+[SkySafari / iOptron Commander] ──TCP :8899──> [WiFi Module] ──Serial 115200 8N1──> [Go2Nova 8409 HC] ──> [Mount]
+```
+
+A client opens a TCP connection to `192.168.178.87:8899` (or `10.10.100.254:8899` over the AP) and sends raw RS-232 commands like `:GLS#`, `:GUT#`, `:GAC#` exactly as documented in the iOptron RS-232 Command Language V3.10. Responses come back over the same TCP stream. No HTTP, no API key, no JSON — just byte-for-byte serial passthrough.
+
+That's why **Other Setting** parameters must not be changed: the serial parameters (115200 8N1, no flow control) are fixed by the 8409 hand controller's firmware. Mismatching them breaks the WiFi bridge.
+
+### Client app configuration
+
+For control from any device on the home WiFi:
+
+| App                   | Setting                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **SkySafari Pro**     | Setup → IP `192.168.178.87`, Port `8899`, Scope Type `iOptron CEM-120`, Mount Type `Equatorial GoTo (German)`   |
+| **iOptron Commander** | Connection Settings → Wi-Fi/Ethernet → Custom IP `192.168.178.87`, Port `8899`                                  |
+| **ASIAIR**            | **N/A** — ASIAIR connects via USB-Serial 115200 8N1 (not WiFi). Mount profile: "iOptron CEM26 / GEM28 / HEM27". |
+
+### Web admin access
+
+The underlying WiFi module exposes a web admin (Web Ver 1.0.14) reachable from either interface:
+
+| From | URL | Notes |
+|---|---|---|
+| Home WiFi (via STA) | `http://192.168.178.87/` | Works from any device on `BleiftDoheem` |
+| Direct AP (fallback) | `http://10.10.100.254/` | Connect device to `HBX8409_DF5E72` first |
+
+Default login: `admin / admin`.
+
+> [!warning] Security — change the default admin credentials
+> The default `admin / admin` login means anyone on `BleiftDoheem` who knows the IP can reach the WiFi module's admin and potentially break the mount's connectivity (or worse — reflash firmware via Upgrade SW). To lock it down: web admin → **Account** → set a strong password.
+>
+> ✅ **AP fallback now WPA2PSK-secured** (2026-05-24) — the `HBX8409_DF5E72` SSID requires a password to join. Web admin password lockdown is the remaining outstanding step.
+
+### Re-applying APSTA configuration if lost
+
+Reach the web admin via either IP above (use the AP `10.10.100.254` if STA is broken). Default login `admin / admin` unless changed.
+
+1. **Work Mode** → select `AP+STA mode` → Save
+2. **STA Setting** → Scan → pick `BleiftDoheem` → Encryption `WPA2PSK / AES` → enter password → DHCP `Enable` → Save
+3. **(Optional) AP Setting** → add a WPA2 password to lock down `HBX8409_DF5E72` (currently open)
+4. **(Optional) Account** → change web admin from `admin / admin`
+5. **Restart** → ~30 s reboot → verify System page shows both AP Mode and STA Mode populated
+
+Then on Fritz!Box (`http://fritz.box` → Heimnetz → Netzwerk), find MAC `34:EA:E7:DF:5E:72` and check "Diesem Netzwerkgerät immer die gleiche IPv4-Adresse zuweisen" to keep `192.168.178.87` permanently.
+
+### When this WiFi setup matters
+
+- **At home (Tuntange):** lets you control the mount directly from any device on home WiFi via SkySafari or iOptron Commander — bypasses ASIAIR if ASIAIR fails or for quick standalone diagnostics
+- **Portable trips:** STA is moot away from home — only the `HBX8409_DF5E72` AP applies. Mount still reachable at `10.10.100.254` via that AP.
+- **ASIAIR sessions:** WiFi is unused — ASIAIR uses USB-Serial 115200. Disabling WiFi entirely would save a few mA of mount power consumption but isn't necessary.
+
+---
+
 ## Firmware & Software
 
 ### Firmware
@@ -167,7 +243,26 @@ See also: [[EAF-Workflow]] for the complete imaging session procedure.
 - After firmware upgrade: set mount to zero position using "Set Zero Position"
 - CEM26EC/GEM28EC: perform encoder calibration after upgrade
 
-Firmware files in `01_Equipment/Manuals/CEM26/Firmware/`.
+#### Locally cached files (`01_Equipment/Manuals/CEM26/Firmware/`)
+
+| File | Purpose |
+|---|---|
+| `CEM26_GEM28_FW241201.bin` | **Latest firmware** (Dec 2024) — HC V241201, RA V240518, DEC V230305. Fixes communication overflow. Cached 2026-05-24 from iOptron. |
+| `CEM26_GEM28_FW210422.bin` | Legacy firmware (Apr 2021) — kept as rollback safety. HC V210422, RA/DEC V210420. |
+| `CEM26_GEM28_FirmwareUpgradeInstruction.pdf` | iOptron's upgrade procedure (unchanged since 2021). |
+| `CEM26_GEM28_FirmwareVersionHistory.pdf` | Full version change log V20201030 → V20241201. |
+| `iOptronUpgradeUtility223.exe` | Upgrade tool V2.23 (still current per iOptron). |
+| `FTDI_VCP21214_Setup_Win7_8_10.exe` | Required USB-Serial driver (Windows). |
+
+#### Update policy
+
+iOptron's official stance: *"No firmware upgrade is needed if your mount works properly."* The 2021 → 2024 changelog has three intermediate fixes; only **V241201 (communication overflow)** is relevant for this rig (could affect ASCOM/serial reliability over long ASIAIR sessions). Other fixes target GPS display and "Go to SUN" — neither applies here.
+
+**Update procedure is Windows-only:**
+1. Verify installed version first — 8409 hand controller → System Info, OR send `:FW1#` over the WiFi TCP bridge (returns HC firmware date `YYMMDD`)
+2. If updating: Windows PC + FTDI driver + Upgrade Utility V2.23 + USB cable from PC to 8409 hand controller
+3. Follow `CEM26_GEM28_FirmwareUpgradeInstruction.pdf` exactly
+4. Post-upgrade: "Set Zero Position" via hand controller
 
 ### iPolar Software
 
