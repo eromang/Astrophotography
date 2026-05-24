@@ -205,11 +205,35 @@ Configured in the ASIAIR app for [[iOptron-CEM26]]:
 | Setting | Value |
 |---|---|
 | Mount profile | iOptron CEM26 / GEM28 / HEM27 |
-| Interface | Serial (USB-Serial cable from mount hand controller to ASIAIR) |
-| Baud rate | 115200 |
-| Wi-Fi interface | Not used (no iGuider/iPolar Wi-Fi module on CEM26) |
+| Interface | **TCP** via the mount's WiFi-to-Serial bridge (changed 2026-05-24 from USB-Serial) |
+| IP | `192.168.178.87` (mount's home-WiFi APSTA STA IP — see [[iOptron-CEM26#WiFi Configuration]]) |
+| Port | `8899` TCP |
+| Baud rate | n/a at ASIAIR side — the WiFi module's internal serial bridge to the 8409 HC runs 115200 8N1 (per [[iOptron-CEM26#How WiFi mount control actually works]]) |
+| GoTo Auto-Center | ON (plate-solves after each GoTo for accurate framing) |
+| Center EXP Time | 2 s (raise to 5–10 s for faint fields where 2 s won't solve) |
+| Guiding Speed | 0.75× sidereal (higher than typical 0.5× default; watch RA RMS on calm nights) |
 
-The "USB serial undetected" status appears whenever the mount is powered off; it resolves automatically on power-up.
+**Time / DST handling:** ASIAIR pushes the mount UTC offset as **+60 min (CET)** with **DST = no** *regardless of the season* and lets its own UI handle the daylight-saving display offset. The mount's stored UTC is correct — only the stored offset is normalised. ASIAIR's UI shows a "Ensure DST is disabled on Mount Hand Controller; it's normal that the time on the Mount is 1 hour earlier than local time" warning to confirm this is intentional.
+
+> [!info] If you've been using `mount.py timesync`
+> `mount.py timesync` pushes the live local offset (e.g. CEST = +120 min in summer) which ASIAIR will then overwrite back to +60 min on next connect. UTC stays correct in both cases; only the offset field differs. Don't fight this — let ASIAIR's value stand on imaging nights.
+
+### Concurrent access with mount.py (single-client invariant — UPDATED 2026-05-24)
+
+The previous USB-Serial setup put ASIAIR on the cable and `mount.py` on TCP — two transports converging at the 8409 hand controller's serial bus, so concurrent use produced garbled commands.
+
+The new TCP setup puts **both clients on the same TCP port 8899**. Empirically tested 2026-05-24:
+
+| Behaviour | Observation |
+|---|---|
+| Bridge accepts multiple TCP connections | ✓ confirmed |
+| Commands are serialised on the serial bus | ✓ confirmed (8409 processes one at a time) |
+| **Responses are broadcast to every connected TCP client** | ✓ confirmed via raw `nc` — saw ASIAIR's polls in my client's stream |
+| Same-command parallel polling (both query `:GLS#`) | Usually works — both parsers succeed on either client's response |
+| Different-command parallel polling (one queries `:FW1#`, other queries `:GLS#`) | Parser fails — read-until-`#` returns the wrong response format |
+| Set commands (`:SG`, `:SUT`, etc.) | Last writer wins on the mount; cosmetic collisions only |
+
+**Operational rule:** don't run `mount.py status / health / log` while ASIAIR holds the connection during an active imaging session. The mount is fine, the data stream isn't. Reserve `mount.py` for ASIAIR-off windows (pre-session check, post-session diagnostics). See [[../03_Techniques/Capture-Planning-Rules#4 MacBot operational rules]] for the full operational rule.
 
 ---
 

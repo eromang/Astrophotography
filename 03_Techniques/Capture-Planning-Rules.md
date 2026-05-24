@@ -80,9 +80,22 @@ Auto-refresh cron on Mac Mini runs **Sunday 3 AM only** — without an explicit 
 
 **Intents that don't require this pre-flight** (they don't read vault content): `mount status`, `mount log start`, `mount log stop`, `mount schedule list`, `mount schedule cancel`.
 
-### 4b. Single-client invariant
+### 4b. Single-client invariant (updated 2026-05-24)
 
-`mount.py` and ASIAIR both talk to the mount's serial bus (one via WiFi, one via USB-Serial). **Only one client at a time.** If MacBot is logging via WiFi and you connect ASIAIR via USB-Serial, responses collide — parser errors will spike in the log. For a session where ASIAIR is in charge, either skip the per-second telemetry or accept some parse errors.
+**Both `mount.py` and ASIAIR now use the same TCP endpoint** `192.168.178.87:8899` — ASIAIR was reconfigured from USB-Serial to TCP/WiFi on 2026-05-24. Empirical testing that day revealed the WiFi bridge architecture:
+
+- The bridge **accepts multiple TCP connections** (not exclusive)
+- The 8409 hand controller serialises command processing (no physical collision on the serial bus)
+- BUT **every response is broadcast to every connected TCP client** — there's no per-client filtering
+
+**Practical consequence:**
+- Same-command parallel polling (both query `:GLS#`) usually works because both parsers can handle either response
+- Different-command parallel polling fails — `mount.py`'s read-until-`#` returns whatever response arrives first, which may be ASIAIR's poll of a different command, breaking the parser
+- Set commands (`:SG`, `:SUT`) get last-writer-wins on the mount — ASIAIR routinely overwrites `mount.py timesync`'s offset to its preferred CET (+60 min); UTC itself stays correct in both cases
+
+**Rule:** during an active ASIAIR session, **don't run `mount.py status / health / log`** and **don't let MacBot fire scheduled `mount log` jobs**. Reserve `mount.py` for ASIAIR-off windows (pre-session checks, post-session diagnostics, dead-window logging). If logging during a real session is critical, switch ASIAIR back to USB-Serial for that night (manual cable swap) so `mount.py` has the TCP bridge to itself.
+
+For MacBot session-driven scheduling specifically: **cancel the scheduled `mount log start/stop` jobs on imaging nights** (`cancel mount schedule for tonight` via iMessage), or schedule logging only on non-imaging diagnostic nights. See [[../01_Equipment/Accessories/ASIAIR#Concurrent access with mount.py]] for the test results.
 
 ### 4c. Post-slew WiFi-drop pattern
 

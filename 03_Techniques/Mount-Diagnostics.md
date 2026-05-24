@@ -142,7 +142,7 @@ Until those are in place, slewing belongs to ASIAIR or the 8409 hand controller.
 
 ## Safety notes
 
-- **Single client at a time.** Don't run `mount.py` against the WiFi bridge while ASIAIR is on the USB-Serial. See [[iOptron-CEM26#How WiFi mount control actually works]] for the architectural reason.
+- **Single client at a time.** Both `mount.py` and (since 2026-05-24) ASIAIR use the same TCP endpoint `192.168.178.87:8899`. The WiFi bridge accepts multiple TCP connections but **broadcasts every response to every connected client** — so `mount.py status` polled during an active ASIAIR session sees ASIAIR's poll responses interleaved with its own. Parsers may pick the wrong record format and fail. Reserve `mount.py` queries for ASIAIR-off windows. Verified empirically 2026-05-24. See [[../01_Equipment/Accessories/ASIAIR#Concurrent access with mount.py (single-client invariant — UPDATED 2026-05-24)|ASIAIR § Concurrent access]] for the test results.
 - **No motion subcommands.** This script cannot slew the mount. Reach for ASIAIR or the 8409 hand controller for any GoTo / park / sky pointing.
 - **After mid-slew power cycle** — the mount's internal coordinate model is reset to home but the OTA is wherever it physically stopped. Re-align the OTA to the home position and use "Set Zero Position" on the 8409 hand controller before any future slew (whether via ASIAIR or HC). This applies regardless of `mount.py`.
 
