@@ -375,6 +375,99 @@ class TestResolveTarget(unittest.TestCase):
 # 4. Mocked TCP layer
 # ============================================================================
 
+class TestGotoCommandFormat(unittest.TestCase):
+    """Verify cli_goto sends syntactically correct iOptron commands.
+
+    Regression for the 2026-05-24 bug where `:Sds<sign><digits>#` was sent
+    instead of `:Sd<sign><digits>#`. The spec writes the format as
+    `:SdsTTTTTTTT#` which parses as `:Sd` (command) + `s` (sign char: + or -)
+    + 8 digits. The buggy version injected a redundant literal 's', which
+    firmware silently swallowed — leaving Dec target at default 0° and
+    causing M44 to slew to RA 130° / Dec 0° instead of RA 130° / Dec +20°.
+    """
+
+    def test_goto_sends_correct_command_sequence(self):
+        # Capture every command the goto subcommand sends to a mock mount.
+        sent = []
+
+        class FakeMount:
+            def send(self, cmd):
+                sent.append(cmd)
+                # Minimal responses to keep cli_goto happy:
+                #   :GLS# → unparked-at-home state
+                #   :SRA, :Sd → '1' (success)
+                #   :MS1# → '1' (slew accepted)
+                #   subsequent :GLS# → state=7 (not slewing) so loop exits
+                if cmd == ":GLS#":
+                    # +021630005029810007 + state + tracking + speed + tsrc + hemi + #
+                    return "+0216300050298100" + "0" + "7" + "0" + "5" + "1" + "1" + "#"
+                if cmd == ":GEP#":
+                    # Whatever, doesn't matter for command-format test
+                    return "+00000000098892000" + "0" + "1" + "#"
+                return "1"
+
+        repo_root = Path(tempfile.mkdtemp())
+        try:
+            exit_code = mount.cli_goto(FakeMount(), "M16", repo_root)
+        finally:
+            import shutil
+            shutil.rmtree(repo_root)
+
+        self.assertEqual(exit_code, 0)
+        # Expected sequence:
+        #   :GLS#   (parked check)
+        #   :SRA<9digits>#
+        #   :Sd<sign><8digits>#     <-- regression check: NOT :Sds
+        #   :MS1#
+        #   :GLS#   (slew complete check)
+        # Optionally another :GLS# poll if state was still slewing, then :GEP#
+        self.assertEqual(sent[0], ":GLS#", "should check parked state first")
+        # SRA: 9 unsigned digits, no sign
+        sra = sent[1]
+        self.assertTrue(sra.startswith(":SRA"), f"expected :SRA prefix, got {sra!r}")
+        self.assertEqual(len(sra), 1 + 3 + 9 + 1, f"SRA wrong length: {sra!r}")
+        # Sd: literal command name `:Sd` (NOT `:Sds`), then sign + 8 digits + '#'
+        sd = sent[2]
+        self.assertTrue(sd.startswith(":Sd"), f"expected :Sd prefix, got {sd!r}")
+        self.assertFalse(sd.startswith(":Sds"),
+                         f"BUG: should be :Sd<sign>...# not :Sds...#: {sd!r}")
+        self.assertIn(sd[3], "+-", f"4th char must be sign +/-, got {sd!r}")
+        self.assertTrue(sd[4:-1].isdigit(), f"body after sign must be digits: {sd!r}")
+        self.assertEqual(len(sd), 1 + 2 + 1 + 8 + 1,
+                         f":Sd command should be 13 chars total: {sd!r}")
+        self.assertEqual(sent[3], ":MS1#", "should issue MS1 slew after target set")
+
+    def test_goto_m16_constructs_correct_dec_value(self):
+        # M16 is Dec -13.78°. Verify the encoded Dec digits decode back correctly.
+        sent = []
+
+        class FakeMount:
+            def send(self, cmd):
+                sent.append(cmd)
+                if cmd == ":GLS#":
+                    return "+0216300050298100" + "0" + "7" + "0" + "5" + "1" + "1" + "#"
+                if cmd == ":GEP#":
+                    return "+00000000098892000" + "0" + "1" + "#"
+                return "1"
+
+        repo_root = Path(tempfile.mkdtemp())
+        try:
+            mount.cli_goto(FakeMount(), "M16", repo_root)
+        finally:
+            import shutil
+            shutil.rmtree(repo_root)
+
+        # Find the :Sd command and decode its Dec value
+        sd_cmd = next(c for c in sent if c.startswith(":Sd") and not c.startswith(":Sds"))
+        # Format: :Sd<sign><8 digits>#
+        sign = sd_cmd[3]
+        digits = sd_cmd[4:-1]
+        encoded_arcsec_hundredths = int(digits)
+        dec_deg = (1 if sign == "+" else -1) * encoded_arcsec_hundredths / (3600.0 * 100.0)
+        self.assertAlmostEqual(dec_deg, -13.78, places=2,
+                               msg=f"M16 Dec encoded incorrectly: command={sd_cmd!r}")
+
+
 class TestMountConnection(unittest.TestCase):
 
     def _mock_socket_with_response(self, response: bytes) -> MagicMock:

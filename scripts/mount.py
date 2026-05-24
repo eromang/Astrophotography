@@ -897,9 +897,14 @@ def cli_goto(mount: MountConnection, designation: str, repo_root: Path,
         print(f"  SRA rejected: {resp!r}", file=sys.stderr)
         return 1
     print(f"setting target Dec…")
-    resp = mount.send(f":Sds{encode_dec(dec_deg)}#")
+    # NOTE: command is `:Sd` + sign + 8 digits. The protocol spec writes
+    # `:SdsTTTTTTTT#` which parses as `:Sd` (literal) + `s` (sign) + 8 digits.
+    # Sending `:Sds<sign><digits>#` would inject a redundant 's' literal that
+    # firmware silently swallows, leaving Dec target at default 0° — verified
+    # 2026-05-24 by attempting M44 and watching the mount slew to Dec 0°.
+    resp = mount.send(f":Sd{encode_dec(dec_deg)}#")
     if not resp.startswith("1"):
-        print(f"  Sds rejected: {resp!r}", file=sys.stderr)
+        print(f"  Sd rejected: {resp!r}", file=sys.stderr)
         return 1
     print("slewing (MS1)…")
     resp = mount.send(":MS1#")
