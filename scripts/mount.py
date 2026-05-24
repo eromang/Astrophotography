@@ -9,7 +9,9 @@ Subcommands (all non-moving except the slow sidereal tracking that `unpark` star
     unpark                   Clear parked flag + start sidereal tracking (~15"/sec westward drift).
     timesync                 Push host's UTC/DST/offset to mount (config write only — no motion).
     log [--session FILE]     Periodic state logger; writes NDJSON beside capture-session note.
-        [--interval N]
+        [--interval N]       Three record kinds: sample (per-poll snapshot), event (state
+        [--quiet]            transitions: mount_unreachable, tracking_stopped, meridian_flip),
+                             summary (end-of-run totals). --quiet for background subprocess use.
 
 Mount connection: TCP to 192.168.178.87:8899 (CEM26 WiFi APSTA mode, HBX8409 module).
 The WiFi module is a TCP-to-Serial bridge — every TCP command is forwarded byte-for-byte
@@ -721,18 +723,84 @@ def cli_timesync(mount: MountConnection) -> int:
     return 1
 
 
-def cli_log(mount: MountConnection, output_path: Path, interval_s: float) -> int:
-    """Periodic mount-state logger. Appends NDJSON until Ctrl-C, then writes a summary line."""
+def _detect_events(prev_sample: Optional[dict], curr_sample: dict) -> list[dict]:
+    """Detect state transitions between two consecutive samples.
+
+    Returns a list of event dicts (may be empty). Each event has shape:
+        {"ts": ..., "kind": "event", "event_type": <type>, "detail": <human-readable>}
+
+    Detected event types:
+        - tracking_stopped : tracking became false during what should be an imaging session
+                             (not parked, not at home — those are normal end-of-session states)
+        - meridian_flip    : pier_side changed between two known sides (E ↔ W)
+
+    `mount_unreachable` is emitted directly by cli_log when MountError happens
+    (no prior-sample comparison needed).
+    """
+    events: list[dict] = []
+    if prev_sample is None:
+        return events
+
+    ts = curr_sample["ts"]
+
+    # Tracking stopped — was tracking, now not, and not because of park/home (those are expected)
+    if (prev_sample.get("is_tracking") and not curr_sample.get("is_tracking")
+            and not curr_sample.get("is_parked")
+            and curr_sample.get("system_state") != 7):
+        events.append({
+            "ts": ts,
+            "kind": "event",
+            "event_type": "tracking_stopped",
+            "detail": f"tracking transitioned to off (state now: {curr_sample.get('system_state_name')})",
+        })
+
+    # Meridian flip — pier side changed between two known sides
+    prev_pier = prev_sample.get("pier_side")
+    curr_pier = curr_sample.get("pier_side")
+    if prev_pier in ("E", "W") and curr_pier in ("E", "W") and prev_pier != curr_pier:
+        events.append({
+            "ts": ts,
+            "kind": "event",
+            "event_type": "meridian_flip",
+            "detail": f"pier side changed {prev_pier} → {curr_pier}",
+        })
+
+    return events
+
+
+def cli_log(mount: MountConnection, output_path: Path, interval_s: float,
+            quiet: bool = False) -> int:
+    """Periodic mount-state logger. Appends NDJSON until Ctrl-C, then writes a summary line.
+
+    Three record types are written:
+        kind: "sample"  — every interval_s, full state snapshot
+        kind: "event"   — state transitions worth alerting on (tracking_stopped,
+                          meridian_flip, mount_unreachable)
+        kind: "summary" — single line at end-of-run with total counts + duration
+
+    The "event" records are what MacBot's notification watcher tails to fire
+    iMessage alerts. They're written in addition to (not instead of) the sample
+    that triggered the detection.
+
+    If `quiet` is True, per-sample stdout is suppressed (use when running as
+    a background subprocess under MacBot). Errors and the final summary line
+    are still printed.
+    """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     sample_count = 0
+    event_count = 0
     start_ts = datetime.now(timezone.utc)
-    print(f"logging to {output_path} every {interval_s} s — Ctrl-C to stop")
+    if not quiet:
+        print(f"logging to {output_path} every {interval_s} s — Ctrl-C to stop")
 
     def _write(record: dict) -> None:
-        nonlocal sample_count
+        nonlocal sample_count, event_count
         with output_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, separators=(",", ":")) + "\n")
-        sample_count += 1
+        if record.get("kind") == "sample":
+            sample_count += 1
+        elif record.get("kind") == "event":
+            event_count += 1
 
     stop = {"flag": False}
 
@@ -740,6 +808,8 @@ def cli_log(mount: MountConnection, output_path: Path, interval_s: float) -> int
         stop["flag"] = True
 
     signal.signal(signal.SIGINT, _on_sigint)
+
+    prev_sample: Optional[dict] = None
 
     try:
         while not stop["flag"]:
@@ -763,12 +833,29 @@ def cli_log(mount: MountConnection, output_path: Path, interval_s: float) -> int
                     "is_tracking": gls.is_tracking,
                 }
                 _write(rec)
-                print(f"  {now.isoformat(timespec='seconds')}"
-                      f"  RA {gep.ra_deg:7.3f}°  Dec {gep.dec_deg:+7.3f}°"
-                      f"  {gls.system_state_name}")
+                if not quiet:
+                    print(f"  {now.isoformat(timespec='seconds')}"
+                          f"  RA {gep.ra_deg:7.3f}°  Dec {gep.dec_deg:+7.3f}°"
+                          f"  {gls.system_state_name}")
+                # Emit any state-transition events triggered by this sample
+                for event in _detect_events(prev_sample, rec):
+                    _write(event)
+                    if not quiet:
+                        print(f"  {now.isoformat(timespec='seconds')}"
+                              f"  EVENT {event['event_type']}: {event['detail']}")
+                prev_sample = rec
             except MountError as e:
-                _write({"ts": now.isoformat(), "kind": "error", "error": str(e)})
-                print(f"  {now.isoformat(timespec='seconds')}  ERROR: {e}")
+                event_rec = {
+                    "ts": now.isoformat(),
+                    "kind": "event",
+                    "event_type": "mount_unreachable",
+                    "detail": str(e),
+                }
+                _write(event_rec)
+                # Errors print even in quiet mode — operator wants to know
+                print(f"  {now.isoformat(timespec='seconds')}  EVENT mount_unreachable: {e}",
+                      file=sys.stderr)
+                # Don't update prev_sample on error; pier-side tracking continues from last good sample
             # interruptible sleep
             slept = 0.0
             while slept < interval_s and not stop["flag"]:
@@ -783,10 +870,12 @@ def cli_log(mount: MountConnection, output_path: Path, interval_s: float) -> int
             "ended": end_ts.isoformat(),
             "duration_s": (end_ts - start_ts).total_seconds(),
             "samples_written": sample_count,
+            "events_written": event_count,
             "interval_s": interval_s,
         }
         _write(summary)
-        print(f"\nwrote {sample_count} samples + summary to {output_path}")
+        # Summary line prints even in quiet mode — useful when triggered from MacBot
+        print(f"wrote {sample_count} samples + {event_count} events + summary to {output_path}")
     return 0
 
 
@@ -825,6 +914,9 @@ def build_parser() -> argparse.ArgumentParser:
                        help="override output path (default: 05_Sessions/{year}/Capture/{date}-mount-log.json)")
     s_log.add_argument("--interval", type=float, default=30.0,
                        help="seconds between samples (default 30)")
+    s_log.add_argument("--quiet", action="store_true",
+                       help="suppress per-sample stdout (errors + summary still printed); "
+                            "use when running as a background subprocess (e.g., under MacBot)")
 
     return p
 
@@ -847,7 +939,7 @@ def main(argv: list[str] | None = None) -> int:
             return cli_timesync(mount)
         if args.cmd == "log":
             output = args.session if args.session else default_log_path(repo_root)
-            return cli_log(mount, output, args.interval)
+            return cli_log(mount, output, args.interval, quiet=args.quiet)
     except MountUnreachable as e:
         print(f"mount unreachable: {e}", file=sys.stderr)
         print(f"  → check the mount is powered on and on home WiFi (BleiftDoheem)", file=sys.stderr)

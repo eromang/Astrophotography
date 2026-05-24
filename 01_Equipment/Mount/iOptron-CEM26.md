@@ -307,6 +307,10 @@ Run from repo root: `python3 scripts/mount.py <subcommand>`. See [[../../scripts
 
 Stdlib-only (no `pip install` needed). Tested via `python3 -m unittest scripts.test_mount` (parser + mock tests, no mount needed) and `MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount` (live read-only integration).
 
+### Mac Mini as logging station
+
+The always-on Mac Mini (`192.168.178.91`) clones this repo and runs MacBot — see [[../../03_Techniques/Mount-Diagnostics.md#Session-driven-logging-via-MacBot]]. iMessage triggers expose `mount status`, `mount log start/stop`, and **session-driven scheduling** that reads the Start/End times from a capture-session note's Planning table and auto-runs `mount.py log` for that window. Three throttled iMessage alerts (`mount_unreachable`, `tracking_stopped`, `meridian_flip`) come from MacBot tailing the live NDJSON log for `kind: "event"` records. Since the MacBook is typically asleep during night sessions, the Mac Mini is the practical logging host.
+
 ### iPolar Software
 
 - [iPolar download](https://www.ioptron.com/product-p/c261b1.htm)

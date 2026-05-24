@@ -278,7 +278,247 @@ class TestEncoders(unittest.TestCase):
 
 
 # ============================================================================
-# 3. Mocked TCP layer
+# 3. Event detection (for MacBot notification watcher)
+# ============================================================================
+
+def _sample(ts="2026-05-24T22:00:00+00:00", pier="E", is_tracking=True,
+            is_parked=False, system_state=1, system_state_name="tracking (PEC off)"):
+    """Build a minimal sample dict for _detect_events testing."""
+    return {
+        "ts": ts, "kind": "sample",
+        "pier_side": pier,
+        "is_tracking": is_tracking,
+        "is_parked": is_parked,
+        "system_state": system_state,
+        "system_state_name": system_state_name,
+    }
+
+
+class TestDetectEvents(unittest.TestCase):
+    """Verify _detect_events emits the right event records for the right transitions.
+
+    These records are what MacBot tails to fire iMessage alerts.
+    """
+
+    def test_no_events_on_first_sample(self):
+        events = mount._detect_events(prev_sample=None, curr_sample=_sample())
+        self.assertEqual(events, [])
+
+    def test_no_events_on_no_change(self):
+        prev = _sample()
+        curr = _sample(ts="2026-05-24T22:00:30+00:00")
+        events = mount._detect_events(prev, curr)
+        self.assertEqual(events, [])
+
+    def test_tracking_stopped_event(self):
+        prev = _sample(is_tracking=True, system_state=1)
+        # Tracking stopped without parking — surprise stop
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", is_tracking=False,
+                       system_state=0, system_state_name="stopped (non-zero position)")
+        events = mount._detect_events(prev, curr)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["event_type"], "tracking_stopped")
+        self.assertEqual(events[0]["kind"], "event")
+        self.assertIn("stopped", events[0]["detail"].lower())
+
+    def test_no_tracking_stopped_when_parked(self):
+        # Tracking-off because of normal park — should NOT alert
+        prev = _sample(is_tracking=True, system_state=1)
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", is_tracking=False,
+                       is_parked=True, system_state=6, system_state_name="parked")
+        events = mount._detect_events(prev, curr)
+        self.assertEqual(events, [])
+
+    def test_no_tracking_stopped_when_returning_home(self):
+        # Tracking-off because mount went to home (state 7) — should NOT alert
+        prev = _sample(is_tracking=True, system_state=1)
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", is_tracking=False,
+                       system_state=7, system_state_name="stopped at zero/home position")
+        events = mount._detect_events(prev, curr)
+        self.assertEqual(events, [])
+
+    def test_meridian_flip_event(self):
+        prev = _sample(pier="E")
+        curr = _sample(ts="2026-05-24T22:30:00+00:00", pier="W")
+        events = mount._detect_events(prev, curr)
+        flips = [e for e in events if e["event_type"] == "meridian_flip"]
+        self.assertEqual(len(flips), 1)
+        self.assertIn("E", flips[0]["detail"])
+        self.assertIn("W", flips[0]["detail"])
+
+    def test_no_meridian_flip_when_pier_was_unknown(self):
+        # First "real" pier reading after the indeterminate ? — not a flip
+        prev = _sample(pier="?")
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", pier="E")
+        events = mount._detect_events(prev, curr)
+        flips = [e for e in events if e["event_type"] == "meridian_flip"]
+        self.assertEqual(flips, [])
+
+    def test_no_meridian_flip_when_pier_became_unknown(self):
+        prev = _sample(pier="E")
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", pier="?")
+        events = mount._detect_events(prev, curr)
+        flips = [e for e in events if e["event_type"] == "meridian_flip"]
+        self.assertEqual(flips, [])
+
+    def test_multiple_events_in_one_sample(self):
+        # Both tracking stopped AND pier flipped in one transition (unlikely but valid)
+        prev = _sample(pier="E", is_tracking=True, system_state=1)
+        curr = _sample(ts="2026-05-24T22:00:30+00:00", pier="W",
+                       is_tracking=False, system_state=0,
+                       system_state_name="stopped (non-zero position)")
+        events = mount._detect_events(prev, curr)
+        event_types = {e["event_type"] for e in events}
+        self.assertEqual(event_types, {"tracking_stopped", "meridian_flip"})
+
+
+class TestCliLogEventEmission(unittest.TestCase):
+    """End-to-end test that cli_log writes event records to the NDJSON file
+    when state transitions happen, and that --quiet suppresses per-sample stdout."""
+
+    def _build_responses(self, samples, pad_with_last=20):
+        """Build a side_effect list of MountConnection.send return values.
+
+        `samples` is a list of (pier_digit, sys_state_digit, tracking_digit) tuples
+        that drive consecutive :GLS#+:GEP# response pairs. `pad_with_last` extra
+        copies of the LAST sample are appended so the mock doesn't StopIteration
+        if cli_log polls a few extra times before SIGINT arrives (timing-sensitive).
+        """
+        responses = []
+        for pier, sys_state, _track in samples:
+            pier_digit = {"E": "0", "W": "1", "?": "2"}[pier]
+            gls = ("+0216300050298100"
+                   "0"
+                   f"{sys_state}"
+                   "0"
+                   "5"
+                   "2"
+                   "1"
+                   "#")
+            gep = "+00000000" + "000000000" + pier_digit + "1#"
+            responses.extend([gls, gep])
+        # Pad with copies of the last sample to absorb any extra polls
+        if samples and pad_with_last > 0:
+            last_gls, last_gep = responses[-2], responses[-1]
+            for _ in range(pad_with_last):
+                responses.extend([last_gls, last_gep])
+        return responses
+
+    def test_tracking_stopped_writes_event_record(self):
+        # Sample 1: tracking. Sample 2: not tracking, not parked, not home.
+        responses = self._build_responses([
+            ("E", 1, 1),   # tracking PEC off
+            ("E", 0, 0),   # stopped non-zero
+        ])
+        mock_conn = MagicMock()
+        mock_conn.send.side_effect = responses
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "log.json"
+            # Run cli_log for 2 samples then sigint
+            import threading
+            def _interrupt():
+                time.sleep(0.3)  # give time for ~2 polls at 0.1s interval
+                os.kill(os.getpid(), 2)  # SIGINT
+            threading.Thread(target=_interrupt, daemon=True).start()
+            mount.cli_log(mock_conn, out, interval_s=0.1, quiet=True)
+
+            lines = [json.loads(l) for l in out.read_text().strip().split("\n")]
+            kinds = [l["kind"] for l in lines]
+            event_lines = [l for l in lines if l["kind"] == "event"]
+            self.assertIn("event", kinds, f"no event record written; got: {kinds}")
+            self.assertEqual(len(event_lines), 1)
+            self.assertEqual(event_lines[0]["event_type"], "tracking_stopped")
+
+    def test_meridian_flip_writes_event_record(self):
+        responses = self._build_responses([
+            ("E", 1, 1),   # pier east, tracking
+            ("W", 1, 1),   # pier west, tracking — flip!
+        ])
+        mock_conn = MagicMock()
+        mock_conn.send.side_effect = responses
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "log.json"
+            import threading
+            def _interrupt():
+                time.sleep(0.3)
+                os.kill(os.getpid(), 2)
+            threading.Thread(target=_interrupt, daemon=True).start()
+            mount.cli_log(mock_conn, out, interval_s=0.1, quiet=True)
+
+            lines = [json.loads(l) for l in out.read_text().strip().split("\n")]
+            event_lines = [l for l in lines if l["kind"] == "event"]
+            self.assertEqual(len(event_lines), 1)
+            self.assertEqual(event_lines[0]["event_type"], "meridian_flip")
+
+    def test_mount_unreachable_writes_event_record(self):
+        # First call succeeds; subsequent calls raise MountError (simulating WiFi drop
+        # that persists until SIGINT).
+        gls_ok = ("+0216300050298100" + "0" + "1" + "0" + "5" + "2" + "1" + "#")
+        gep_ok = "+00000000" + "000000000" + "0" + "1#"
+
+        call_count = {"n": 0}
+        def _send_side(cmd):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return gls_ok
+            if call_count["n"] == 2:
+                return gep_ok
+            raise mount.MountUnreachable("simulated WiFi drop")
+
+        mock_conn = MagicMock()
+        mock_conn.send.side_effect = _send_side
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "log.json"
+            import threading
+            def _interrupt():
+                time.sleep(0.3)
+                os.kill(os.getpid(), 2)
+            threading.Thread(target=_interrupt, daemon=True).start()
+            mount.cli_log(mock_conn, out, interval_s=0.1, quiet=True)
+
+            lines = [json.loads(l) for l in out.read_text().strip().split("\n")]
+            event_lines = [l for l in lines if l["kind"] == "event"]
+            unreachable = [e for e in event_lines if e["event_type"] == "mount_unreachable"]
+            self.assertGreaterEqual(len(unreachable), 1,
+                                    "expected ≥1 mount_unreachable event")
+            self.assertIn("simulated WiFi drop", unreachable[0]["detail"])
+
+    def test_quiet_suppresses_per_sample_stdout(self):
+        # Run a single sample with quiet=True, capture stdout.
+        responses = self._build_responses([("E", 7, 0)])
+        mock_conn = MagicMock()
+        mock_conn.send.side_effect = responses
+
+        from contextlib import redirect_stdout
+        import io
+        buf = io.StringIO()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "log.json"
+            import threading
+            def _interrupt():
+                time.sleep(0.2)
+                os.kill(os.getpid(), 2)
+            threading.Thread(target=_interrupt, daemon=True).start()
+            with redirect_stdout(buf):
+                mount.cli_log(mock_conn, out, interval_s=0.1, quiet=True)
+
+        stdout = buf.getvalue()
+        # The "logging to ..." preamble should be absent
+        self.assertNotIn("logging to", stdout)
+        # Per-sample lines should be absent (would start with "  20" ISO ts)
+        sample_lines = [l for l in stdout.splitlines() if l.strip().startswith("20")]
+        self.assertEqual(sample_lines, [],
+                         f"quiet mode should suppress per-sample lines; got: {sample_lines}")
+        # Final summary should still be printed (operator wants this)
+        self.assertIn("wrote", stdout)
+
+
+# ============================================================================
+# 4. Mocked TCP layer
 # ============================================================================
 
 class TestMountConnection(unittest.TestCase):

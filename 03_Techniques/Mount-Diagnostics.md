@@ -146,9 +146,75 @@ Until those are in place, slewing belongs to ASIAIR or the 8409 hand controller.
 - **No motion subcommands.** This script cannot slew the mount. Reach for ASIAIR or the 8409 hand controller for any GoTo / park / sky pointing.
 - **After mid-slew power cycle** — the mount's internal coordinate model is reset to home but the OTA is wherever it physically stopped. Re-align the OTA to the home position and use "Set Zero Position" on the 8409 hand controller before any future slew (whether via ASIAIR or HC). This applies regardless of `mount.py`.
 
+## Session-driven logging via MacBot
+
+The always-on Mac Mini (`192.168.178.91`) clones this repo and runs MacBot — the iMessage agent documented in the separate House-Automation vault. Mount logging on the Mac Mini is the practical workflow for night sessions since the MacBook Pro is typically asleep.
+
+### One-time Mac Mini setup
+
+Run interactively from MacBook Pro (involves git credentials for the clone):
+
+```bash
+ssh macbot@192.168.178.91 << 'EOF'
+mkdir -p ~/Documents/git-repos ~/Documents/MacBot/mount-logs
+cd ~/Documents/git-repos
+git clone https://github.com/eromang/Astrophotography
+# verify
+python3 ~/Documents/git-repos/Astrophotography/scripts/mount.py status
+# weekly auto-refresh of the repo
+(crontab -l 2>/dev/null; echo "0 3 * * 0 cd ~/Documents/git-repos/Astrophotography && git pull --quiet") | crontab -
+EOF
+```
+
+Then deploy the MacBot module (`mount_commands.py`) per the post-pull-deploy.sh procedure documented in the House-Automation vault, and restart MacBot manually (Keychain unlock).
+
+### iMessage commands
+
+Send to MacBot (iCloud `familleromang@icloud.com`):
+
+| Phrase | What happens |
+|---|---|
+| **"mount status"** | Runs `mount.py status` on Mac Mini, replies with formatted state |
+| **"start mount log"** *(optionally with "every N seconds")* | Spawns `mount.py log --quiet` as background subprocess, records PID in MacBot's SQLite, replies with confirmation + log path |
+| **"stop mount log"** | SIGINT the running subprocess, parses the summary line, replies with sample/event counts + duration |
+| **"schedule mount log for tonight"** / **"for 2026-05-23"** / **"for tomorrow"** | Reads `05_Sessions/{year}/Capture/{date}-Capture.md`, parses the Planning table (Start/End columns, takes `min(Start)` and `max(End)` across multi-target rows), schedules two MacBot cron jobs to auto-start at session start and auto-stop at session end |
+| **"show mount schedule"** | Lists currently pending mount jobs |
+| **"cancel mount schedule for tonight"** / **"for 2026-05-23"** | Removes scheduled jobs for that date |
+
+### Log location
+
+`~/Documents/MacBot/mount-logs/{date}-mount-log.json` (on Mac Mini). One file per capture date. Independent of the Astrophotography vault — accumulates locally on the Mac Mini and can be retrieved later via `scp`.
+
+### Alerts
+
+MacBot tails the active log file every check cycle. For each new `kind: "event"` record, it routes the event through `notifications.py` with per-type cooldowns:
+
+| Event type | Cooldown | Triggers iMessage when… |
+|---|---|---|
+| `mount_unreachable` | 5 min | Two consecutive `:GLS#`/`:GEP#` queries fail (WiFi drop, mount off, ASIAIR conflict) |
+| `tracking_stopped` | 10 min | Mount transitions from tracking → stopped, but not parked and not at home (i.e., surprise stop, not normal end-of-session) |
+| `meridian_flip` | 30 min | Pier side changes E ↔ W (flip itself takes ~2 min so longer cooldown) |
+
+Events are written to the NDJSON log alongside samples — `mount.py log` does the detection between consecutive samples; MacBot's notification watcher just reads + alerts.
+
+### NDJSON record types
+
+```json
+{"ts":"…","kind":"sample","ra_deg":274.7,"dec_deg":-13.78,"pier_side":"E","is_tracking":true,…}
+{"ts":"…","kind":"event","event_type":"meridian_flip","detail":"pier side changed E → W"}
+{"ts":"…","kind":"event","event_type":"tracking_stopped","detail":"tracking transitioned to off (state now: stopped (non-zero position))"}
+{"ts":"…","kind":"event","event_type":"mount_unreachable","detail":"could not connect to 192.168.178.87:8899: …"}
+{"ts":"…","kind":"summary","duration_s":7300.5,"samples_written":240,"events_written":1,"interval_s":30.0}
+```
+
+### Why MacBot, not a launchd plist?
+
+MacBot already runs on the Mac Mini, owns its own SQLite + scheduler + iMessage UX, and is the user's natural way to query home-automation state. Adding mount monitoring to that pipeline (instead of a parallel launchd plist + custom UI) keeps a single touch point. The trade-off is that mount logging is gated on MacBot being healthy.
+
 ## Reference
 
 - [[iOptron-CEM26]] — equipment specs + WiFi config + firmware reference
 - [[ASIAIR]] — primary mount control (USB-Serial, separate from this script)
 - [[../scripts/README.md]] — per-subcommand reference for `mount.py`
+- House-Automation Master Index (separate vault) — MacBot architecture, scheduler, notifications
 - iOptron RS-232 V3.10 spec — `01_Equipment/Manuals/CEM26/ASCOM-Driver/RS-232_Command_Language2014V310.pdf`
