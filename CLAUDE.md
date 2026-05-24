@@ -145,7 +145,7 @@ Not slash commands — invoked directly from the shell. Run from repo root.
 | Script | Purpose |
 |--------|---------|
 | `python3 scripts/fov_atlas.py` | Regenerate the RedCat 51 FOV all-sky atlas PNG |
-| `python3 scripts/mount.py {status\|health\|firmware\|park\|unpark\|timesync\|goto\|log}` | CEM26 mount control via WiFi TCP bridge — see [[scripts/README.md]] and [[Mount-Diagnostics]] |
+| `python3 scripts/mount.py {status\|health\|firmware\|unpark\|timesync\|log}` | CEM26 read-only diagnostics + safe config (no slewing — `goto`/`park` removed for safety 2026-05-24) — see [[scripts/README.md]] and [[Mount-Diagnostics]] |
 
 ### Available Skills
 

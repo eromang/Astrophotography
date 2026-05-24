@@ -4,7 +4,7 @@ test_mount.py — unit + mock + opt-in live tests for scripts/mount.py.
 
 Three test layers:
 
-1. TestParsers / TestEncoders / TestTargetResolution
+1. TestParse* / TestEncoders
        Deterministic. No I/O. Fixture strings captured during the 2026-05-24
        manual verification against the live mount.
 
@@ -17,6 +17,7 @@ Three test layers:
          - mount powered on
          - mount on home WiFi (192.168.178.87 reachable)
          - ASIAIR USB-Serial NOT connected to the mount (single-client invariant)
+       All live tests are read-only (or timesync, which only writes config — no motion).
 
 Run from repo root:
     python3 -m unittest scripts.test_mount               # mock + unit only
@@ -249,27 +250,7 @@ class TestParseGUT(unittest.TestCase):
 # ============================================================================
 
 class TestEncoders(unittest.TestCase):
-
-    def test_ra_round_trip_via_gep(self):
-        for ra in (0.0, 90.0, 180.0, 274.70, 359.999):
-            encoded = mount.encode_ra(ra)
-            self.assertEqual(len(encoded), 9)
-            # Build a synthetic :GEP# response with dec=0
-            raw = f"+00000000{encoded}01#"
-            gep = mount.parse_gep(raw)
-            self.assertAlmostEqual(gep.ra_deg, ra, places=3,
-                                   msg=f"RA {ra} did not round-trip")
-
-    def test_dec_round_trip_via_gep(self):
-        for dec in (-89.5, -13.78, 0.0, 30.0, 89.9):
-            encoded = mount.encode_dec(dec)
-            self.assertEqual(len(encoded), 9)  # sign + 8 digits
-            sign = encoded[0]
-            digits = encoded[1:]
-            raw = f"{sign}{digits}00000000001#"
-            gep = mount.parse_gep(raw)
-            self.assertAlmostEqual(gep.dec_deg, dec, places=3,
-                                   msg=f"Dec {dec} did not round-trip")
+    """Encoders for the SET commands timesync uses (:SG, :SUT)."""
 
     def test_utc_offset_encoding(self):
         self.assertEqual(mount.encode_utc_offset(120), "+120")
@@ -291,182 +272,14 @@ class TestEncoders(unittest.TestCase):
             delta_s = abs((gut.utc - utc_dt).total_seconds())
             self.assertLess(delta_s, 0.002, f"UTC drift {delta_s}s for {utc_dt}")
 
-    def test_ra_out_of_range_raises(self):
-        with self.assertRaises(ValueError):
-            mount.encode_ra(-1.0)
-        with self.assertRaises(ValueError):
-            mount.encode_ra(361.0)
-
-    def test_dec_out_of_range_raises(self):
-        with self.assertRaises(ValueError):
-            mount.encode_dec(-91.0)
-        with self.assertRaises(ValueError):
-            mount.encode_dec(91.0)
-
     def test_encode_utc_time_naive_raises(self):
         with self.assertRaises(ValueError):
             mount.encode_utc_time(datetime(2026, 5, 24, 14, 30, 0))  # no tzinfo
 
 
 # ============================================================================
-# 3. Target resolution
+# 3. Mocked TCP layer
 # ============================================================================
-
-class TestNormalizeDesignation(unittest.TestCase):
-
-    def test_strips_spaces_and_hyphens(self):
-        self.assertEqual(mount.normalize_designation("M 16"), "M16")
-        self.assertEqual(mount.normalize_designation("M-16"), "M16")
-        self.assertEqual(mount.normalize_designation("ngc 7000"), "NGC7000")
-        self.assertEqual(mount.normalize_designation("Sh2-240"), "SH2240")
-
-
-class TestResolveTarget(unittest.TestCase):
-
-    def setUp(self):
-        # Empty repo root → only fallback catalog applies
-        self.tmpdir = tempfile.TemporaryDirectory()
-        self.repo_root = Path(self.tmpdir.name)
-
-    def tearDown(self):
-        self.tmpdir.cleanup()
-
-    def test_resolve_from_catalog(self):
-        display, ra, dec = mount.resolve_target("M16", self.repo_root)
-        self.assertEqual(display, "M16 Eagle")
-        self.assertAlmostEqual(ra, 274.70, places=2)
-        self.assertAlmostEqual(dec, -13.78, places=2)
-
-    def test_resolve_normalizes(self):
-        display, ra, dec = mount.resolve_target("m 16", self.repo_root)
-        self.assertEqual(display, "M16 Eagle")
-
-    def test_unknown_raises(self):
-        with self.assertRaises(ValueError) as cm:
-            mount.resolve_target("XYZ999", self.repo_root)
-        self.assertIn("XYZ999", str(cm.exception))
-        self.assertIn("Known:", str(cm.exception))
-
-    def test_vault_wins_over_catalog(self):
-        # Write a fake target note with overriding coords
-        targets = self.repo_root / "02_Targets" / "Nebulae"
-        targets.mkdir(parents=True)
-        note = targets / "M16-Eagle.md"
-        note.write_text(
-            "---\n"
-            "title: M16 — Eagle Nebula (from vault)\n"
-            "designation: M16\n"
-            "ra_deg: 100.0\n"
-            "dec_deg: -50.0\n"
-            "---\n\nbody\n",
-            encoding="utf-8",
-        )
-        try:
-            import yaml  # noqa: F401
-        except ImportError:
-            self.skipTest("PyYAML not installed — vault lookup degrades to fallback (covered separately)")
-        display, ra, dec = mount.resolve_target("M16", self.repo_root)
-        self.assertEqual(display, "M16 — Eagle Nebula (from vault)")
-        self.assertEqual(ra, 100.0)
-        self.assertEqual(dec, -50.0)
-
-
-# ============================================================================
-# 4. Mocked TCP layer
-# ============================================================================
-
-class TestGotoCommandFormat(unittest.TestCase):
-    """Verify cli_goto sends syntactically correct iOptron commands.
-
-    Regression for the 2026-05-24 bug where `:Sds<sign><digits>#` was sent
-    instead of `:Sd<sign><digits>#`. The spec writes the format as
-    `:SdsTTTTTTTT#` which parses as `:Sd` (command) + `s` (sign char: + or -)
-    + 8 digits. The buggy version injected a redundant literal 's', which
-    firmware silently swallowed — leaving Dec target at default 0° and
-    causing M44 to slew to RA 130° / Dec 0° instead of RA 130° / Dec +20°.
-    """
-
-    def test_goto_sends_correct_command_sequence(self):
-        # Capture every command the goto subcommand sends to a mock mount.
-        sent = []
-
-        class FakeMount:
-            def send(self, cmd):
-                sent.append(cmd)
-                # Minimal responses to keep cli_goto happy:
-                #   :GLS# → unparked-at-home state
-                #   :SRA, :Sd → '1' (success)
-                #   :MS1# → '1' (slew accepted)
-                #   subsequent :GLS# → state=7 (not slewing) so loop exits
-                if cmd == ":GLS#":
-                    # +021630005029810007 + state + tracking + speed + tsrc + hemi + #
-                    return "+0216300050298100" + "0" + "7" + "0" + "5" + "1" + "1" + "#"
-                if cmd == ":GEP#":
-                    # Whatever, doesn't matter for command-format test
-                    return "+00000000098892000" + "0" + "1" + "#"
-                return "1"
-
-        repo_root = Path(tempfile.mkdtemp())
-        try:
-            exit_code = mount.cli_goto(FakeMount(), "M16", repo_root)
-        finally:
-            import shutil
-            shutil.rmtree(repo_root)
-
-        self.assertEqual(exit_code, 0)
-        # Expected sequence:
-        #   :GLS#   (parked check)
-        #   :SRA<9digits>#
-        #   :Sd<sign><8digits>#     <-- regression check: NOT :Sds
-        #   :MS1#
-        #   :GLS#   (slew complete check)
-        # Optionally another :GLS# poll if state was still slewing, then :GEP#
-        self.assertEqual(sent[0], ":GLS#", "should check parked state first")
-        # SRA: 9 unsigned digits, no sign
-        sra = sent[1]
-        self.assertTrue(sra.startswith(":SRA"), f"expected :SRA prefix, got {sra!r}")
-        self.assertEqual(len(sra), 1 + 3 + 9 + 1, f"SRA wrong length: {sra!r}")
-        # Sd: literal command name `:Sd` (NOT `:Sds`), then sign + 8 digits + '#'
-        sd = sent[2]
-        self.assertTrue(sd.startswith(":Sd"), f"expected :Sd prefix, got {sd!r}")
-        self.assertFalse(sd.startswith(":Sds"),
-                         f"BUG: should be :Sd<sign>...# not :Sds...#: {sd!r}")
-        self.assertIn(sd[3], "+-", f"4th char must be sign +/-, got {sd!r}")
-        self.assertTrue(sd[4:-1].isdigit(), f"body after sign must be digits: {sd!r}")
-        self.assertEqual(len(sd), 1 + 2 + 1 + 8 + 1,
-                         f":Sd command should be 13 chars total: {sd!r}")
-        self.assertEqual(sent[3], ":MS1#", "should issue MS1 slew after target set")
-
-    def test_goto_m16_constructs_correct_dec_value(self):
-        # M16 is Dec -13.78°. Verify the encoded Dec digits decode back correctly.
-        sent = []
-
-        class FakeMount:
-            def send(self, cmd):
-                sent.append(cmd)
-                if cmd == ":GLS#":
-                    return "+0216300050298100" + "0" + "7" + "0" + "5" + "1" + "1" + "#"
-                if cmd == ":GEP#":
-                    return "+00000000098892000" + "0" + "1" + "#"
-                return "1"
-
-        repo_root = Path(tempfile.mkdtemp())
-        try:
-            mount.cli_goto(FakeMount(), "M16", repo_root)
-        finally:
-            import shutil
-            shutil.rmtree(repo_root)
-
-        # Find the :Sd command and decode its Dec value
-        sd_cmd = next(c for c in sent if c.startswith(":Sd") and not c.startswith(":Sds"))
-        # Format: :Sd<sign><8 digits>#
-        sign = sd_cmd[3]
-        digits = sd_cmd[4:-1]
-        encoded_arcsec_hundredths = int(digits)
-        dec_deg = (1 if sign == "+" else -1) * encoded_arcsec_hundredths / (3600.0 * 100.0)
-        self.assertAlmostEqual(dec_deg, -13.78, places=2,
-                               msg=f"M16 Dec encoded incorrectly: command={sd_cmd!r}")
-
 
 class TestMountConnection(unittest.TestCase):
 

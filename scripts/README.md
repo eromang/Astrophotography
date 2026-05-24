@@ -20,17 +20,18 @@ Output: `03_Techniques/images/fov-atlas-allsky.png`. Embedded in [[../03_Techniq
 
 ---
 
-## mount.py — CEM26 mount control via WiFi TCP bridge
+## mount.py — CEM26 read-only diagnostics + safe config helpers
 
-Standalone CLI for talking directly to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). Bypasses ASIAIR entirely; useful for pre-session readiness checks, end-of-session park, session-state logging, and standalone diagnostics when ASIAIR isn't running.
+CLI for talking to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). All subcommands are non-moving (except the slow sidereal tracking that `unpark` starts and `timesync` config writes which don't drive the motors). Useful for pre-session readiness checks, session-state logging, time sync, and quick diagnostics when ASIAIR isn't running.
 
 ```bash
-python3 -m pip install pyyaml          # only needed for `goto` vault target lookup
 python3 scripts/mount.py status        # quick state readout
 python3 scripts/mount.py health        # pre-session readiness check; exit 0=pass, 1=fail
 python3 scripts/mount.py firmware      # installed firmware versions + gap vs latest
 python3 scripts/mount.py log           # NDJSON state logger written beside session note
 ```
+
+Stdlib-only — no `pip install` required.
 
 ### Subcommands
 
@@ -39,11 +40,19 @@ python3 scripts/mount.py log           # NDJSON state logger written beside sess
 | `status [--watch [N]]` | Print parsed mount state (RA/Dec, alt/az, tracking, parked/slewing). `--watch` repolls every N seconds (default 5). |
 | `health` | Pre-session readiness: firmware, location, hemisphere, tracking, time drift, not-slewing. Exit 0 if all pass, 1 if any fail. |
 | `firmware` | Show installed firmware (HC + RA + DEC) and compare against the latest documented release. |
-| `park` | End-of-session: stop tracking, slew to stored park position, confirm system state = 6 (parked). |
-| `unpark` | `:MP0#` + start sidereal tracking. |
-| `timesync` | Push host's UTC + DST + UTC offset to mount. Reports before/after drift. |
-| `goto <designation>` | Look up target in `02_Targets/` (or fallback catalog), slew there. **ASIAIR must be disconnected.** Designation normalization is case-insensitive and strips spaces/hyphens: `M16`, `m 16`, `M-16` all match. |
+| `unpark` | `:MP0#` + start sidereal tracking. The only "motion" is the slow ~15"/sec westward sidereal drift — no slew. |
+| `timesync` | Push host's UTC + DST + UTC offset to mount. Config writes only, no motion. Reports before/after drift. |
 | `log [--session FILE] [--interval N]` | Periodic state logger. Appends NDJSON to `05_Sessions/{year}/Capture/{date}-mount-log.json` (one record per sample), plus a final summary line on Ctrl-C. Default interval 30 s. |
+
+### Removed: `goto` and `park`
+
+Both subcommands were removed 2026-05-24 after a chained `goto NGC7000` → `park` test sequence drove the bare mount into a hard mechanical limit. Root cause: the script had no way to verify that the mount's internal RA/Dec coords matched the OTA's actual physical position after repeated power cycles, and chained motion commands compounded the desync.
+
+Slewing operations now belong to:
+- **ASIAIR** (via USB-Serial) for guided imaging sessions, or
+- **The 8409 hand controller** directly for manual GoTo.
+
+See [[../03_Techniques/Mount-Diagnostics.md#Removed-goto-and-park]] for the full rationale and what safety gates would need to be added before re-introducing either subcommand.
 
 ### Sample output
 
@@ -60,7 +69,7 @@ $ python3 scripts/mount.py status
 
 ### Single-client invariant
 
-The mount's WiFi-to-Serial bridge multiplexes a single 115200 8N1 serial link to the 8409 hand controller. Two clients writing at the same time produce garbled responses. **Do not run `mount.py` while ASIAIR is connected to the mount via the USB-Serial cable.** The script's `goto` and `park` subcommands enforce this implicitly (you'd see corrupted responses); for read-only diagnostics it's mostly harmless but still discouraged.
+The mount's WiFi-to-Serial bridge multiplexes a single 115200 8N1 serial link to the 8409 hand controller. Two clients writing at the same time produce garbled responses. **Do not run `mount.py` while ASIAIR is connected to the mount via the USB-Serial cable.** For the read-only subcommands it's mostly harmless but still discouraged.
 
 ### Tests
 
@@ -69,17 +78,10 @@ python3 -m unittest scripts.test_mount                     # unit + mock tests (
 MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount   # + live integration tests
 ```
 
-Live tests require the mount powered on and reachable at `192.168.178.87`. They cover read-only verification and `timesync` (which writes but only to set the clock to host time). Park / goto are **not** in the live test set — those move the mount and require manual supervision.
+Live tests require the mount powered on and reachable at `192.168.178.87`. All live tests are read-only (or `timesync`, which writes config but does not move the mount).
 
 ### Reference docs
 
 - iOptron RS-232 command spec: `01_Equipment/Manuals/CEM26/ASCOM-Driver/RS-232_Command_Language2014V310.pdf` (V3.10)
 - Equipment note: [[../01_Equipment/Mount/iOptron-CEM26.md]] — WiFi/firmware setup
 - Workflow guide: [[../03_Techniques/Mount-Diagnostics.md]] — when to use which subcommand
-
-### Extending the target catalog (for `goto`)
-
-Same model as `fov_atlas.py`:
-
-- **Inline:** append a row to `TARGET_CATALOG` in `mount.py`.
-- **From vault:** add `designation`, `ra_deg`, `dec_deg` to a target's YAML frontmatter under `02_Targets/`. Vault entries win over the inline catalog. (Most current target notes don't carry these fields yet — populate as needed.)

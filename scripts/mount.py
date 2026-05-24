@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-mount.py — CEM26 mount control via WiFi TCP bridge (iOptron RS-232 V3.10).
+mount.py — CEM26 read-only diagnostics + safe config helpers via WiFi TCP bridge.
 
-Subcommands:
+Subcommands (all non-moving except the slow sidereal tracking that `unpark` starts):
     status [--watch [N]]     Live mount state (RA/Dec, alt/az, tracking, parked/slewing).
     health                   Pre-session readiness check; exits 0 if all pass, 1 if any fail.
     firmware                 Show installed firmware versions + gap vs latest available.
-    park                     End-of-session: stop tracking, slew to park position, confirm.
-    unpark                   Unpark + start sidereal tracking.
-    timesync                 Push host's UTC/DST/offset to mount.
-    goto <designation>       Look up target RA/Dec from vault, slew (ASIAIR must be disconnected).
+    unpark                   Clear parked flag + start sidereal tracking (~15"/sec westward drift).
+    timesync                 Push host's UTC/DST/offset to mount (config write only — no motion).
     log [--session FILE]     Periodic state logger; writes NDJSON beside capture-session note.
         [--interval N]
 
@@ -20,8 +18,14 @@ to the Go2Nova 8409 hand controller over its internal 115200 8N1 serial link.
 Single-client invariant: do NOT run while ASIAIR is connected via USB-Serial.
 Both clients writing to the same hand controller serial interface produces garbled responses.
 
-Requirements:
-    python3 -m pip install pyyaml    # only needed for `goto` vault target lookup
+REMOVED — `goto` and `park` were removed 2026-05-24 after the `goto + park` chain
+drove the bare mount into a hard mechanical limit (mount internal coords were
+desynced from the OTA's physical position after repeated power cycles, and the
+script had no way to detect that). Slewing operations now belong to ASIAIR
+(USB-Serial) or the 8409 hand controller directly. See 03_Techniques/Mount-Diagnostics.md
+for the rationale and what would need to be in place before re-adding either subcommand.
+
+Requirements: stdlib only (no PyYAML needed since `goto` vault-lookup is gone).
 
 Run from the repo root:
     python3 scripts/mount.py status
@@ -32,16 +36,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import signal
 import socket
 import sys
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 
 # ============================================================================
@@ -82,30 +85,6 @@ MOUNT_MODELS: dict[str, str] = {
     "0045": "GEM45 / GEM45EC",
     "0070": "CEM70 / CEM70EC",
     "0120": "CEM120 / CEM120EC / CEM120EC2",
-}
-
-# Fallback target catalog — mirrors scripts/fov_atlas.py:CATALOG.
-# Keys are normalized designations (uppercase, spaces/hyphens stripped).
-# Used when vault target notes don't carry ra_deg/dec_deg in their frontmatter.
-# Keep in sync with fov_atlas.py.
-TARGET_CATALOG: dict[str, tuple[str, float, float]] = {
-    "M16":      ("M16 Eagle",            274.70, -13.78),
-    "M17":      ("M17 Omega",            275.20, -16.18),
-    "M42":      ("M42 Orion",             83.82,  -5.39),
-    "M44":      ("M44 Beehive",          130.10,  19.67),
-    "M45":      ("M45 Pleiades",          56.75,  24.12),
-    "MEL111":   ("Mel 111 Coma",         186.00,  26.00),
-    "M31":      ("M31 Andromeda",         10.68,  41.27),
-    "M33":      ("M33 Triangulum",        23.46,  30.66),
-    "NGC2244":  ("NGC 2244 Rosette",      97.98,   4.93),
-    "NGC2264":  ("NGC 2264 Cone",        100.27,   9.87),
-    "NGC1499":  ("NGC 1499 California",   60.38,  36.40),
-    "NGC6960":  ("NGC 6960 W Veil",      311.12,  30.72),
-    "NGC6992":  ("NGC 6992 E Veil",      313.18,  31.72),
-    "NGC7000":  ("NGC 7000 N. America",  314.75,  44.52),
-    "IC443":    ("IC 443 Jellyfish",      94.35,  22.57),
-    "IC5070":   ("IC 5070 Pelican",      312.68,  44.35),
-    "SH2-240":  ("Sh2-240 Simeis 147",    84.50,  28.00),
 }
 
 # Decoded enums for :GLS# state digits.
@@ -411,20 +390,6 @@ def parse_gut(raw: bytes | str) -> MountTime:
 # Encoders (for set/slew commands)
 # ============================================================================
 
-def encode_longitude(deg: float) -> str:
-    """Encode longitude in degrees to ':SLO sTTTTTTTT#' value."""
-    sign = "+" if deg >= 0 else "-"
-    arcsec_hundredths = int(round(abs(deg) * 3600.0 * 100))
-    return f"{sign}{arcsec_hundredths:08d}"
-
-
-def encode_latitude(deg: float) -> str:
-    """Encode latitude in degrees to ':SLA sTTTTTTTT#' value (latitude+90)."""
-    sign = "+" if deg >= 0 else "-"
-    arcsec_hundredths = int(round(abs(deg) * 3600.0 * 100))
-    return f"{sign}{arcsec_hundredths:08d}"
-
-
 def encode_utc_offset(minutes: int) -> str:
     """Encode UTC offset in minutes to ':SG sMMM#' value."""
     sign = "+" if minutes >= 0 else "-"
@@ -438,23 +403,6 @@ def encode_utc_time(dt: datetime) -> str:
     unix_ts = dt.astimezone(timezone.utc).timestamp()
     ms_since_j2000 = int(round((unix_ts - J2000_UNIX_TIMESTAMP) * 1000.0))
     return f"{ms_since_j2000:013d}"
-
-
-def encode_ra(deg: float) -> str:
-    """Encode RA in degrees to ':SRA TTTTTTTTT#' (9 digits, 0.01 arcsec)."""
-    if not (0.0 <= deg <= 360.0):
-        raise ValueError(f"RA out of range: {deg}")
-    arcsec_hundredths = int(round(deg * 3600.0 * 100))
-    return f"{arcsec_hundredths:09d}"
-
-
-def encode_dec(deg: float) -> str:
-    """Encode Dec in degrees to ':Sds sTTTTTTTT#' (sign + 8 digits, 0.01 arcsec)."""
-    if not (-90.0 <= deg <= 90.0):
-        raise ValueError(f"Dec out of range: {deg}")
-    sign = "+" if deg >= 0 else "-"
-    arcsec_hundredths = int(round(abs(deg) * 3600.0 * 100))
-    return f"{sign}{arcsec_hundredths:08d}"
 
 
 # ============================================================================
@@ -536,85 +484,6 @@ class MountConnection:
                 idx = buf.index(RESPONSE_TERMINATOR)
                 return buf[: idx + 1].decode("ascii", errors="replace")
         return buf.decode("ascii", errors="replace")
-
-    def send_fire_and_forget(self, command: str) -> None:
-        """Send a command that produces no response (jog, pulse-guide)."""
-        if not command.startswith(":") or not command.endswith("#"):
-            raise ValueError(f"command must be of the form ':CMD#', got {command!r}")
-        try:
-            with socket.create_connection((self.ip, self.port), timeout=self.connect_timeout_s) as sock:
-                sock.sendall(command.encode("ascii"))
-                # tiny grace period so the bridge forwards before we close
-                time.sleep(0.2)
-        except (ConnectionRefusedError, OSError) as e:
-            raise MountUnreachable(f"could not connect to {self.ip}:{self.port}: {e}") from e
-
-
-# ============================================================================
-# Vault target lookup (for `goto` subcommand)
-# ============================================================================
-
-def normalize_designation(name: str) -> str:
-    """Normalize 'M 16', 'm-16', 'NGC 7000' to 'M16' / 'NGC7000' for catalog lookup."""
-    return name.replace(" ", "").replace("-", "").upper()
-
-
-def load_targets_from_vault(targets_dir: Path) -> dict[str, tuple[str, float, float]]:
-    """Parse YAML frontmatter from 02_Targets/**/*.md, returning {designation: (display_name, ra_deg, dec_deg)}.
-
-    Mirrors scripts/fov_atlas.py:load_from_vault() — gracefully degrades if PyYAML
-    isn't installed (returns empty dict, falls back to TARGET_CATALOG).
-    """
-    try:
-        import yaml
-    except ImportError:
-        return {}
-    out: dict[str, tuple[str, float, float]] = {}
-    if not targets_dir.is_dir():
-        return out
-    for md in targets_dir.rglob("*.md"):
-        try:
-            text = md.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        if not text.startswith("---"):
-            continue
-        try:
-            fm = yaml.safe_load(text.split("---", 2)[1])
-        except yaml.YAMLError:
-            continue
-        if not fm or "ra_deg" not in fm or "dec_deg" not in fm:
-            continue
-        designation = str(fm.get("designation", "")).strip()
-        if not designation:
-            continue
-        display_name = str(fm.get("title", md.stem))
-        try:
-            ra = float(fm["ra_deg"])
-            dec = float(fm["dec_deg"])
-        except (TypeError, ValueError):
-            continue
-        out[normalize_designation(designation)] = (display_name, ra, dec)
-    return out
-
-
-def resolve_target(designation: str, repo_root: Path) -> tuple[str, float, float]:
-    """Look up a target by designation. Vault frontmatter wins over the hardcoded catalog.
-
-    Raises ValueError with the list of known designations if not found.
-    """
-    key = normalize_designation(designation)
-    vault = load_targets_from_vault(repo_root / "02_Targets")
-    if key in vault:
-        return vault[key]
-    if key in TARGET_CATALOG:
-        return TARGET_CATALOG[key]
-    known = sorted(set(vault.keys()) | set(TARGET_CATALOG.keys()))
-    raise ValueError(
-        f"unknown target {designation!r} (normalized: {key!r}). "
-        f"Known: {', '.join(known)}"
-    )
-
 
 # ============================================================================
 # Subcommand implementations
@@ -811,34 +680,6 @@ def cli_unpark(mount: MountConnection) -> int:
     return 0 if resp_unpark.startswith("1") and resp_track.startswith("1") else 1
 
 
-def cli_park(mount: MountConnection, timeout_s: int = 60) -> int:
-    """End-of-session park: stop tracking, slew to stored park position, confirm parked."""
-    print("stopping tracking…")
-    mount.send(":ST0#")
-    print("reading park position…")
-    try:
-        # :GPC# returns alt+az of the stored park position (informational)
-        _ = mount.send(":GPC#")
-    except MountError as e:
-        print(f"warning: couldn't read park position: {e}")
-    print("issuing park command…")
-    resp = mount.send(":MP1#")
-    if not resp.startswith("1"):
-        print(f"park rejected by mount: {resp!r}")
-        return 1
-    print(f"slewing to park (timeout {timeout_s} s)…")
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        gls = parse_gls(mount.send(":GLS#"))
-        if gls.is_parked:
-            print(f"  parked ✓ (state: {gls.system_state_name})")
-            return 0
-        print(f"  …{gls.system_state_name}")
-        time.sleep(1)
-    print(f"timeout: mount did not report 'parked' within {timeout_s} s")
-    return 1
-
-
 def cli_timesync(mount: MountConnection) -> int:
     """Push host's UTC + DST + UTC offset to mount."""
     print("reading mount time before sync…")
@@ -872,57 +713,6 @@ def cli_timesync(mount: MountConnection) -> int:
         print("time sync OK ✓")
         return 0
     print(f"drift still {drift_after:+.1f} s — sync may have failed")
-    return 1
-
-
-def cli_goto(mount: MountConnection, designation: str, repo_root: Path,
-             slew_timeout_s: int = 120) -> int:
-    """Look up target, set coords, slew. ASIAIR must be disconnected."""
-    try:
-        display, ra_deg, dec_deg = resolve_target(designation, repo_root)
-    except ValueError as e:
-        print(f"error: {e}", file=sys.stderr)
-        return 1
-    print(f"target: {display}  RA {ra_deg:.4f}°  Dec {dec_deg:+.4f}°")
-
-    # Check not parked
-    gls = parse_gls(mount.send(":GLS#"))
-    if gls.is_parked:
-        print("mount is parked — run `unpark` first", file=sys.stderr)
-        return 1
-
-    print(f"setting target RA…")
-    resp = mount.send(f":SRA{encode_ra(ra_deg)}#")
-    if not resp.startswith("1"):
-        print(f"  SRA rejected: {resp!r}", file=sys.stderr)
-        return 1
-    print(f"setting target Dec…")
-    # NOTE: command is `:Sd` + sign + 8 digits. The protocol spec writes
-    # `:SdsTTTTTTTT#` which parses as `:Sd` (literal) + `s` (sign) + 8 digits.
-    # Sending `:Sds<sign><digits>#` would inject a redundant 's' literal that
-    # firmware silently swallows, leaving Dec target at default 0° — verified
-    # 2026-05-24 by attempting M44 and watching the mount slew to Dec 0°.
-    resp = mount.send(f":Sd{encode_dec(dec_deg)}#")
-    if not resp.startswith("1"):
-        print(f"  Sd rejected: {resp!r}", file=sys.stderr)
-        return 1
-    print("slewing (MS1)…")
-    resp = mount.send(":MS1#")
-    if not resp.startswith("1"):
-        print(f"  MS1 rejected (likely below horizon or limit): {resp!r}", file=sys.stderr)
-        return 1
-
-    deadline = time.monotonic() + slew_timeout_s
-    while time.monotonic() < deadline:
-        gls = parse_gls(mount.send(":GLS#"))
-        if not gls.is_slewing:
-            gep = parse_gep(mount.send(":GEP#"))
-            print(f"  slew complete ✓  RA {gep.ra_deg:.4f}°  Dec {gep.dec_deg:+.4f}°"
-                  f"  (state: {gls.system_state_name})")
-            return 0
-        print(f"  …slewing")
-        time.sleep(2)
-    print(f"timeout: slew did not complete within {slew_timeout_s} s", file=sys.stderr)
     return 1
 
 
@@ -1022,12 +812,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("health", help="pre-session readiness check (exit 0=pass, 1=fail)")
     sub.add_parser("firmware", help="show installed firmware versions + gap analysis")
-    sub.add_parser("park", help="end-of-session: stop tracking, slew to park, confirm")
-    sub.add_parser("unpark", help="unpark + start sidereal tracking")
+    sub.add_parser("unpark", help="clear parked flag + start sidereal tracking")
     sub.add_parser("timesync", help="push host UTC/DST/offset to mount")
-
-    s_goto = sub.add_parser("goto", help="slew to a target by designation (ASIAIR must be disconnected)")
-    s_goto.add_argument("designation", help="e.g. M16, NGC7000, MEL111")
 
     s_log = sub.add_parser("log", help="periodic state logger; writes NDJSON beside capture-session note")
     s_log.add_argument("--session", type=Path, default=None,
@@ -1050,14 +836,10 @@ def main(argv: list[str] | None = None) -> int:
             return cli_health(mount)
         if args.cmd == "firmware":
             return cli_firmware(mount)
-        if args.cmd == "park":
-            return cli_park(mount)
         if args.cmd == "unpark":
             return cli_unpark(mount)
         if args.cmd == "timesync":
             return cli_timesync(mount)
-        if args.cmd == "goto":
-            return cli_goto(mount, args.designation, repo_root)
         if args.cmd == "log":
             output = args.session if args.session else default_log_path(repo_root)
             return cli_log(mount, output, args.interval)

@@ -290,22 +290,22 @@ Or the raw equivalents (no Python required):
 
 ## Mount Control Script (`scripts/mount.py`)
 
-Standalone CLI for talking to the mount over the WiFi-to-Serial bridge, independent of [[ASIAIR]]. Wraps the iOptron RS-232 V3.10 protocol with parsed dataclasses, a TCP I/O layer that respects the bridge's quirks (single connection per command, `:MountInfo#` returns without `#`, etc.), and 8 subcommands for the most common operations.
+Standalone CLI for **read-only diagnostics and safe config** over the WiFi-to-Serial bridge, independent of [[ASIAIR]]. **Cannot slew the mount** — `goto` and `park` were removed 2026-05-24 after an incident in which a chained slew sequence drove the bare mount into a hard mechanical limit (mount's internal coords had desynced from the OTA's physical position after repeated power cycles, and the script had no way to detect that). See [[../../03_Techniques/Mount-Diagnostics.md#Removed-goto-and-park]] for the full rationale and what safety gates would need to be added before either subcommand could be safely re-introduced.
 
-| Subcommand | Purpose |
-|---|---|
-| `status [--watch [N]]` | Print parsed mount state (RA/Dec, alt/az, tracking, parked/slewing) |
-| `health` | Pre-session readiness check; exit 0/1 |
-| `firmware` | Installed firmware + gap analysis vs latest |
-| `park` | End-of-session: stop tracking, slew to park, confirm |
-| `unpark` | Unpark + sidereal tracking |
-| `timesync` | Push host UTC/DST/offset to mount |
-| `goto <designation>` | Slew to target (e.g. `M16`, `NGC7000`). ASIAIR must be disconnected. |
-| `log [--session FILE] [--interval N]` | NDJSON telemetry logger beside the capture-session note |
+For any slewing (GoTo, park, re-pointing), use **ASIAIR** (USB-Serial) or the **8409 hand controller** directly.
 
-Run from repo root: `python3 scripts/mount.py <subcommand>`. See [[../../scripts/README.md]] for the per-subcommand reference and [[../../03_Techniques/Mount-Diagnostics.md]] for the workflow guide (when to use which subcommand, log analysis, troubleshooting).
+| Subcommand | Purpose | Moves mount? |
+|---|---|---|
+| `status [--watch [N]]` | Print parsed mount state (RA/Dec, alt/az, tracking, parked/slewing) | No |
+| `health` | Pre-session readiness check; exit 0/1 | No |
+| `firmware` | Installed firmware + gap analysis vs latest | No |
+| `unpark` | Clear parked flag + start sidereal tracking | Only the slow ~15"/sec sidereal drift |
+| `timesync` | Push host UTC/DST/offset to mount | No (config write only) |
+| `log [--session FILE] [--interval N]` | NDJSON telemetry logger beside the capture-session note | No |
 
-The script is tested via `python3 -m unittest scripts.test_mount` (parser + mock tests, no mount needed) and `MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount` (live integration).
+Run from repo root: `python3 scripts/mount.py <subcommand>`. See [[../../scripts/README.md]] for the per-subcommand reference and [[../../03_Techniques/Mount-Diagnostics.md]] for the workflow guide.
+
+Stdlib-only (no `pip install` needed). Tested via `python3 -m unittest scripts.test_mount` (parser + mock tests, no mount needed) and `MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount` (live read-only integration).
 
 ### iPolar Software
 
