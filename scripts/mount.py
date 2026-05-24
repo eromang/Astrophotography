@@ -479,91 +479,63 @@ class MountConnection:
         self.read_deadline_s = read_deadline_s
         self.connect_timeout_s = connect_timeout_s
 
-    # Commands whose responses are NOT '#'-terminated. Quirk of the iOptron
-    # firmware — most commands respond with '<value>#' but a handful (notably
-    # :MountInfo# which returns the 4-digit model code) come back without '#'.
-    # For these we read until a short settle delay elapses instead of blocking
-    # for the '#' that will never arrive.
-    NO_TERMINATOR_COMMANDS = frozenset({":MountInfo#", ":V#"})
+    # Settle delay for commands whose responses don't include '#'. Many iOptron
+    # commands fall in this category — :MountInfo# returns '0026', set commands
+    # like :SG#, :SDS#, :SUT# return just '1' for success, etc. The default
+    # send() always uses short-read mode (returns immediately on '#' if present,
+    # or after SETTLE_S of quiet if not).
     SETTLE_S = 0.8
 
-    def send(self, command: str, expect_terminator: Optional[bool] = None) -> str:
+    def send(self, command: str) -> str:
         """Send a single iOptron command and return the response.
 
         Commands must include the ':' prefix and '#' terminator already.
         Returns the raw response as a str, including the trailing '#' when present.
 
-        If `expect_terminator` is None (default), it's inferred from the command:
-        `False` for commands in NO_TERMINATOR_COMMANDS, `True` otherwise.
-        When False, the read loop returns whatever arrived after SETTLE_S of
-        quiet (or on EOF), instead of blocking for a '#' that won't arrive.
+        The read loop returns immediately when '#' arrives (so terminator-included
+        commands are fast) or after SETTLE_S of socket quiet for commands that
+        don't terminate with '#' (e.g. :MountInfo# returns '0026'; set commands
+        return '1' without '#'). EOF with empty buffer raises MountResponseError;
+        timeout with empty buffer raises MountTimeout.
         """
         if not command.startswith(":") or not command.endswith("#"):
             raise ValueError(f"command must be of the form ':CMD#', got {command!r}")
-        if expect_terminator is None:
-            expect_terminator = command not in self.NO_TERMINATOR_COMMANDS
         try:
             with socket.create_connection((self.ip, self.port), timeout=self.connect_timeout_s) as sock:
                 sock.sendall(command.encode("ascii"))
-                if expect_terminator:
-                    sock.settimeout(self.read_deadline_s)
-                    return self._recv_until_hash(sock)
-                # Short-read mode: settle for SETTLE_S, then return what we got.
                 sock.settimeout(self.SETTLE_S)
                 return self._recv_short(sock)
-        except (socket.timeout, TimeoutError) as e:
-            raise MountTimeout(f"mount did not respond within {self.read_deadline_s} s") from e
         except (ConnectionRefusedError, OSError) as e:
             raise MountUnreachable(f"could not connect to {self.ip}:{self.port}: {e}") from e
 
     @staticmethod
     def _recv_short(sock: socket.socket) -> str:
-        """Accumulate recv'd bytes until the socket goes quiet (timeout) or EOF.
+        """Accumulate recv'd bytes; return on '#', settle-timeout, or EOF.
 
-        Used for commands like :MountInfo# whose responses don't include '#'.
-        Any timeout is treated as "response complete" — no MountTimeout raised.
-        """
-        buf = bytearray()
-        while True:
-            try:
-                chunk = sock.recv(RECV_CHUNK)
-            except (socket.timeout, TimeoutError):
-                break  # quiet — assume response complete
-            if not chunk:
-                break  # EOF — definitely complete
-            buf.extend(chunk)
-            # If '#' did show up (mount firmware variant), return promptly.
-            if RESPONSE_TERMINATOR in buf:
-                idx = buf.index(RESPONSE_TERMINATOR)
-                return buf[: idx + 1].decode("ascii", errors="replace")
-        return buf.decode("ascii", errors="replace")
-
-    @staticmethod
-    def _recv_until_hash(sock: socket.socket) -> str:
-        """Accumulate recv'd bytes until '#' arrives, then return decoded string.
-
-        Some commands (jog, pulse-guide) intentionally produce no response — those
-        callers should not use this helper, and should send via send_fire_and_forget()
-        instead.
+        Behaviour matrix:
+          - '#' seen          → return up to and including '#'
+          - timeout, have data → return the partial buffer (assume complete)
+          - timeout, no data   → raise MountTimeout
+          - EOF, have data     → return the partial buffer
+          - EOF, no data       → raise MountResponseError
         """
         buf = bytearray()
         while True:
             try:
                 chunk = sock.recv(RECV_CHUNK)
             except (socket.timeout, TimeoutError) as e:
-                raise MountTimeout(
-                    f"no '#' received before timeout (got {len(buf)} bytes: {bytes(buf)!r})"
-                ) from e
+                if not buf:
+                    raise MountTimeout("mount did not send any bytes") from e
+                break
             if not chunk:
-                # peer closed — return what we have if it contains '#', else error
-                if RESPONSE_TERMINATOR in buf:
-                    return buf.decode("ascii", errors="replace")
-                raise MountResponseError(f"connection closed before '#': got {bytes(buf)!r}")
+                if not buf:
+                    raise MountResponseError("connection closed with no data")
+                break
             buf.extend(chunk)
             if RESPONSE_TERMINATOR in buf:
-                # return everything up to and including the first '#'
                 idx = buf.index(RESPONSE_TERMINATOR)
                 return buf[: idx + 1].decode("ascii", errors="replace")
+        return buf.decode("ascii", errors="replace")
 
     def send_fire_and_forget(self, command: str) -> None:
         """Send a command that produces no response (jog, pulse-guide)."""

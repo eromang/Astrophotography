@@ -436,17 +436,32 @@ class TestMountConnection(unittest.TestCase):
             conn.send(":GLS#")
 
     @patch("mount.socket.create_connection")
-    def test_eof_before_hash_raises_response_error(self, mock_create):
-        # Use :GLS# (a terminator-expecting command) since :MountInfo# now
-        # takes the short-read path that tolerates EOF without '#'.
+    def test_eof_with_no_data_raises_response_error(self, mock_create):
+        # Empty buffer + immediate EOF is the only "definitely broken" case
+        # under the new short-read default. Partial bytes followed by EOF are
+        # returned as-is (let the parser decide).
         sock = MagicMock(spec=socket.socket)
         sock.__enter__.return_value = sock
         sock.__exit__.return_value = False
-        sock.recv.side_effect = [b"+021630", b""]   # closes before '#'
+        sock.recv.side_effect = [b""]   # closes with nothing sent
         mock_create.return_value = sock
         conn = mount.MountConnection()
         with self.assertRaises(mount.MountResponseError):
             conn.send(":GLS#")
+
+    @patch("mount.socket.create_connection")
+    def test_partial_then_eof_returns_partial(self, mock_create):
+        # New behaviour (vs the prior strict mode): if we got some bytes and
+        # then EOF, return what we got instead of raising. The parser will
+        # surface the error if the partial isn't valid.
+        sock = MagicMock(spec=socket.socket)
+        sock.__enter__.return_value = sock
+        sock.__exit__.return_value = False
+        sock.recv.side_effect = [b"+021630", b""]
+        mock_create.return_value = sock
+        conn = mount.MountConnection()
+        resp = conn.send(":GLS#")
+        self.assertEqual(resp, "+021630")
 
     @patch("mount.socket.create_connection")
     def test_no_terminator_command_tolerates_missing_hash(self, mock_create):
