@@ -702,14 +702,19 @@ def cli_timesync(mount: MountConnection) -> int:
     print(f"  pushing UTC time {host_utc.isoformat(timespec='seconds')}…")
     mount.send(f":SUT{encode_utc_time(host_utc)}#")
 
-    # Re-read for drift verification
+    # Re-read for drift verification.
+    # Tolerance is 5.0 s, not zero: the round-trip latency through the
+    # WiFi-to-Serial bridge consistently adds 1-3 s between SUT being received
+    # and GUT being read back. That's normal bridge behavior, not a sync
+    # failure. Anything beyond 5 s suggests the SUT command was actually
+    # rejected (firmware bug, malformed encoding, etc.).
     time.sleep(0.5)
     after = parse_gut(mount.send(":GUT#"))
     host_after = datetime.now(timezone.utc)
     drift_after = (after.utc - host_after).total_seconds()
     print(f"  mount UTC after sync: {after.utc.isoformat(timespec='seconds')}"
           f"  (drift {drift_after:+.1f} s)")
-    if abs(drift_after) <= 2.0:
+    if abs(drift_after) <= 5.0:
         print("time sync OK ✓")
         return 0
     print(f"drift still {drift_after:+.1f} s — sync may have failed")
