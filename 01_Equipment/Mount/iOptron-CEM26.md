@@ -254,15 +254,58 @@ Then on Fritz!Box (`http://fritz.box` → Heimnetz → Netzwerk), find MAC `34:E
 | `iOptronUpgradeUtility223.exe` | Upgrade tool V2.23 (still current per iOptron). |
 | `FTDI_VCP21214_Setup_Win7_8_10.exe` | Required USB-Serial driver (Windows). |
 
+#### Installed version (verified 2026-05-24 via `:FW1#` + `:FW2#` over WiFi TCP bridge)
+
+| Component | Installed | Latest available | Gap |
+|---|---|---|---|
+| Hand Controller | **V230305** (2023-03-05) | V241201 | ~21 months — V241201 fixes communication overflow |
+| Main board | V230305 | — | (returned by `:FW1#` second field) |
+| RA motor | V210420 (2021-04-20) | V240518 | ~37 months — V240518 fixes "Go to SUN" (irrelevant) |
+| DEC motor | V230305 | V230305 | ✅ already current |
+
+Installed bundle matches the **V20230305 release** (HC V230305, RA V210420, DEC V230305). The locally-cached `FW210422.bin` was therefore never installed — V20230305 was applied instead at some point.
+
 #### Update policy
 
-iOptron's official stance: *"No firmware upgrade is needed if your mount works properly."* The 2021 → 2024 changelog has three intermediate fixes; only **V241201 (communication overflow)** is relevant for this rig (could affect ASCOM/serial reliability over long ASIAIR sessions). Other fixes target GPS display and "Go to SUN" — neither applies here.
+iOptron's official stance: *"No firmware upgrade is needed if your mount works properly."* For this rig, the only meaningful gain from upgrading to V241201 is the **HC communication-overflow fix** (could affect ASCOM/serial reliability over long ASIAIR sessions). RA's "Go to SUN" fix is irrelevant for astro imaging; DEC is already current.
 
 **Update procedure is Windows-only:**
-1. Verify installed version first — 8409 hand controller → System Info, OR send `:FW1#` over the WiFi TCP bridge (returns HC firmware date `YYMMDD`)
-2. If updating: Windows PC + FTDI driver + Upgrade Utility V2.23 + USB cable from PC to 8409 hand controller
+1. Confirm installed version (already done — see table above)
+2. Windows PC + FTDI driver + Upgrade Utility V2.23 + USB cable from PC to 8409 hand controller
 3. Follow `CEM26_GEM28_FirmwareUpgradeInstruction.pdf` exactly
 4. Post-upgrade: "Set Zero Position" via hand controller
+
+To re-verify installed version any time (from any device on home WiFi):
+```bash
+python3 scripts/mount.py firmware   # parsed report + gap analysis vs latest
+```
+
+Or the raw equivalents (no Python required):
+```bash
+(printf ':FW1#'; sleep 3) | nc -w 5 192.168.178.87 8899   # → HC + Main board dates
+(printf ':FW2#'; sleep 3) | nc -w 5 192.168.178.87 8899   # → RA + DEC motor dates
+```
+
+---
+
+## Mount Control Script (`scripts/mount.py`)
+
+Standalone CLI for talking to the mount over the WiFi-to-Serial bridge, independent of [[ASIAIR]]. Wraps the iOptron RS-232 V3.10 protocol with parsed dataclasses, a TCP I/O layer that respects the bridge's quirks (single connection per command, `:MountInfo#` returns without `#`, etc.), and 8 subcommands for the most common operations.
+
+| Subcommand | Purpose |
+|---|---|
+| `status [--watch [N]]` | Print parsed mount state (RA/Dec, alt/az, tracking, parked/slewing) |
+| `health` | Pre-session readiness check; exit 0/1 |
+| `firmware` | Installed firmware + gap analysis vs latest |
+| `park` | End-of-session: stop tracking, slew to park, confirm |
+| `unpark` | Unpark + sidereal tracking |
+| `timesync` | Push host UTC/DST/offset to mount |
+| `goto <designation>` | Slew to target (e.g. `M16`, `NGC7000`). ASIAIR must be disconnected. |
+| `log [--session FILE] [--interval N]` | NDJSON telemetry logger beside the capture-session note |
+
+Run from repo root: `python3 scripts/mount.py <subcommand>`. See [[../../scripts/README.md]] for the per-subcommand reference and [[../../03_Techniques/Mount-Diagnostics.md]] for the workflow guide (when to use which subcommand, log analysis, troubleshooting).
+
+The script is tested via `python3 -m unittest scripts.test_mount` (parser + mock tests, no mount needed) and `MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount` (live integration).
 
 ### iPolar Software
 

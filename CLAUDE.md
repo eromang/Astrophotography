@@ -15,7 +15,7 @@ Astrophotography knowledge base managed with Obsidian and Claude Code.
 04_Processing/    Post-processing workflows (PixInsight, SIRIL) and calibration library
 05_Sessions/      Capture and processing session logs, organized by year with type subfolders (Capture/, Processing/, Campaigns/, Finder-Charts/)
 06_Metadata/      Templates, Claude Code skills/commands, administrative files
-scripts/          Matplotlib chart generators (FOV atlas etc.); run from repo root
+scripts/          Python utilities (FOV atlas chart generator, CEM26 mount control CLI); run from repo root
 ```
 
 Manuals, firmware, drivers, and images are in `01_Equipment/Manuals/{device}/`.
@@ -137,6 +137,15 @@ At the start of a new session, read `06_Metadata/Agents/Claude/Session-Context.m
 | `/session-plan` | `sp` | Plan a capture session for a given date |
 | `/vault-health-fast` | `vhf` | Vault health check |
 | `/metadata-validate-fast` | `mvf` | YAML frontmatter validation |
+
+### Local Python utilities
+
+Not slash commands — invoked directly from the shell. Run from repo root.
+
+| Script | Purpose |
+|--------|---------|
+| `python3 scripts/fov_atlas.py` | Regenerate the RedCat 51 FOV all-sky atlas PNG |
+| `python3 scripts/mount.py {status\|health\|firmware\|park\|unpark\|timesync\|goto\|log}` | CEM26 mount control via WiFi TCP bridge — see [[scripts/README.md]] and [[Mount-Diagnostics]] |
 
 ### Available Skills
 

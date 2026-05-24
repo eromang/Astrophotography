@@ -7,3 +7,10 @@ Markwhen/
 06_Metadata/Agents/Claude/state/
 06_Metadata/Agents/Claude/skills/recall/scripts/
 06_Metadata/Agents/Claude/skills/sync-claude-sessions/scripts/
+
+# scripts/mount.py telemetry logs (accumulate locally; not worth versioning)
+*-mount-log.json
+
+# Python bytecode cache
+__pycache__/
+*.pyc
