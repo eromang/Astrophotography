@@ -778,13 +778,14 @@ def cli_log(mount: MountConnection, output_path: Path, interval_s: float,
                           meridian_flip, mount_unreachable)
         kind: "summary" — single line at end-of-run with total counts + duration
 
-    The "event" records are what MacBot's notification watcher tails to fire
-    iMessage alerts. They're written in addition to (not instead of) the sample
-    that triggered the detection.
+    The "event" records mark state transitions worth post-mortem attention
+    (or downstream alerting if you wire a tailing watcher to the log file).
+    They're written in addition to (not instead of) the sample that triggered
+    the detection.
 
-    If `quiet` is True, per-sample stdout is suppressed (use when running as
-    a background subprocess under MacBot). Errors and the final summary line
-    are still printed.
+    If `quiet` is True, per-sample stdout is suppressed (useful when running
+    as a background subprocess). Errors and the final summary line are still
+    printed.
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     sample_count = 0
@@ -874,7 +875,7 @@ def cli_log(mount: MountConnection, output_path: Path, interval_s: float,
             "interval_s": interval_s,
         }
         _write(summary)
-        # Summary line prints even in quiet mode — useful when triggered from MacBot
+        # Summary line prints even in quiet mode — useful for backgrounded callers
         print(f"wrote {sample_count} samples + {event_count} events + summary to {output_path}")
     return 0
 
@@ -916,7 +917,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="seconds between samples (default 30)")
     s_log.add_argument("--quiet", action="store_true",
                        help="suppress per-sample stdout (errors + summary still printed); "
-                            "use when running as a background subprocess (e.g., under MacBot)")
+                            "use when running as a background subprocess")
 
     return p
 

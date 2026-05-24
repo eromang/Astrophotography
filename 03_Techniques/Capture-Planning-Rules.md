@@ -16,7 +16,7 @@ This is a *workflow* note, not a recipe — it complements [[Seasonal-Calendar]]
 
 ## 1. The weather gate
 
-**Do not draft a session plan when the forecast for the dark window is marginal or worse.** Report the NOGO with hourly cloud breakdown and stop there. Don't write a `-Capture.md` note "just in case" — that pollutes the session log with no-go artifacts and (if scheduled to MacBot) wastes telemetry storage.
+**Do not draft a session plan when the forecast for the dark window is marginal or worse.** Report the NOGO with hourly cloud breakdown and stop there. Don't write a `-Capture.md` note "just in case" — that pollutes the session log with no-go artifacts.
 
 **Rough thresholds for marginal/bad:**
 
@@ -90,7 +90,7 @@ Independently observed 2026-05-24: the mount's WiFi module drops connectivity fo
 
 ## 5. Mount safety — what `mount.py` will NOT do, and why
 
-The Mac Mini-deployed `mount.py` (read-only diagnostics + safe config + logging) deliberately **does not** include slew commands (`goto`, `park`). These were removed 2026-05-24 after a chained `goto NGC7000 → park` sequence drove the bare mount into a hard mechanical limit. The mount has no encoder memory; once internal coords desync from physical OTA position (e.g., after a mid-slew power cycle), any subsequent slew can move the mount along an unpredictable path.
+`scripts/mount.py` (read-only diagnostics + safe config + logging) deliberately **does not** include slew commands (`goto`, `park`). These were removed 2026-05-24 after a chained `goto NGC7000 → park` sequence drove the bare mount into a hard mechanical limit. The mount has no encoder memory; once internal coords desync from physical OTA position (e.g., after a mid-slew power cycle), any subsequent slew can move the mount along an unpredictable path.
 
 **For slewing operations:**
 - Use **ASIAIR** (USB-Serial) for guided imaging sessions
@@ -119,7 +119,7 @@ When drafting a `-Capture.md` note (manually or via `/session-plan`), it must co
 - [ ] **YAML frontmatter** with `date`, `twilight_evening`/`twilight_morning`, `moon_phase`/`moon_illumination`, `equipment` block, `targets:` array, `integrations:` array, `tags`
 - [ ] **Conditions** section (weather, moon, temperature, humidity, wind) with explicit **Verdict: GO / MARGINAL / NOGO**
 - [ ] **Location** table (matches the preset used)
-- [ ] **Planning** table (Object | Type | Start | End | Exposure | Frames (planned) | Frames (realized) | Filter | Gain | Temp | Workflow) — MacBot's `mount schedule` parses Start/End from this table
+- [ ] **Planning** table (Object | Type | Start | End | Exposure | Frames (planned) | Frames (realized) | Filter | Gain | Temp | Workflow) — Start/End drive the imaging window narrative
 - [ ] **Altitude profile** for each target through the dark window
 - [ ] **Calibration** checklist (darks/flats/dark flats/bias availability per [[Master-Library]])
 - [ ] **Notes** with: cross-references to related session notes, rotator calibration reminder (if relevant), multi-night plan context
@@ -145,6 +145,6 @@ After a session (whether it ran or not):
 - [[FOV-Atlas]] — which targets fit the RedCat 51's 5.4° × 3.6° FOV
 - [[Integration-Budget]] — how much total integration exists per target
 - [[Master-Library]] — calibration master inventory
-- [[Mount-Diagnostics]] — `mount.py` workflow + MacBot integration
+- [[Mount-Diagnostics]] — `mount.py` workflow (includes historical note on the removed MacBot integration)
 - [[iOptron-CEM26]] — mount specs + WiFi/firmware setup
-- [[ASIAIR]] — primary imaging controller (separate from MacBot/mount.py)
+- [[ASIAIR]] — primary imaging controller (separate from `mount.py`)

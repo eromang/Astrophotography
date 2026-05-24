@@ -278,7 +278,7 @@ class TestEncoders(unittest.TestCase):
 
 
 # ============================================================================
-# 3. Event detection (for MacBot notification watcher)
+# 3. Event detection (post-mortem analysis of session telemetry)
 # ============================================================================
 
 def _sample(ts="2026-05-24T22:00:00+00:00", pier="E", is_tracking=True,
@@ -297,7 +297,9 @@ def _sample(ts="2026-05-24T22:00:00+00:00", pier="E", is_tracking=True,
 class TestDetectEvents(unittest.TestCase):
     """Verify _detect_events emits the right event records for the right transitions.
 
-    These records are what MacBot tails to fire iMessage alerts.
+    These records show up in the NDJSON log alongside samples — useful for
+    post-session analysis of when slews/flips/tracking-stops happened, and
+    available to any downstream tailing watcher that wants to act on them.
     """
 
     def test_no_events_on_first_sample(self):

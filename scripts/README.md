@@ -42,7 +42,7 @@ Stdlib-only — no `pip install` required.
 | `firmware` | Show installed firmware (HC + RA + DEC) and compare against the latest documented release. |
 | `unpark` | `:MP0#` + start sidereal tracking. The only "motion" is the slow ~15"/sec westward sidereal drift — no slew. |
 | `timesync` | Push host's UTC + DST + UTC offset to mount. Config writes only, no motion. Reports before/after drift. |
-| `log [--session FILE] [--interval N] [--quiet]` | Periodic state logger. Appends NDJSON to `05_Sessions/{year}/Capture/{date}-mount-log.json`. Three record kinds: `sample` (per-poll), `event` (state transitions: `mount_unreachable`, `tracking_stopped`, `meridian_flip`), `summary` (end-of-run). `--quiet` suppresses per-sample stdout for background subprocess use (under MacBot, for instance). Default interval 30 s. |
+| `log [--session FILE] [--interval N] [--quiet]` | Periodic state logger. Appends NDJSON to `05_Sessions/{year}/Capture/{date}-mount-log.json`. Three record kinds: `sample` (per-poll), `event` (state transitions: `mount_unreachable`, `tracking_stopped`, `meridian_flip`), `summary` (end-of-run). `--quiet` suppresses per-sample stdout for background subprocess use. Default interval 30 s. |
 
 ### Removed: `goto` and `park`
 

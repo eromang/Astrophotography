@@ -233,7 +233,7 @@ The new TCP setup puts **both clients on the same TCP port 8899**. Empirically t
 | Different-command parallel polling (one queries `:FW1#`, other queries `:GLS#`) | Parser fails — read-until-`#` returns the wrong response format |
 | Set commands (`:SG`, `:SUT`, etc.) | Last writer wins on the mount; cosmetic collisions only |
 
-**Operational rule:** don't run `mount.py status / health / log` while ASIAIR holds the connection during an active imaging session. The mount is fine, the data stream isn't. Reserve `mount.py` for ASIAIR-off windows (pre-session check, post-session diagnostics). See [[../03_Techniques/Capture-Planning-Rules#4 MacBot operational rules]] for the full operational rule.
+**Operational rule:** don't run `mount.py status / health / log` while ASIAIR holds the connection during an active imaging session. The mount is fine, the data stream isn't. Reserve `mount.py` for ASIAIR-off windows (pre-session check, post-session diagnostics). See [[../03_Techniques/Capture-Planning-Rules|Capture-Planning-Rules § 4]] for the full operational rule.
 
 ---
 
