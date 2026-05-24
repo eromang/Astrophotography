@@ -167,6 +167,7 @@ Canonical routing for analytics questions — don't rebuild; update the underlyi
 | *"When did I image X?"* / *"what's the campaign history?"* | [[Campaign-Timeline]] (Mermaid Gantt + Dataview chronological log) |
 | *"Does X fit the RedCat 51 FOV?"* / *"is X reachable from the balcony?"* | [[FOV-Atlas]] (matplotlib all-sky + Stellarium Oculars workflow) |
 | *"What can I image this month?"* | [[Seasonal-Calendar]] |
+| *"What are the rules for planning a session / using MacBot / mount safety?"* | [[Capture-Planning-Rules]] — operational rules paid for in real mistakes; weather gate, Mac Mini sync prereq, balcony horizon caveats, mount safety, MacBot intent reference. **Read this before drafting any session plan or invoking `mount schedule`.** |
 
 Regenerating the FOV atlas PNG: `python3 scripts/fov_atlas.py` from repo root.
 
