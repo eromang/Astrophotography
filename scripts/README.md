@@ -80,25 +80,6 @@ MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount   # + live integration 
 
 Live tests require the mount powered on and reachable at `192.168.178.87`. All live tests are read-only (or `timesync`, which writes config but does not move the mount).
 
-### Mac Mini integration via MacBot
-
-The always-on Mac Mini (`192.168.178.91`, runs [MacBot](../../Obsidian/Local1/04_Personal/House-Automation/House-Automation%20-%20Master%20Index.md)) clones this repo and exposes mount.py via iMessage commands. Useful for capturing telemetry during night sessions when the MacBook Pro is asleep.
-
-iMessage triggers:
-
-| Phrase | Effect |
-|---|---|
-| "mount status" | `mount.py status` — formatted reply |
-| "start mount log" | `mount.py log --quiet --interval 30` in background |
-| "stop mount log" | SIGINT the background log, reply with summary |
-| "schedule mount log for tonight" / "for 2026-05-23" | Reads the capture-session note's Planning table (Start/End columns), schedules MacBot cron jobs to auto-start/stop at those times |
-| "show mount schedule" | Lists pending mount jobs |
-| "cancel mount schedule for tonight" | Removes scheduled jobs for that date |
-
-Alerts (iMessage, throttled per type): `mount_unreachable`, `tracking_stopped`, `meridian_flip` — emitted by MacBot's notification watcher tailing the active log file for `kind: "event"` records.
-
-See [[../03_Techniques/Mount-Diagnostics.md#Session-driven-logging-via-MacBot]] for setup steps and the full workflow.
-
 ### Reference docs
 
 - iOptron RS-232 command spec: `01_Equipment/Manuals/CEM26/ASCOM-Driver/RS-232_Command_Language2014V310.pdf` (V3.10)

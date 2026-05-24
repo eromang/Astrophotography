@@ -58,48 +58,35 @@ The [[Dark-Sky-Sites|balcony preset]] uses an AR-anchored per-azimuth altitude f
 - For M17 (Dec −16°), even lower; the balcony window may be effectively unusable.
 - **TODO:** re-do the Stellarium AR horizon check for the 120°–150° band specifically with the OTA at its actual setup position, and update the [[Dark-Sky-Sites|preset profile]] with `(135°, 20°)` or `(140°, 20°)` instead of the current optimistic `(135°, 15°)`.
 
-## 4. MacBot operational rules
+## 4. Single-client invariant — `mount.py` vs ASIAIR
 
-[[Mount-Diagnostics#Session-driven logging via MacBot]] describes the integration; these are the operational rules that govern when/how to use it.
+`mount.py` is a **local MacBook-only tool**. A separate Mac Mini / MacBot integration was attempted on 2026-05-24 (session-driven mount log scheduling via iMessage) and torn down the same day — see [[Mount-Diagnostics#Historical note: Mac Mini / MacBot integration attempted + torn down 2026-05-24|the historical note]] for the incident write-up.
 
-### 4a. Sync Mac Mini before `mount schedule`
-
-Before sending `schedule mount log for <date>` via iMessage to MacBot, **ensure the Mac Mini's clone of the Astrophotography repo has the session note for that date**. The MacBot scheduler reads `~/Documents/git-repos/Astrophotography/05_Sessions/{year}/Capture/{date}-Capture.md` on the Mac Mini, not on the MacBook.
-
-Required pre-flight:
-```bash
-# from MacBook, after writing the session note locally
-git add 05_Sessions/...
-git commit -m "..."
-git push
-ssh macbot@192.168.178.91 'cd ~/Documents/git-repos/Astrophotography && git pull --quiet'
-# then send the iMessage trigger
-```
-
-Auto-refresh cron on Mac Mini runs **Sunday 3 AM only** — without an explicit `git pull`, Mac Mini can be days behind.
-
-**Intents that don't require this pre-flight** (they don't read vault content): `mount status`, `mount log start`, `mount log stop`, `mount schedule list`, `mount schedule cancel`.
-
-### 4b. Single-client invariant (updated 2026-05-24)
-
-**Both `mount.py` and ASIAIR now use the same TCP endpoint** `192.168.178.87:8899` — ASIAIR was reconfigured from USB-Serial to TCP/WiFi on 2026-05-24. Empirical testing that day revealed the WiFi bridge architecture:
+Both `mount.py` and ASIAIR use the same TCP endpoint `192.168.178.87:8899` (ASIAIR was reconfigured from USB-Serial to TCP/WiFi on 2026-05-24). Empirical testing that day revealed the WiFi bridge architecture:
 
 - The bridge **accepts multiple TCP connections** (not exclusive)
 - The 8409 hand controller serialises command processing (no physical collision on the serial bus)
-- BUT **every response is broadcast to every connected TCP client** — there's no per-client filtering
+- BUT **every response is broadcast to every connected TCP client** — no per-client filtering
 
-**Practical consequence:**
-- Same-command parallel polling (both query `:GLS#`) usually works because both parsers can handle either response
-- Different-command parallel polling fails — `mount.py`'s read-until-`#` returns whatever response arrives first, which may be ASIAIR's poll of a different command, breaking the parser
-- Set commands (`:SG`, `:SUT`) get last-writer-wins on the mount — ASIAIR routinely overwrites `mount.py timesync`'s offset to its preferred CET (+60 min); UTC itself stays correct in both cases
+**Practical failure mode:** if `mount.py` asks for `:GEP#` while ASIAIR is mid-`:GLS#` poll, `mount.py`'s read-until-`#` returns ASIAIR's GLS response → format mismatch → parser correctly rejects it but logs a false `mount_unreachable` event. A 60-second concurrent test showed ~25% false-event rate.
 
-**Rule:** during an active ASIAIR session, **don't run `mount.py status / health / log`** and **don't let MacBot fire scheduled `mount log` jobs**. Reserve `mount.py` for ASIAIR-off windows (pre-session checks, post-session diagnostics, dead-window logging). If logging during a real session is critical, switch ASIAIR back to USB-Serial for that night (manual cable swap) so `mount.py` has the TCP bridge to itself.
+**Set commands** (`:SG`, `:SUT`) are last-writer-wins on the mount — ASIAIR routinely overwrites `mount.py timesync`'s offset to its preferred CET (+60 min); UTC itself stays correct in both cases.
 
-For MacBot session-driven scheduling specifically: **cancel the scheduled `mount log start/stop` jobs on imaging nights** (`cancel mount schedule for tonight` via iMessage), or schedule logging only on non-imaging diagnostic nights. See [[../01_Equipment/Accessories/ASIAIR#Concurrent access with mount.py]] for the test results.
+### Operational rule
 
-### 4c. Post-slew WiFi-drop pattern
+| When ASIAIR is… | Then `mount.py` is… |
+|---|---|
+| Connected and actively running a session | **Don't use `mount.py`** — wait until ASIAIR's mount profile is disconnected (toggle off in app) |
+| Disconnected (no green toggle in app) | Safe to use any `mount.py` subcommand |
+| Off entirely (app closed / unit powered down) | Safe — bridge is dedicated |
 
-Observed 2026-05-24: the mount's WiFi module drops connectivity for 30–60 s after motor activity (slew, park) on at least three consecutive tests. `mount.py` and the MacBot log subprocess both handle this gracefully (mount_unreachable events are recorded; the next sample after WiFi returns picks back up). **Don't panic-power-cycle the mount** when this happens during ASIAIR sessions — wait 60 s and re-ping before deciding it's a real failure.
+If logging during a real ASIAIR session is critical, the only clean option is to switch ASIAIR back to USB-Serial for that night (toggle the mount profile in ASIAIR app + plug the USB cable) so `mount.py` has the TCP bridge to itself.
+
+See [[../01_Equipment/Accessories/ASIAIR#Concurrent access with mount.py (single-client invariant — UPDATED 2026-05-24)|ASIAIR § Concurrent access]] for the raw test data.
+
+### Post-slew WiFi-drop pattern
+
+Independently observed 2026-05-24: the mount's WiFi module drops connectivity for 30–60 s after motor activity (slew, park). `mount.py` handles this gracefully (mount_unreachable events are recorded; the next sample after WiFi returns picks back up). **Don't panic-power-cycle the mount** when this happens during ASIAIR sessions — wait 60 s and re-ping before deciding it's a real failure.
 
 ## 5. Mount safety — what `mount.py` will NOT do, and why
 

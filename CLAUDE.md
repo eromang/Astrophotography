@@ -145,7 +145,7 @@ Not slash commands — invoked directly from the shell. Run from repo root.
 | Script | Purpose |
 |--------|---------|
 | `python3 scripts/fov_atlas.py` | Regenerate the RedCat 51 FOV all-sky atlas PNG |
-| `python3 scripts/mount.py {status\|health\|firmware\|unpark\|timesync\|log}` | CEM26 read-only diagnostics + safe config (no slewing — `goto`/`park` removed for safety 2026-05-24) — see [[scripts/README.md]] and [[Mount-Diagnostics]] |
+| `python3 scripts/mount.py {status\|health\|firmware\|unpark\|timesync\|log}` | CEM26 read-only diagnostics + safe config — local MacBook tool only. **Don't run while ASIAIR is connected via TCP** (broadcast bridge — see [[Capture-Planning-Rules#Single-client invariant — mount.py vs ASIAIR]]). |
 
 ### Available Skills
 
@@ -167,7 +167,7 @@ Canonical routing for analytics questions — don't rebuild; update the underlyi
 | *"When did I image X?"* / *"what's the campaign history?"* | [[Campaign-Timeline]] (Mermaid Gantt + Dataview chronological log) |
 | *"Does X fit the RedCat 51 FOV?"* / *"is X reachable from the balcony?"* | [[FOV-Atlas]] (matplotlib all-sky + Stellarium Oculars workflow) |
 | *"What can I image this month?"* | [[Seasonal-Calendar]] |
-| *"What are the rules for planning a session / using MacBot / mount safety?"* | [[Capture-Planning-Rules]] — operational rules paid for in real mistakes; weather gate, Mac Mini sync prereq, balcony horizon caveats, mount safety, MacBot intent reference. **Read this before drafting any session plan or invoking `mount schedule`.** |
+| *"What are the rules for planning a session?"* | [[Capture-Planning-Rules]] — operational rules paid for in real mistakes; weather gate, multi-night strategy, balcony horizon caveats at az 130-150°, mount.py vs ASIAIR single-client invariant, mount safety. **Read this before drafting any session plan or using `scripts/mount.py`.** |
 
 Regenerating the FOV atlas PNG: `python3 scripts/fov_atlas.py` from repo root.
 
