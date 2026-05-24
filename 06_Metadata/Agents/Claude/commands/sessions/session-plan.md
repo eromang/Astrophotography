@@ -552,6 +552,7 @@ If the call succeeds:
   original_jday = response.time.jday
   original_isTimeNow = response.time.isTimeNow
   original_fov = response.view.fov
+  original_timerate = response.time.timerate    # captured so step 5d.4 can restore it after the freeze
   ```
 - These will be restored at the end of step 5d.
 
@@ -566,20 +567,22 @@ For each selected target (1 to N), at its **peak altitude time** (mid-window):
    jday = (dt_utc.timestamp() / 86400.0) + 2440587.5
    ```
 
-2. Set Stellarium time:
+2. Set Stellarium time **and freeze the clock** (CRITICAL — sending `time=` alone with default `timerate≠0` lets Stellarium immediately resume real-time from the set value, so the simulation snaps back to "now". Always include `timerate=0`):
    ```bash
-   curl -sf -m 3 -X POST http://localhost:8090/api/main/time --data "time=${jday}"
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/time --data "time=${jday}&timerate=0"
+   sleep 1.5
    ```
 
-3. Focus on target:
+3. Deselect, then focus fresh (alt/az is cached at focus time and doesn't update on subsequent time changes — for a new target/time you must deselect first):
    ```bash
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/focus --data "target="
+   sleep 1.0
    curl -sf -m 3 -X POST http://localhost:8090/api/main/focus --data "target=${designation}"
+   sleep 2.0
    ```
 
 4. Read object info:
    ```bash
-   sleep 1.0  # CRITICAL: Stellarium needs ~1s to settle after focus,
-              # otherwise alt/az may reflect a previous selection
    curl -sf -m 3 "http://localhost:8090/api/objects/info?format=json"
    ```
 
@@ -590,10 +593,12 @@ For each selected target (1 to N), at its **peak altitude time** (mid-window):
        warn user about discrepancy with both values
    else:
        use stellarium.altitude as authoritative for the report
-   
+
    record stellarium.airmass for the planning table
    record stellarium.above-horizon as sanity check
    ```
+
+   **Sanity check:** if `above-horizon == false` while Stellarium's own `rise`/`transit`/`set` fields say the target should be up at this JD, the time freeze didn't take. Re-run step 2 with `timerate=0` and re-focus (step 3) before trusting the values.
 
 ##### 5d.3 Capture Finder Chart Per Target
 
@@ -631,9 +636,11 @@ For each target:
 
 After all targets are processed:
 
-1. Restore time to "now" (real-time tracking):
+1. Restore time to "now" (real-time tracking) — also explicitly restore `timerate` since step 5d.2 set it to 0:
    ```bash
    curl -sf -m 3 -X POST http://localhost:8090/api/stelaction/do --data "id=actionReturn_To_Current_Time"
+   sleep 0.5
+   curl -sf -m 3 -X POST http://localhost:8090/api/main/time --data "timerate=${original_timerate:-1.1574074074074073e-05}"
    ```
 
 2. Restore the original FOV:
@@ -654,7 +661,7 @@ If the screenshot file isn't found after the timeout:
 
 ### Step 6: Generate Session File
 
-Write to `05_Sessions/{year}/{date}-Capture.md` using the CAPTURE_SESSION_TEMPLATE format.
+Write to `05_Sessions/{year}/Capture/{date}-Capture.md` using the CAPTURE_SESSION_TEMPLATE format. Create the `Capture/` subfolder if it does not exist (typical when starting a new year).
 
 Read the template from `06_Metadata/Templates/CAPTURE_SESSION_TEMPLATE.md` first, then fill:
 

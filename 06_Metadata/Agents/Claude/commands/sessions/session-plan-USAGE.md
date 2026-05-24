@@ -155,7 +155,7 @@ After every successful run, the resolved location is saved to the state file so 
 
 - Uses last-used location (or balcony on first run)
 - Skips Stellarium integration
-- Output: text plan + session file in `05_Sessions/{year}/`
+- Output: text plan + session file in `05_Sessions/{year}/Capture/`
 
 ### 2. Plan tomorrow with Stellarium verification
 
@@ -220,7 +220,7 @@ The command produces three things:
 
 ### 2. Session file
 
-Written to `05_Sessions/{year}/{date}-Capture.md` with this structure:
+Written to `05_Sessions/{year}/Capture/{date}-Capture.md` with this structure:
 
 ```yaml
 ---

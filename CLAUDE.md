@@ -13,7 +13,7 @@ Astrophotography knowledge base managed with Obsidian and Claude Code.
 02_Targets/       Deep sky objects organized by type (nebulae, clusters, galaxies)
 03_Techniques/    Conceptual guides, data views, and atlases (frame types, seasonal calendar, campaign timeline, integration budget, FOV atlas)
 04_Processing/    Post-processing workflows (PixInsight, SIRIL) and calibration library
-05_Sessions/      Capture and processing session logs, organized by year
+05_Sessions/      Capture and processing session logs, organized by year with type subfolders (Capture/, Processing/, Campaigns/, Finder-Charts/)
 06_Metadata/      Templates, Claude Code skills/commands, administrative files
 scripts/          Matplotlib chart generators (FOV atlas etc.); run from repo root
 ```
@@ -31,8 +31,10 @@ Manuals, firmware, drivers, and images are in `01_Equipment/Manuals/{device}/`.
 | `technique` | `03_Techniques/` | — |
 | `processing-workflow` | `04_Processing/{software}/` | — |
 | `calibration` | `04_Processing/Calibration/` | — |
-| `capture-session` | `05_Sessions/{year}/` | `CAPTURE_SESSION_TEMPLATE.md` |
-| `processing-session` | `05_Sessions/{year}/` | `PROCESSING_SESSION_TEMPLATE.md` |
+| `capture-session` | `05_Sessions/{year}/Capture/` | `CAPTURE_SESSION_TEMPLATE.md` |
+| `processing-session` | `05_Sessions/{year}/Processing/` | `PROCESSING_SESSION_TEMPLATE.md` |
+| Campaign (multi-session aggregate) | `05_Sessions/{year}/Campaigns/` | — |
+| Finder chart PNG | `05_Sessions/{year}/Finder-Charts/` | — |
 
 Templates are in `06_Metadata/Templates/`.
 

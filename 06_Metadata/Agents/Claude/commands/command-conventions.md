@@ -34,8 +34,10 @@ technique/
 | Technique | `03_Techniques/` |
 | Processing workflow | `04_Processing/{software}/` |
 | Calibration | `04_Processing/Calibration/` |
-| Capture session | `05_Sessions/{year}/` |
-| Processing session | `05_Sessions/{year}/` |
+| Capture session | `05_Sessions/{year}/Capture/` |
+| Processing session | `05_Sessions/{year}/Processing/` |
+| Campaign | `05_Sessions/{year}/Campaigns/` |
+| Finder chart | `05_Sessions/{year}/Finder-Charts/` |
 | Template | `06_Metadata/Templates/` |
 | Skill/Command | `06_Metadata/Agents/Claude/` |
 
