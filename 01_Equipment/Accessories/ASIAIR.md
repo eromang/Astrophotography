@@ -89,11 +89,11 @@ The ASIAIR exposes several TCP services beyond the proprietary app channel. The 
 
 | Port | Protocol | Use |
 |---|---|---|
-| 7624 | **Standard INDI** | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). Pre-configured as a TCP proxy to `192.168.178.87:8899` — same broadcast bridge as `mount.py`, just one protocol layer up. |
+| 7624 | **Standard INDI** | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). **The ASIAIR app uses this INDI server internally** — proven 2026-05-25 by observing app arrow-press events at a passive listener. External `pyindi-client` subscribers are peer-clean. Server is ephemeral: runs while app is connected to mount profile. |
 | 4350 | ZWO JSON-RPC 2.0 | OTA / firmware updater channel. Greets with `{"Event":"Version","name":"ASI AIR updater",...}`. 20-method probe returned all `code:103`. Not for everyday automation. |
-| 8888 | Proprietary app control | Black box — RSTs on every structured probe. The iOS app's channel; not reverse-engineered publicly. |
+| 8888 | Proprietary app control | Black box — RSTs on every structured probe. Likely an app-discovery / pairing channel rather than mount control (mount goes through INDI). Not reverse-engineered publicly. |
 
-Full port table, INDI property tree, JSON-RPC enumeration result, and the **two empirical tests still open** for the INDI path live in [[ASIAIR-Network-Protocol]]. **Read that before designing any future external-monitoring tool against the ASIAIR** — including the corrected lesson that INDI on 7624 is a proxy (not a separate path) and the broadcast-bridge single-client invariant still applies system-wide.
+Full port table, both INDI test results, the corrected architecture diagram, and the rebuild-feasibility conclusion for an INDI-based external mount logger live in [[ASIAIR-Network-Protocol]]. **Read that before designing any future external-monitoring tool against the ASIAIR** — the May 2026 MacBot teardown's broadcast-bridge collision problem does NOT apply to INDI-based subscribers.
 
 ---
 

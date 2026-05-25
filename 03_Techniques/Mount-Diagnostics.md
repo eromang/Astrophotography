@@ -166,10 +166,47 @@ A separate integration was built that exposed `mount.py` via iMessage to MacBot 
 
 Net: `mount.py` is best used as a **local-only MacBook tool** for ad-hoc diagnostics during ASIAIR-off windows (pre-session check, post-session diagnostics, dead-window logging). See [[Capture-Planning-Rules#Single-client invariant — mount.py vs ASIAIR]] for the operational rule.
 
+## INDI on ASIAIR as a known-good external monitoring path (2026-05-25)
+
+Active probing of the ASIAIR's LAN service surface on 2026-05-25 (full writeup: [[ASIAIR-Network-Protocol]]) discovered that **the ASIAIR runs a standard INDI server on port 7624** which exposes the `iOptronV3` mount driver — and crucially, **the ASIAIR iOS app uses that INDI server internally for mount control**. Confirmed by passive observation: every arrow-key press in the app surfaced as a `TELESCOPE_MOTION_*` property change at a passive listener within ~1 s.
+
+This is the architectural detail that makes a future external mount logger feasible (which the MacBot integration was not):
+
+| Path | Architecture | Verdict |
+|---|---|---|
+| `mount.py` polling `:GLS#` on `192.168.178.87:8899` | Second TCP client on the WiFi bridge alongside the INDI server → broadcast-bridge collisions | ❌ killed the May-24 MacBot build |
+| External `pyindi-client` subscribing to `192.168.178.84:7624` | Peer-client of the same INDI server that the app uses; INDI is the single arbiter on the WiFi bridge | ✅ no transport-layer contention; pub/sub, event-driven |
+
+### Rebuild possibility (deferred — not built yet)
+
+A Mac Mini external mount logger using `pyindi-client` is the architecturally-correct replacement for the torn-down `mount.py log` integration. Subscribe to:
+
+- `TELESCOPE_TRACK_STATE` — alert on unexpected tracking stop
+- `TELESCOPE_PARK` — record park events
+- `TELESCOPE_PIER_SIDE` — detect meridian flips (West ↔ East transitions)
+- `CONNECTION` — detect mount-driver disconnect (~ mount comm loss)
+- `EQUATORIAL_EOD_COORD` — record position changes without polling
+- `TELESCOPE_TIMED_GUIDE_NS/WE` — observe live guider pulse activity
+
+### Operational caveat: ephemeral INDI server
+
+Empirically observed during the same testing pass: the INDI server on port 7624 is **not always-on**. It runs while the app is connected to the mount profile and exits otherwise (specifically: when the last INDI client disconnects AND the app's mount profile is off). An external monitor must handle "INDI is `Connection refused`" by retry-with-backoff. Practical pattern: assume INDI is available *iff* the user has the app open with the mount connected — which is by definition true during real sessions, so a session-window logger works fine but ambient between-sessions telemetry does not.
+
+### Why this doesn't change `mount.py`'s scope
+
+`mount.py` remains useful in the specific scenario where INDI is NOT running:
+
+- Bench diagnostics with no app open
+- Pre-session firmware version check
+- Time-sync rescue when the RTC has drifted and you need to push UTC without booting the app first (RTC battery is suspected weak — see [[iOptron-CEM26]])
+
+For those, `mount.py` on raw `:GLS#` works fine because no other client is on the WiFi bridge. The single-client invariant from [[Capture-Planning-Rules#4. Single-client invariant — `mount.py` vs ASIAIR|Capture-Planning-Rules § 4]] still applies: don't run `mount.py` while the INDI server is also connected to the mount (i.e. while the app has the mount profile on).
+
 ## Reference
 
 - [[iOptron-CEM26]] — equipment specs + WiFi config + firmware reference
 - [[ASIAIR]] — primary mount control (TCP via WiFi bridge since 2026-05-24)
+- [[ASIAIR-Network-Protocol]] — LAN service surface, INDI test results, INDI rebuild blueprint
 - [[Capture-Planning-Rules]] — operational rules including the mount.py/ASIAIR concurrent-access caveat
 - [[../scripts/README.md]] — per-subcommand reference for `mount.py`
 - iOptron RS-232 V3.10 spec — `01_Equipment/Manuals/CEM26/ASCOM-Driver/RS-232_Command_Language2014V310.pdf`
