@@ -104,17 +104,21 @@ The INDI server on port 7624 is **not always-on**, but its lifecycle is tied to 
 
 | Event | INDI server (port 7624) | iOptronV3 driver |
 |---|---|---|
-| ASIAIR power-on, app never opened | Down / on-demand spawn only | Not loaded |
-| User opens app + connects mount profile | **Spawned** | **CONNECT=On**, polling mount every 1000 ms |
+| ASIAIR + mount powered on (mount profile previously activated in app) | **Up at boot** ✓ — verified 2026-05-25 by user power-cycle observation | **CONNECT=On at boot** ✓ — driver auto-reconnects based on persisted mount profile state |
+| User opens app | App attaches to the already-running INDI server as a client | Continues uninterrupted |
 | User closes the app (mount profile stays active) | **Stays running** ✓ | **Stays CONNECT=On** ✓ |
 | User reopens the app | Same server, app re-attaches as INDI client | Continues uninterrupted |
 | User toggles mount profile OFF in app | Likely exits when the last INDI client disconnects | DISCONNECT=On |
 | External client sends DISCONNECT=On then closes socket (test #1 cleanup) | Server exits | DISCONNECT=Off, driver unloaded |
-| ASIAIR power cycle | Down until next mount-profile activation | — |
+| ASIAIR power cycle | Comes back up at boot | Reconnects at boot |
 
-**The critical correction:** the *app being open* is not the predicate for INDI availability — the *mount profile being active* is. The user's real workflow (open app at session start to slew + configure, close app, ASIAIR runs autonomously for hours, reopen briefly to check, finally toggle off + shutdown) keeps the mount profile active for the entire session window. INDI is alive and the driver is connected for that whole span, including the long "app closed" stretches.
+**The critical correction:** the *app being open* is not the predicate for INDI availability. INDI is up:
+- **At ASIAIR boot**, if the mount profile was previously activated (the ASIAIR persists profile state across reboots and the iOptronV3 driver auto-reconnects)
+- **Throughout the entire session** even with the app closed, as long as the mount profile stays active
 
-**Practical implication for an external monitor**: a Mac Mini `pyindi-client` subscriber works for the full session duration — *not* limited to brief windows when the user has the app foregrounded. The retry-with-backoff is only needed at session start (waiting for the user to activate the mount profile for the first time, which spawns INDI).
+The user's real workflow (power-on ASIAIR + mount, open app briefly only at session start to slew + configure, close app, ASIAIR runs autonomously for hours, reopen briefly to check, finally toggle off + shutdown) keeps the mount profile active across the full span. INDI is alive and the driver is connected the whole time — and is even already alive *before* the app is opened.
+
+**Practical implication for an external monitor**: a Mac Mini `pyindi-client` subscriber can attach as soon as the ASIAIR boots — no retry-with-backoff waiting for the user to open the app. The scheduler just needs to know when imaging starts (read from the session note's YAML `planned_start:` field — see [[../CLAUDE.md|CLAUDE.md § Capture-session-specific: planned_start / planned_end]]) and start the subscriber at that time.
 
 ### What this unlocks
 

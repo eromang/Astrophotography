@@ -5,6 +5,8 @@ date: {{date}}
 location: "Tuntange, Luxembourg"
 twilight_evening: ""
 twilight_morning: ""
+planned_start: ""   # HH:MM local — imaging window opens (machine-readable for schedulers; if < 06:00, refers to next day relative to `date`)
+planned_end: ""     # HH:MM local — imaging window closes (same convention)
 moon_phase: ""
 moon_illumination: ""
 equipment:

@@ -93,6 +93,20 @@ integrations:
 - Dead-season sessions (empty `targets:`) omit the `integrations:` block entirely.
 - Multi-filter nights add one entry per filter used on the target.
 
+### Capture-session-specific: `planned_start:` / `planned_end:`
+
+Every `capture-session` note carries machine-readable imaging-window times for the [[Mount-Diagnostics#INDI on ASIAIR as a known-good external monitoring path (2026-05-25)|future Mac Mini INDI logger]] scheduler:
+
+```yaml
+planned_start: "00:30"   # HH:MM local — dark window / imaging begins
+planned_end: "02:30"     # HH:MM local — dark window / imaging ends
+```
+
+- Times are HH:MM local (matches `twilight_evening` / `twilight_morning` convention)
+- If a time is `< 06:00`, the scheduler treats it as **next-day relative to `date`** (overnight session)
+- For multi-target nights, these are the **outer envelope**: `planned_start = min(per-target Start)`, `planned_end = max(per-target End)`. The per-target Start/End stays in the Planning table for human reading.
+- Dead-window / NOGO sessions: leave both empty (`""`), same as `integrations: []`
+
 ---
 
 ## Language

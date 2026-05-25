@@ -679,6 +679,8 @@ bortle: {LOC_BORTLE}
 power_source: "{LOC_POWER}"
 twilight_evening: "{HH:MM}"
 twilight_morning: "{HH:MM}"
+planned_start: "{HH:MM}"     # imaging-window start (= min(per-target Start) from Planning table); HH:MM local, next-day if < 06:00
+planned_end: "{HH:MM}"       # imaging-window end   (= max(per-target End)   from Planning table); same convention
 moon_phase: "{phase_name}"
 moon_illumination: "{illumination}%"
 equipment:

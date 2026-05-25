@@ -190,14 +190,15 @@ A Mac Mini external mount logger using `pyindi-client` is the architecturally-co
 
 ### Operational caveat: INDI server lifecycle (corrected)
 
-The INDI server on port 7624 is **not always-on**, but its uptime is tied to the **mount profile state**, not to whether the app is foregrounded. Verified empirically 2026-05-25 with the app explicitly closed:
+The INDI server on port 7624 is **not always-on**, but its uptime is tied to the **mount profile state**, not to whether the app is foregrounded. Verified empirically 2026-05-25:
 
-- ASIAIR up, mount up, **app fully shut down** → INDI server is **still reachable** and `iOptronV3` is still `CONNECT=On`, polling the mount.
-- The trigger for INDI exiting is **the mount profile being toggled off** in the app (or the ASIAIR being power-cycled) — not "app closed".
+- **ASIAIR power-on + mount on, app never opened that session** → INDI server is **up at boot** and `iOptronV3` is `CONNECT=On`, polling the mount. The mount profile state persists across ASIAIR reboots, so the driver auto-reconnects.
+- **ASIAIR up, mount up, app fully shut down** → INDI server still reachable, driver still CONNECT=On (same state).
+- The trigger for INDI exiting is **the mount profile being toggled off** in the app — not "app closed", not "ASIAIR power-cycled".
 
-**Why this matters for the user's real workflow:** during a real capture session the user typically opens the app only at start (connect mount + configure + start autorun), closes the app, lets the ASIAIR run autonomously for hours, reopens briefly to check, and finally toggles off + shuts down at the end. The mount profile stays active for the full session window. INDI stays up for that same window. A Mac Mini `pyindi-client` subscriber therefore works for the full session — *not* limited to the brief windows when the app is foregrounded.
+**Why this matters for the user's real workflow:** during a real capture session the user opens the app only briefly (start of session to slew + configure + start autorun, occasionally during to check, end of session to shut down). The mount profile is active the entire time. INDI is alive the entire time — and is already alive *before* the user opens the app, as long as the ASIAIR booted with a previously-active mount profile.
 
-Retry-with-backoff is only needed at session start, waiting for the user to spawn INDI by activating the mount profile for the first time.
+A Mac Mini `pyindi-client` subscriber can therefore attach immediately when the ASIAIR comes online — no retry-with-backoff, no dependency on app foreground state. The scheduler just needs to know when imaging starts (machine-readable in the capture-session note's YAML `planned_start:` / `planned_end:` fields — see [[../CLAUDE.md|CLAUDE.md § Capture-session-specific: planned_start / planned_end]]).
 
 ### Why this doesn't change `mount.py`'s scope
 

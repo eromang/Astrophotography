@@ -116,7 +116,7 @@ Regression tests for this live in `scripts/test_mount.py::TestGotoCommandFormat`
 
 When drafting a `-Capture.md` note (manually or via `/session-plan`), it must contain:
 
-- [ ] **YAML frontmatter** with `date`, `twilight_evening`/`twilight_morning`, `moon_phase`/`moon_illumination`, `equipment` block, `targets:` array, `integrations:` array, `tags`
+- [ ] **YAML frontmatter** with `date`, `twilight_evening`/`twilight_morning`, **`planned_start`/`planned_end`** (HH:MM local, machine-readable for the Mac Mini logger scheduler — see [[../CLAUDE.md|CLAUDE.md § Capture-session-specific: planned_start / planned_end]]), `moon_phase`/`moon_illumination`, `equipment` block, `targets:` array, `integrations:` array, `tags`
 - [ ] **Conditions** section (weather, moon, temperature, humidity, wind) with explicit **Verdict: GO / MARGINAL / NOGO**
 - [ ] **Location** table (matches the preset used)
 - [ ] **Planning** table (Object | Type | Start | End | Exposure | Frames (planned) | Frames (realized) | Filter | Gain | Temp | Workflow) — Start/End drive the imaging window narrative
