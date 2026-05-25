@@ -188,9 +188,16 @@ A Mac Mini external mount logger using `pyindi-client` is the architecturally-co
 - `EQUATORIAL_EOD_COORD` — record position changes without polling
 - `TELESCOPE_TIMED_GUIDE_NS/WE` — observe live guider pulse activity
 
-### Operational caveat: ephemeral INDI server
+### Operational caveat: INDI server lifecycle (corrected)
 
-Empirically observed during the same testing pass: the INDI server on port 7624 is **not always-on**. It runs while the app is connected to the mount profile and exits otherwise (specifically: when the last INDI client disconnects AND the app's mount profile is off). An external monitor must handle "INDI is `Connection refused`" by retry-with-backoff. Practical pattern: assume INDI is available *iff* the user has the app open with the mount connected — which is by definition true during real sessions, so a session-window logger works fine but ambient between-sessions telemetry does not.
+The INDI server on port 7624 is **not always-on**, but its uptime is tied to the **mount profile state**, not to whether the app is foregrounded. Verified empirically 2026-05-25 with the app explicitly closed:
+
+- ASIAIR up, mount up, **app fully shut down** → INDI server is **still reachable** and `iOptronV3` is still `CONNECT=On`, polling the mount.
+- The trigger for INDI exiting is **the mount profile being toggled off** in the app (or the ASIAIR being power-cycled) — not "app closed".
+
+**Why this matters for the user's real workflow:** during a real capture session the user typically opens the app only at start (connect mount + configure + start autorun), closes the app, lets the ASIAIR run autonomously for hours, reopens briefly to check, and finally toggles off + shuts down at the end. The mount profile stays active for the full session window. INDI stays up for that same window. A Mac Mini `pyindi-client` subscriber therefore works for the full session — *not* limited to the brief windows when the app is foregrounded.
+
+Retry-with-backoff is only needed at session start, waiting for the user to spawn INDI by activating the mount profile for the first time.
 
 ### Why this doesn't change `mount.py`'s scope
 

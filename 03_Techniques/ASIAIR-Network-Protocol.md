@@ -27,7 +27,7 @@ This note complements [[ASIAIR]] (the equipment spec) and [[Mount-Diagnostics]] 
 | 4400 | Unknown ZWO service | open | Not probed. |
 | 4500 | Unknown ZWO service | open | Not probed. |
 | 4900 | **ZWO usage statistics push** | open | One-way push: server sends `{"Event":"Version","name":"zwoair_usage_statistics_handler",...}` JSON lines unsolicited. Telemetry-only. |
-| 7624 | **Standard INDI server** | open ⚠️ ephemeral | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). **The ASIAIR app uses this INDI server internally** — proven 2026-05-25 by observing app arrow-press events on a passive listener. INDI is the single arbiter of the mount bus. Server is spawned when the app is connected to the mount, exits otherwise. See § Port 7624. |
+| 7624 | **Standard INDI server** | open while mount profile active | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). **The ASIAIR app uses this INDI server internally** — proven 2026-05-25 by observing app arrow-press events on a passive listener. INDI is the single arbiter of the mount bus. **Server stays running for the full session window** even when the app is closed, as long as the mount profile is active. See § Port 7624. |
 | 8888 | Proprietary ASIAIR app control | open | Silent on connect, RSTs on every structured probe (JSON-RPC, length-prefixed JSON, TLS, raw event JSON). Binary handshake; not reverse-engineered in public sources. |
 
 ---
@@ -98,15 +98,23 @@ Driver messages matched exactly: *"Moving toward East"*, *"East motion stopped"*
 
 The earlier draft of this note ("INDI is just a proxy that competes with the app") was wrong. The proxy framing collapsed the moment test #2 showed the app's events arriving in INDI — the app and the INDI server are the same TCP client on the bridge.
 
-### Caveat: INDI server is ephemeral
+### INDI server lifecycle (corrected 2026-05-25 after app-closed test)
 
-The INDI server on port 7624 is **not** an always-on service. Observed lifecycle:
+The INDI server on port 7624 is **not always-on**, but its lifecycle is tied to the **mount profile state**, not to whether the app is foregrounded. Empirically observed lifecycle:
 
-- **App connected to mount profile** → INDI server is running, `iOptronV3` is `CONNECT=On`, full property tree streaming
-- **App not connected to mount** (closed, or mount toggle off) → server can exit; port becomes `Connection refused` until something re-spawns it
-- **After an external client cleanly DISCONNECTs the driver** (test #1's cleanup) → server may also exit
+| Event | INDI server (port 7624) | iOptronV3 driver |
+|---|---|---|
+| ASIAIR power-on, app never opened | Down / on-demand spawn only | Not loaded |
+| User opens app + connects mount profile | **Spawned** | **CONNECT=On**, polling mount every 1000 ms |
+| User closes the app (mount profile stays active) | **Stays running** ✓ | **Stays CONNECT=On** ✓ |
+| User reopens the app | Same server, app re-attaches as INDI client | Continues uninterrupted |
+| User toggles mount profile OFF in app | Likely exits when the last INDI client disconnects | DISCONNECT=On |
+| External client sends DISCONNECT=On then closes socket (test #1 cleanup) | Server exits | DISCONNECT=Off, driver unloaded |
+| ASIAIR power cycle | Down until next mount-profile activation | — |
 
-Practical implication for an external monitor: assume "INDI is available iff the app is currently connected to the mount". That's fine for a session-window logger because the app is running for the duration of every session by definition — but it precludes any "ambient between-sessions" telemetry.
+**The critical correction:** the *app being open* is not the predicate for INDI availability — the *mount profile being active* is. The user's real workflow (open app at session start to slew + configure, close app, ASIAIR runs autonomously for hours, reopen briefly to check, finally toggle off + shutdown) keeps the mount profile active for the entire session window. INDI is alive and the driver is connected for that whole span, including the long "app closed" stretches.
+
+**Practical implication for an external monitor**: a Mac Mini `pyindi-client` subscriber works for the full session duration — *not* limited to brief windows when the user has the app foregrounded. The retry-with-backoff is only needed at session start (waiting for the user to activate the mount profile for the first time, which spawns INDI).
 
 ### What this unlocks
 
@@ -127,9 +135,9 @@ Event-driven via pub/sub. No polling. No competition for the WiFi bridge. The pr
 - **No focuser control**. ZWO EAF same story.
 - **No guide camera control**. ASI385MC same.
 - **No sequence engine / plate solver / polar align / autofocus**. Those are app-internal logic on top of the mount channel.
-- **No always-on availability**. See the ephemeral caveat above.
+- **No always-on availability** between sessions. INDI exits when the mount profile is toggled off. See the lifecycle table above.
 
-External tooling is **mount-only** and **session-window-only**. Plan around that.
+External tooling is **mount-only** and **session-window-only** — but the session window is the full duration the user has the mount profile active, not just when the app is foregrounded.
 
 ### When NOT to use INDI clients
 
