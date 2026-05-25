@@ -83,6 +83,18 @@ ASIAIR Plus connects to `BleiftDoheem` (home WiFi) in **station mode** so it's r
 
 **MAC reservation pattern (Fritz!Box):** the ASIAIR's MAC is bound to `.84` in the Heimnetz → Netzwerk DHCP table. Matches the same pattern used for the [[iOptron-CEM26]] mount at `.87` (see [[iOptron-CEM26#WiFi Configuration]]).
 
+### LAN service surface
+
+The ASIAIR exposes several TCP services beyond the proprietary app channel. The two relevant to custom tooling:
+
+| Port | Protocol | Use |
+|---|---|---|
+| 7624 | **Standard INDI** | Already publishes `iOptronV3` (the [[iOptron-CEM26]] driver). Cleanest path for any external monitoring / scripting. |
+| 4350 | ZWO JSON-RPC 2.0 | OTA / firmware updater channel. Greets with `{"Event":"Version","name":"ASI AIR updater",...}`. Not for everyday automation. |
+| 8888 | Proprietary app control | Black box — RSTs on every structured probe. The iOS app's channel; not reverse-engineered publicly. |
+
+Full port table + probe results + the rationale for "use INDI on 7624, not 8888" live in [[ASIAIR-Network-Protocol]]. **Read that before designing any future external-monitoring tool against the ASIAIR** — repeating the May 2026 MacBot mistake by talking to the mount's WiFi bridge directly is the wrong architecture.
+
 ---
 
 ## Core Functions
