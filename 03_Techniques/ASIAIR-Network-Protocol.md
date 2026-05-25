@@ -120,18 +120,19 @@ The user's real workflow (power-on ASIAIR + mount, open app briefly only at sess
 
 **Practical implication for an external monitor**: a Mac Mini `pyindi-client` subscriber can attach as soon as the ASIAIR boots — no retry-with-backoff waiting for the user to open the app. The scheduler just needs to know when imaging starts (read from the session note's YAML `planned_start:` field — see [[../CLAUDE.md|CLAUDE.md § Capture-session-specific: planned_start / planned_end]]) and start the subscriber at that time.
 
-### What this unlocks
+### What this unlocked — Mac Mini mount monitor (LIVE 2026-05-25)
 
-A Mac Mini external mount logger using `pyindi-client` becomes the **architecturally-correct replacement** for the torn-down [[Mount-Diagnostics#Historical note: Mac Mini / MacBot integration attempted + torn down 2026-05-24|May-24 MacBot mount integration]]. Properties to subscribe to:
+The Mac Mini external mount logger using a stdlib INDI XML/TCP subscriber (~250 lines, no `pyindi-client` dependency) is the **architecturally-correct replacement** for the torn-down [[Mount-Diagnostics#Historical note: Mac Mini / MacBot integration attempted + torn down 2026-05-24|May-24 MacBot mount integration]]. **Built and end-to-end verified on 2026-05-25** — see [[Mount-Diagnostics#Rebuild status: LIVE on Mac Mini (2026-05-25)]] for the full operational writeup (architecture, iMessage intents, verification stages, deployment paths).
+
+Properties subscribed:
 
 - `TELESCOPE_TRACK_STATE` — detect unexpected tracking stop
 - `TELESCOPE_PARK` — detect park events
 - `TELESCOPE_PIER_SIDE` — detect meridian flips (West ↔ East transitions)
 - `CONNECTION` — detect mount-driver disconnect (probably == mount comm loss)
 - `EQUATORIAL_EOD_COORD` — record position changes (slews) without polling
-- `TELESCOPE_TIMED_GUIDE_NS/WE` — observe guiding pulse rate (a live signal of guider activity)
 
-Event-driven via pub/sub. No polling. No competition for the WiFi bridge. The previously-discovered 25% false-event rate from `mount.py log` collisions does not re-occur because there is no second TCP client on the bridge.
+Event-driven via pub/sub. No polling. No competition for the WiFi bridge. The previously-discovered 25 % false-event rate from `mount.py log` collisions does not re-occur because there is no second TCP client on the bridge — the Mac Mini's INDI subscriber is a peer of the same INDI server the ASIAIR app uses.
 
 ### What INDI does NOT give us
 

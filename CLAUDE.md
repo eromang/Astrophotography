@@ -95,7 +95,7 @@ integrations:
 
 ### Capture-session-specific: `planned_start:` / `planned_end:`
 
-Every `capture-session` note carries machine-readable imaging-window times for the [[Mount-Diagnostics#INDI on ASIAIR as a known-good external monitoring path (2026-05-25)|future Mac Mini INDI logger]] scheduler:
+Every `capture-session` note carries machine-readable imaging-window times for the **live Mac Mini INDI mount logger** (see [[Mount-Diagnostics#Rebuild status: LIVE on Mac Mini (2026-05-25)]]) — the MacBot iMessage scheduler reads these fields to fire `mount_log_start_<date>` and `mount_log_stop_<date>` jobs at `planned_start − 15 min` and `planned_end + 30 min`:
 
 ```yaml
 planned_start: "00:30"   # HH:MM local — dark window / imaging begins

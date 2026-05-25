@@ -307,8 +307,12 @@ Run from repo root: `python3 scripts/mount.py <subcommand>`. See [[../../scripts
 
 Stdlib-only (no `pip install` needed). Tested via `python3 -m unittest scripts.test_mount` (parser + mock tests, no mount needed) and `MOUNT_TEST_LIVE=1 python3 -m unittest scripts.test_mount` (live read-only integration).
 
-> [!note] MacBot integration removed 2026-05-24
-> A Mac Mini / MacBot integration was attempted and then torn down the same day after discovering ASIAIR (when set to TCP/WiFi mount control) shares the same `192.168.178.87:8899` endpoint and the bridge broadcasts every response to every connected TCP client. Concurrent polling produced ~25% false `mount_unreachable` events. `mount.py` remains a local-only tool on the MacBook for ad-hoc diagnostics (`status`, `health`, `firmware`, `unpark`, `timesync`, `log`) when ASIAIR is *not* connected. See [[../../03_Techniques/Capture-Planning-Rules#Single-client invariant — mount.py vs ASIAIR]] for the operational rule.
+> [!note] MacBot integration rebuilt via INDI 2026-05-25
+> The original `mount.py`-based MacBot integration was torn down 2026-05-24 after discovering ASIAIR (in TCP/WiFi mount-control mode) shares the same `192.168.178.87:8899` endpoint and the bridge broadcasts every response to every connected TCP client. Concurrent polling produced ~25 % false `mount_unreachable` events.
+>
+> A **transport-correct rebuild went live on the Mac Mini on 2026-05-25**: instead of polling the mount's WiFi bridge as a competing TCP client, the Mac Mini subscribes to the ASIAIR's standard INDI server on `192.168.178.84:7624` (where the ASIAIR app itself talks to the mount internally — confirmed empirically). External INDI clients attach as peer-clean subscribers with no transport contention. iMessage intents: `mount status`, `start/stop mount log`, `schedule mount log for <date>`, `show/cancel mount schedule`. Scheduler reads `planned_start:` / `planned_end:` from capture-session note YAML. See [[../../03_Techniques/Mount-Diagnostics#Rebuild status: LIVE on Mac Mini (2026-05-25)]] for the full operational writeup.
+>
+> `mount.py` remains a local-only tool on the MacBook for ad-hoc diagnostics (`status`, `health`, `firmware`, `unpark`, `timesync`, `log`) when ASIAIR is *not* connected — and when the RTC backup battery has drifted the clock and the ASIAIR app isn't open to push time. See [[../../03_Techniques/Capture-Planning-Rules#Single-client invariant — mount.py vs ASIAIR]] for the operational rule.
 
 ### iPolar Software
 

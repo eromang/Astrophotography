@@ -177,16 +177,50 @@ This is the architectural detail that makes a future external mount logger feasi
 | `mount.py` polling `:GLS#` on `192.168.178.87:8899` | Second TCP client on the WiFi bridge alongside the INDI server → broadcast-bridge collisions | ❌ killed the May-24 MacBot build |
 | External `pyindi-client` subscribing to `192.168.178.84:7624` | Peer-client of the same INDI server that the app uses; INDI is the single arbiter on the WiFi bridge | ✅ no transport-layer contention; pub/sub, event-driven |
 
-### Rebuild possibility (deferred — not built yet)
+### Rebuild status: LIVE on Mac Mini (2026-05-25)
 
-A Mac Mini external mount logger using `pyindi-client` is the architecturally-correct replacement for the torn-down `mount.py log` integration. Subscribe to:
+The architecturally-correct replacement for the torn-down `mount.py log` integration is **built and end-to-end verified** on the always-on Mac Mini (`192.168.178.91`). Implementation lives in the **Local1 vault** at `04_Personal/House-Automation/scripts/macbot/` and is deployed to `~/Documents/MacBot/` on the Mac Mini.
 
-- `TELESCOPE_TRACK_STATE` — alert on unexpected tracking stop
-- `TELESCOPE_PARK` — record park events
-- `TELESCOPE_PIER_SIDE` — detect meridian flips (West ↔ East transitions)
-- `CONNECTION` — detect mount-driver disconnect (~ mount comm loss)
-- `EQUATORIAL_EOD_COORD` — record position changes without polling
-- `TELESCOPE_TIMED_GUIDE_NS/WE` — observe live guider pulse activity
+**Architecture** (stdlib only — no `pyindi-client` dependency, ~250 lines of raw XML/TCP):
+
+- `mount_indi.py` — INDI XML/TCP subscriber + StateTracker (detects mount_disconnected, tracking_stopped/started, meridian_flip, parked, unparked, position_change). CLI: `status` (one-shot snapshot) + `log --output PATH --session DATE` (NDJSON subscriber).
+- `mount_commands.py` — MacBot intent handlers wrapping the above as a long-running subprocess.
+- `session_note_parser.py` — reads `planned_start:` / `planned_end:` YAML from capture-session notes, returns UTC datetimes for the scheduler.
+
+**iMessage intents** (live — text MacBot at familleromang@icloud.com):
+
+| Intent | NL trigger | What it does |
+|---|---|---|
+| Status | `mount status` / `telescope status` | One-shot mount snapshot (Tracking, Park, Pier, RA/DEC, Time, FW) |
+| Log start | `start mount log` / `begin mount logging` | Spawn `mount_indi.py log` as background subprocess, record pid in SQLite |
+| Log stop | `stop mount log` / `end mount logging` | SIGTERM the active pid, summarize the NDJSON |
+| Schedule | `schedule mount log for tonight` / `for 2026-05-25` | Read session-note YAML → add 2 cron jobs (start −15m, stop +30m) |
+| Schedule list | `show mount schedule` / `list mount jobs` | Active `mount_log_*` jobs + next-run times |
+| Schedule cancel | `cancel mount schedule for <date>` | Delete the scheduled jobs |
+
+**Subscribed properties** (event-driven via INDI pub/sub, written to `~/Documents/MacBot/mount-logs/{date}-mount-log.json`):
+
+- `TELESCOPE_TRACK_STATE` — alert on unexpected tracking stop (10 min cooldown)
+- `TELESCOPE_PARK` — record park events + alert if mid-session (15 min cooldown)
+- `TELESCOPE_PIER_SIDE` — detect meridian flips (30 min cooldown — flip takes ~2 min)
+- `CONNECTION` — alert on mount-driver disconnect (5 min cooldown)
+- `EQUATORIAL_EOD_COORD` — record position changes > 0.5° (no alert — informational)
+- Lifecycle reconnect-burst detector → alert if > 5 reconnects in 10 min
+
+**Verification 2026-05-25**:
+- Local: 126 unit tests pass (70 new)
+- Stage 2 live INDI smoke from MacBook: `status` + `log` + SIGTERM-responsive (caught and fixed a stop-flag-blocking-on-recv bug; regression-tested)
+- Stage 3 Mac Mini deploy: imports clean, `mount_indi.py status` runs from Mac Mini, weekly Astrophotography `git pull` cron set
+- Stage 4 iMessage end-to-end: all 6 intents verified via the MacBot chat — status/log start/log stop/schedule/list/cancel each round-tripped correctly
+
+**Astrophotography repo dependency**: the YAML schema `planned_start:` / `planned_end:` was added to capture-session notes for this purpose (see [[../CLAUDE.md|CLAUDE.md § Capture-session-specific: planned_start / planned_end]]). For a session note to be schedulable, those fields must be populated.
+
+**Mac Mini setup state** (live as of 2026-05-25):
+- `~/Documents/git-repos/Astrophotography` (shallow clone, weekly `git pull` cron at Sun 03:00 → keeps session notes fresh)
+- `~/Documents/MacBot/mount-logs/` (NDJSON output dir)
+- `~/Documents/MacBot/{mount_indi,mount_commands,session_note_parser}.py` (deployed via `post-pull-deploy.sh`)
+- SQLite tracking via `mount_log_runs` table in `~/Documents/MacBot/macbot.db`
+- iMessage cooldowns in `notifications.py`'s COOLDOWNS dict
 
 ### Operational caveat: INDI server lifecycle (corrected)
 
