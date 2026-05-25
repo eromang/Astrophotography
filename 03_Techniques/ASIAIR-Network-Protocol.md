@@ -27,39 +27,59 @@ This note complements [[ASIAIR]] (the equipment spec) and [[Mount-Diagnostics]] 
 | 4400 | Unknown ZWO service | open | Not probed. |
 | 4500 | Unknown ZWO service | open | Not probed. |
 | 4900 | **ZWO usage statistics push** | open | One-way push: server sends `{"Event":"Version","name":"zwoair_usage_statistics_handler",...}` JSON lines unsolicited. Telemetry-only. |
-| 7624 | **Standard INDI server** | open | Already exposes `iOptronV3` device — full INDI control surface. **Cleanest integration path.** |
+| 7624 | **Standard INDI server** | open | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). Pre-configured as a TCP proxy to `192.168.178.87:8899` — same broadcast-bridge endpoint as `mount.py`. See § Port 7624. |
 | 8888 | Proprietary ASIAIR app control | open | Silent on connect, RSTs on every structured probe (JSON-RPC, length-prefixed JSON, TLS, raw event JSON). Binary handshake; not reverse-engineered in public sources. |
 
 ---
 
-## Port 7624 — the recommended path
+## Port 7624 — INDI server, scope limited
 
-Standard INDI XML protocol. Connect with `<getProperties version="1.7"/>\n` and the server immediately publishes its property tree:
+Standard INDI XML protocol. `<getProperties version="1.7"/>\n` returns a 7.9 KB property tree on the dormant unit (ASIAIR app not running). Enumeration result:
 
-```xml
-<defSwitchVector device="iOptronV3" name="CONNECTION" label="Connection"
-                 group="Main Control" state="Alert" perm="rw" rule="OneOfMany"
-                 timeout="60" timestamp="2026-05-25T11:49:11">
-    <defSwitch name="CONNECT" label="Connect">Off</defSwitch>
-    <defSwitch name="DISCONNECT" label="Disconnect">On</defSwitch>
-</defSwitchVector>
-```
+**Devices exposed: 1.** Only `iOptronV3`. No camera, no focuser, no guide cam. The ZWO devices (ASI2600MC, ASI385MC, ZWO-EAF) are held by the ASIAIR app directly via USB — they don't register with the INDI server even when the app is running.
 
-- `iOptronV3` is the [[iOptron-CEM26]] driver — the same driver KStars/Ekos uses
-- `state="Alert"` + `DISCONNECT On` means the mount is enumerated but the INDI driver isn't actively holding the serial bridge (ASIAIR app probably uses its own internal channel when running)
-- When the ASIAIR app session is live, additional devices register: camera, focuser, guide cam
+**iOptronV3 property tree (17 vectors)**, captured with `CONNECT=Off`:
 
-**Why this is the right channel for future tooling:**
+| Property | Group | Type | Perm | State | Value |
+|---|---|---|---|---|---|
+| `CONNECTION` | Main Control | Switch | rw | **Alert** | CONNECT=Off, DISCONNECT=On |
+| `DRIVER_INFO` | Connection | Text | ro | Idle | name=`iOptronV3`, exec=`indi_ioptronv3_telescope`, v1.1, interface=5 |
+| `CONNECTION_MODE` | Connection | Switch | rw | Ok | **TCP=On**, SERIAL=Off |
+| `DEVICE_ADDRESS` | Connection | Text | rw | Ok | **`192.168.178.87:8899`** |
+| `CONNECTION_TYPE` | Connection | Switch | rw | Ok | TCP=On, UDP=Off |
+| `POLLING_PERIOD` | Options | Number | rw | Ok | 1000 ms |
+| `DEBUG` | Options | Switch | rw | Ok | DISABLE=On |
+| `SIMULATION` | Options | Switch | rw | Idle | DISABLE=On |
+| `CONFIG_PROCESS` | Options | Switch | rw | Idle | (load/save/default/purge) |
+| `ACTIVE_DEVICES` | Options | Text | rw | Ok | ACTIVE_GPS=GPS Simulator, ACTIVE_DOME=Dome Simulator |
+| `DOME_POLICY` | Options | Switch | rw | Ok | NO_ACTION=On |
+| `TELESCOPE_INFO` | Options | Number | rw | Ok | APERTURE=0, FOCAL=0, GUIDER_APERTURE=0, GUIDER_FOCAL=0 *(not pre-populated)* |
+| `SCOPE_CONFIG_NAME` | Options | Text | rw | Ok | *(empty)* |
 
-- Standard protocol — XML over TCP, documented at [indilib.org](https://www.indilib.org/develop/developer-manual/91-client-development-tutorial.html)
-- Massive client ecosystem already exists: KStars/Ekos, CCDciel, N.I.N.A. (via INDIGO bridge), `pyindi-client`, any custom Python script
-- No reverse engineering, no fragile dependencies on un-maintained jailbreak repos
-- INDI's pub/sub model (server pushes `setXxxVector` on every state change) avoids the polling-collision problem that killed the MacBot mount integration — clients don't compete for the serial bus, the INDI server arbitrates
+The actual mount-state properties (`EQUATORIAL_EOD_COORD`, `HORIZONTAL_COORD`, `TRACK_STATE`, `MOUNT_PARK`, `PIER_SIDE`, `TIME_UTC`, `GEOGRAPHIC_COORD`) only appear **after** `CONNECT=On` is sent — INDI drivers don't publish runtime properties until connected.
 
-**Caveats not yet verified:**
+### The critical twist: INDI is a proxy, not a separate path
 
-- Does ASIAIR's internal channel and the INDI driver share the same physical mount serial bus? If yes, the [[Capture-Planning-Rules#4. Single-client invariant — `mount.py` vs ASIAIR|single-client invariant]] likely still applies — don't run INDI clients against `iOptronV3` while ASIAIR is actively imaging. Needs empirical test (probably with a passive `pyindi-client` listener during a no-op session).
-- Whether the camera / focuser drivers expose write access while the app holds them is unknown.
+`DEVICE_ADDRESS = 192.168.178.87:8899` is the same TCP WiFi-to-Serial bridge that `mount.py` and the ASIAIR app talk to directly. Sending `CONNECT=On` to the INDI server causes the ASIAIR to open **its own** TCP connection to the mount bridge — making any INDI client a *third* peer on the broadcast bridge alongside `mount.py` and the ASIAIR app.
+
+So the May-24 [[Capture-Planning-Rules#4. Single-client invariant — `mount.py` vs ASIAIR|single-client invariant]] does **not** evaporate by switching to INDI. The protocol layer is cleaner (XML pub/sub instead of polling raw `:GLS#`), but the transport collision is the same — the iOS app, `mount.py`, and an INDI client could all receive each other's broadcast responses if they're running simultaneously.
+
+**The actually-useful win** of going through INDI: pub/sub means we *don't* poll the bridge, so we don't *cause* collisions even if we'd suffer them. That's still an improvement over `mount.py log`'s 30 s polling loop. But it doesn't make us safe to coexist with an active ASIAIR session — only an empirical test can confirm.
+
+### What INDI can give us, realistically
+
+Once `CONNECT=On` populates the runtime tree, an external client (e.g. `pyindi-client`) gets reactive access to:
+
+- **Live mount state**: RA/Dec (J2000 + JNow), alt/az, tracking on/off, parked, pier side, UTC, geographic coords
+- **Slew / park / abort commands**: writable, same hazards as `mount.py`'s removed `goto` / `park` — these stay off-limits
+- **Time / location set**: same convergence with ASIAIR's overwrites as `mount.py timesync`
+
+What it does **not** give us:
+- Camera control — `ASI2600MC Pro`, `ASI385MC` not registered with the INDI server
+- Focuser control — no `ZWO EAF` device
+- Anything the app does internally — sequence engine, plate solver, polar align routine, autofocus V-curve
+
+**Bottom line on 7624**: usable as a mount-state telemetry source, equivalent functional surface to `mount.py status / log` but reactive instead of polling. Not the "clean alternative path" first impression suggested — it shares the same broadcast bridge, just from a different angle.
 
 ---
 
@@ -86,7 +106,20 @@ Known working methods (from `joshumax/asiair/jailbreak.py`):
 
 `begin_recv` triggers `run_update: true` execution which runs the uploaded `update_package.sh` as root — this is the jailbreak vector (write `pi:raspberry` to /etc/shadow). **Do not invoke** outside controlled experimentation on a known-restorable unit.
 
-Use case for legitimate tooling: probably none on this unit. The OTA channel exists for ZWO's own updater; everything else worth automating is on 7624 (INDI) or via the file share (Samba 139/445).
+### Method enumeration result (2026-05-25)
+
+20 plausible method names probed (introspection patterns + ZWO-specific guesses) — **all 20 returned `code:103, "method not found"`**:
+
+```
+system.listMethods, rpc.discover, list_methods, get_methods, help,
+version, get_status, status, ping, get_device_info, get_version_info,
+get_disk_info, get_app_state, get_setting, scan_air, get_air_devices,
+get_camera_info, get_mount_info, get_focuser_info, list_devices
+```
+
+No introspection method exists either (so the full method list can't be enumerated without source-level access — the iOS app's traffic would have to be captured to discover what it actually calls). The greeting's "ASI AIR updater" self-identification is literal: this endpoint exists for ZWO's firmware updater and nothing else.
+
+**Use case for legitimate tooling: none.** Everything actionable is on 7624 (mount via INDI) or 139/445 (Samba file share for captured FITS).
 
 ---
 
@@ -116,15 +149,29 @@ If a real need emerges (e.g. wanting to script the app's sequence engine specifi
 
 ---
 
+## Empirical questions still open
+
+Two tests would close the remaining unknowns about port 7624. Both require the **mount powered on** (and the [[feedback-ask-rig-state-first|rig-state checklist]] cleared beforehand), and ideally piggyback on a real session rather than a special trip:
+
+1. **Does INDI `CONNECT=On` work when ASIAIR app is NOT running?** With mount on, app closed, send `<newSwitchVector device="iOptronV3" name="CONNECTION"><oneSwitch name="CONNECT">On</oneSwitch>...` to 7624. Watch whether `state` transitions Alert → Ok and the runtime properties (`EQUATORIAL_EOD_COORD`, `TRACK_STATE`, etc.) populate. This is the existence proof that INDI is a viable read path at all.
+2. **Does it coexist with an active ASIAIR session?** With mount on AND ASIAIR app actively connected (e.g. during a normal capture window), connect a passive `pyindi-client` listener and watch the property update stream. Good outcome: properties update at the app's rate (suggests the app multiplexes through INDI internally). Bad outcome: properties stall, give garbage, or trigger the same 25 % parse failure rate as `mount.py` did on the WiFi bridge.
+
+Both tests are read-only on the INDI side (no slew, no park — those remain off-limits per [[Capture-Planning-Rules#5. Mount safety — what `mount.py` will NOT do, and why|mount safety]]). The risk is purely transport-layer: test #1 puts the ASIAIR onto the WiFi bridge as a TCP client, which is fine if no one else is on it. Test #2 deliberately overlaps with an active session — only run it on a low-stakes night.
+
+If both pass, the natural follow-up project is a Mac Mini INDI subscriber that logs mount state to NDJSON — same role as the torn-down `mount.py log` integration but transport-correct (pub/sub via INDI instead of poll-and-collide via raw `:GLS#` on the broadcast bridge).
+
+---
+
 ## Lessons applied from the MacBot teardown
 
 The May 24 MacBot integration tried to monitor the [[iOptron-CEM26]] mount via the mount's own WiFi-to-Serial bridge at `192.168.178.87:8899`, in parallel with ASIAIR's connection to the same bridge. The bridge's broadcast architecture (responses go to every client) produced a 25 % false-event rate and the integration was torn down the same day — see [[Mount-Diagnostics#Historical note: Mac Mini / MacBot integration attempted + torn down 2026-05-24|the historical write-up]].
 
-The right architecture for any future external-monitoring project is:
+Architectural lessons that survive this round of probing:
 
-1. **Talk to the ASIAIR's INDI server on port 7624**, not the mount's WiFi bridge. Lets the ASIAIR remain the single arbiter of the physical bus.
-2. **Subscribe to INDI property updates** (pub/sub) instead of polling — no broadcast collisions, no false unreachable events.
-3. **Treat port 8888 as off-limits** unless someone publishes a proper protocol spec — the cost/benefit doesn't justify reverse engineering it.
+1. **INDI on 7624 is *cleaner*, not *separate*.** The ASIAIR's INDI server proxies to the same `192.168.178.87:8899` bridge as `mount.py`. Pub/sub eliminates *our* contribution to collisions (we don't poll), but doesn't eliminate the other clients' contributions. The single-client invariant still applies to the *whole system* — at most one of (ASIAIR app, `mount.py`, INDI client) actively connected at a time, until the empirical test in the section above proves otherwise.
+2. **Polling the bridge from a competing client is the architecture mistake**, not the choice of protocol. `mount.py log` polling `:GLS#` from the Mac Mini was wrong; an `mount.py log` polling `:GLS#` from anywhere else would be wrong too. The fix is pub/sub (INDI) on the same bridge with no other clients, OR a passive listener that doesn't issue any commands.
+3. **Treat port 8888 as off-limits** unless someone publishes a proper protocol spec — the cost/benefit doesn't justify reverse engineering it from scratch via iOS app capture.
+4. **Camera / focuser / guide-cam external control is not available** at all on this firmware. The app holds those USB devices directly and doesn't bridge them through INDI. Plan around it: external tooling is mount-only.
 
 ---
 

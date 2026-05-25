@@ -89,11 +89,11 @@ The ASIAIR exposes several TCP services beyond the proprietary app channel. The 
 
 | Port | Protocol | Use |
 |---|---|---|
-| 7624 | **Standard INDI** | Already publishes `iOptronV3` (the [[iOptron-CEM26]] driver). Cleanest path for any external monitoring / scripting. |
-| 4350 | ZWO JSON-RPC 2.0 | OTA / firmware updater channel. Greets with `{"Event":"Version","name":"ASI AIR updater",...}`. Not for everyday automation. |
+| 7624 | **Standard INDI** | Exposes **only** the `iOptronV3` mount driver (no camera / focuser / guide cam). Pre-configured as a TCP proxy to `192.168.178.87:8899` — same broadcast bridge as `mount.py`, just one protocol layer up. |
+| 4350 | ZWO JSON-RPC 2.0 | OTA / firmware updater channel. Greets with `{"Event":"Version","name":"ASI AIR updater",...}`. 20-method probe returned all `code:103`. Not for everyday automation. |
 | 8888 | Proprietary app control | Black box — RSTs on every structured probe. The iOS app's channel; not reverse-engineered publicly. |
 
-Full port table + probe results + the rationale for "use INDI on 7624, not 8888" live in [[ASIAIR-Network-Protocol]]. **Read that before designing any future external-monitoring tool against the ASIAIR** — repeating the May 2026 MacBot mistake by talking to the mount's WiFi bridge directly is the wrong architecture.
+Full port table, INDI property tree, JSON-RPC enumeration result, and the **two empirical tests still open** for the INDI path live in [[ASIAIR-Network-Protocol]]. **Read that before designing any future external-monitoring tool against the ASIAIR** — including the corrected lesson that INDI on 7624 is a proxy (not a separate path) and the broadcast-bridge single-client invariant still applies system-wide.
 
 ---
 
