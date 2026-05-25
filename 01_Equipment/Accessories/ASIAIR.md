@@ -60,8 +60,28 @@ Purchased in 2022.
 
 | Connection | Device | Method |
 |------------|--------|--------|
-| WiFi | Phone/tablet | ASIAIR app control |
-| ST-4 / USB | [[iOptron-CEM26]] | Mount GoTo and tracking commands |
+| WiFi (station mode) | Home network | Joins `BleiftDoheem` SSID — see Network section below |
+| TCP/WiFi | [[iOptron-CEM26]] | Mount GoTo + tracking via the mount's WiFi-to-Serial bridge at `192.168.178.87:8899` (changed 2026-05-24 from USB-Serial) |
+
+---
+
+## Network
+
+ASIAIR Plus connects to `BleiftDoheem` (home WiFi) in **station mode** so it's reachable from any device on the LAN, not just a hotspot.
+
+| Parameter | Value |
+|---|---|
+| Hostname | (ASIAIR auto-assigned) |
+| **IP address (LAN)** | **`192.168.178.84`** |
+| IP reservation | **Static reservation** on the [[Fritz!Box]] DHCP table — survives reboots |
+| Port | App-managed (ASIAIR app discovers via mDNS / direct IP entry) |
+| Hotspot mode | Available as fallback (`ASIAIR_XXXX` SSID) but not the primary mode |
+
+**Why a static reservation matters:**
+- ASIAIR app finds the device by IP — DHCP-reassigned IPs would silently break connection
+- Mount control (TCP to `192.168.178.87:8899`) and ASIAIR control (`192.168.178.84`) are both on the same LAN — keeping both at fixed IPs lets the iOptron CEM26 and ASIAIR coexist predictably without rediscovery overhead
+
+**MAC reservation pattern (Fritz!Box):** the ASIAIR's MAC is bound to `.84` in the Heimnetz → Netzwerk DHCP table. Matches the same pattern used for the [[iOptron-CEM26]] mount at `.87` (see [[iOptron-CEM26#WiFi Configuration]]).
 
 ---
 
