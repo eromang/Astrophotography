@@ -10,12 +10,13 @@ object_type: cluster
 constellation: "Coma Berenices"
 magnitude: "1.8"
 angular_size: "275'"
-total_integration: "TBD"
+total_integration: "1.7 h"
 sessions:
   - "[[2026-04-20-Capture]]"
   - "[[2026-04-21-Capture]]"
   - "[[2026-04-22-Capture]]"
   - "[[2026-04-23-Capture]]"
+  - "[[2026-05-25-Capture]]"
 tags:
   - target/cluster
 ---
@@ -26,20 +27,24 @@ tags:
 
 ### ASI2600MC Pro + RedCat 51
 
-| Date | Exposure | Frames | Filter | Gain | Temp |
-|------|----------|--------|--------|------|------|
-| 2026-04-20 | 120s | TBD | [[Optolong-LPro]] | g100 | -10°C |
-| 2026-04-21 | 120s | TBD | [[Optolong-LPro]] | g100 | -10°C |
-| 2026-04-22 | 120s | TBD | [[Optolong-LPro]] | g100 | -10°C |
-| 2026-04-23 | 120s | TBD | [[Optolong-LPro]] | g100 | -10°C |
+| Date | Exposure | Frames | Filter | Gain | Temp | Notes |
+|------|----------|--------|--------|------|------|-------|
+| 2026-04-20 | — | 0 | — | — | — | not executed |
+| 2026-04-21 | — | 0 | — | — | — | not executed |
+| 2026-04-22 | — | 0 | — | — | — | not executed |
+| 2026-04-23 | — | 0 | — | — | — | not executed |
+| **2026-05-25** | **120s** | **52** | **[[Optolong-LPro]]** | **g100** | **-9.6°C** | First light. 75% moon at 28° separation — test capture, see session note caveats. |
 
-**Data location:** `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` (TBD — to be created)
+**Total realized integration:** 52 × 120s = **104 min (1.7 h)**
+
+**Data location:** raw FITS currently on `~/Desktop/Astro/Mel 111/` (MacBook). To be moved to `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` per [[project-vault-structure|standard SSD layout]].
 
 ## Processing
 
-- 4-night MultiNights campaign planned (Apr 2026)
+- Multi-night campaign originally planned for Apr 2026 — none of the 4 April nights executed (weather / personal availability). First light delivered 2026-05-25 instead.
 - [[RGB-Workflow]]
 - Star reduction (BlurXTerminator) advised — bright cluster will saturate γ Com etc.
+- For tonight's first-light data specifically: SPCC BN gradient correction will be critical due to elevated background from 75 % moon at 28°. Cluster stars themselves are bright enough to handle the penalty; faint context (IFN) is the casualty.
 
 ## Visibility from Tuntange Balcony
 
