@@ -3,9 +3,9 @@
 ********************************************************************
 PixInsight XML Process Serialization Module - XPSM 1.0
 ********************************************************************
-Generated on 2026-03-29T12:18:29.218Z
-PixInsight Core 1.9.3 (x64)
-Copyright (c) 2003-2025 Pleiades Astrophoto
+Generated on 2026-05-26T12:05:07.088Z
+PixInsight Core 1.9.4 (arm64)
+Copyright (c) 2003-2026 Pleiades Astrophoto
 ********************************************************************
 -->
 <xpsm version="1.0" xmlns="http://www.pixinsight.com/xpsm" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.pixinsight.com/xpsm http://pixinsight.com/xpsm/xpsm-1.0.xsd">
@@ -168,7 +168,7 @@ Copyright (c) 2003-2025 Pleiades Astrophoto
          </tr>
       </table>
    </instance>
-   <instance class="AutomaticBackgroundExtractor" version="256" id="ABE_instance">
+   <instance class="AutomaticBackgroundExtractor" version="2" id="ABE_instance">
       <parameter id="tolerance" value="1.000"/>
       <parameter id="deviation" value="0.800"/>
       <parameter id="unbalance" value="1.800"/>
@@ -179,16 +179,16 @@ Copyright (c) 2003-2025 Pleiades Astrophoto
       <parameter id="polyDegree" value="4"/>
       <parameter id="boxSize" value="5"/>
       <parameter id="boxSeparation" value="5"/>
-      <parameter id="modelImageSampleFormat" value="f32"/>
+      <parameter id="modelImageSampleFormat" value="ModelFormat_f32"/>
       <parameter id="abeDownsample" value="2.00"/>
       <parameter id="writeSampleBoxes" value="false"/>
       <parameter id="justTrySamples" value="false"/>
-      <parameter id="targetCorrection" value="Subtract"/>
+      <parameter id="targetCorrection" value="Correction_Subtract"/>
       <parameter id="normalize" value="false"/>
       <parameter id="discardModel" value="false"/>
       <parameter id="replaceTarget" value="false"/>
       <parameter id="correctedImageId"></parameter>
-      <parameter id="correctedImageSampleFormat" value="SameAsTarget"/>
+      <parameter id="correctedImageSampleFormat" value="CorrectedFormat_SameAsTarget"/>
       <parameter id="verboseCoefficients" value="false"/>
       <parameter id="compareModel" value="false"/>
       <parameter id="compareFactor" value="10.00"/>
