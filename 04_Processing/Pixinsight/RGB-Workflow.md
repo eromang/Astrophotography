@@ -74,7 +74,16 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 
 - **Subframe Weighting:** PSF Signal Weight
 - **Image Registration:** Enabled
-  - **Distortion Correction:** **Disabled**. Empirical finding 2026-05-27 (Mel 111 dataset, [[2026-05-25-Capture]]): enabling Distortion Correction causes the post-drizzle astrometric solve to fail with `RANSAC: Unable to find a valid set of star pair matches`. WBPP's execution monitor reports the failure as `Astrometric solution: 1 solved, 3 failed`. With Distortion Correction off, all master outputs solve cleanly on first attempt. The spline-based local warp Distortion Correction applies leaves the registered output non-projectively consistent, which the plate solver can't match against catalog stars. Field curvature compensation is handled downstream in Phase 2.4 by **BlurXTerminator's "Correct Only" mode** — the proper tool for optical aberration correction.
+  - **Distortion Correction:** **Disabled**.
+  - **Allow Clustered Sources** (in Image Registration, NOT Local Normalization): **Disabled**.
+
+  Empirical finding 2026-05-27 (Mel 111 dataset, [[2026-05-25-Capture]]): **both** Distortion Correction AND Allow Clustered Sources, enabled INDEPENDENTLY, cause the post-drizzle astrometric solve to fail with `RANSAC: Unable to find a valid set of star pair matches` and WBPP's execution monitor signature `Astrometric solution: 1 solved, 3 failed`. With both off, all master outputs solve cleanly on first attempt.
+
+  Both options change Image Registration's alignment math in ways that leave the registered output non-projectively consistent (Distortion Correction via spline-based local warp; Allow Clustered Sources via overlapping-cluster PSF centroid errors). The plate solver expects near-affine projection of the sky to match Gaia DR3 stars via RANSAC. Drizzle 2x's pixel-scale doubling cascades small geometric inconsistencies into RANSAC failure.
+
+  **Name collision warning:** "Allow Clustered Sources" appears in BOTH Image Registration AND Local Normalization sub-panels with opposite recommendations: **Image Registration → Allow Clustered Sources OFF**; **Local Normalization → Allow Clustered Sources ON** (dense cluster fields need it for LN reference build).
+
+  Field curvature compensation is handled downstream in Phase 2.4 by **BlurXTerminator's "Correct Only" mode** — the proper tool for optical aberration correction.
 - **Local Normalization:** Enabled (critical for multi-night stacks)
 - **Image Integration:**
   - Combination: Average

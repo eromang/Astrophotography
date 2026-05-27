@@ -82,6 +82,7 @@ Aligns all frames to a reference frame.
 | Setting | Default | Recommended | Description |
 |---------|---------|-------------|-------------|
 | Distortion Correction | Unchecked | **Unchecked** | ⚠️ Counter-intuitive: leave OFF for this rig. Empirical 2026-05-27 ([[../../05_Sessions/2026/Capture/2026-05-25-Capture\|Mel 111 dataset]]): enabling Distortion Correction breaks the post-drizzle astrometric solve (`RANSAC: Unable to find a valid set of star pair matches`, 3 of 4 masters fail). With it off, all solve cleanly. Spline-warped output is non-projectively consistent → plate solver can't match catalog stars. RedCat 51 field-edge correction is done in Phase 2.4 via BlurXTerminator "Correct Only" — proper tool for optics, not registration. |
+| Allow Clustered Sources (in Image Registration) | Unchecked | **Unchecked** | ⚠️ Same failure mode as Distortion Correction — also independently breaks the post-drizzle astrometric solve with `1 solved, 3 failed`. A/B-tested 2026-05-27. Overlapping cluster PSF centroids introduce alignment errors that prevent near-affine projection. **Name-collision warning:** the "Allow Clustered Sources" in Local Normalization (different sub-panel) should stay CHECKED — opposite recommendation for that one. |
 | Max Spline Points | 2000 | **4000** | Higher = more accurate distortion model |
 
 ### Local Normalization
