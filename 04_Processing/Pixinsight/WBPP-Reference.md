@@ -81,7 +81,7 @@ Aligns all frames to a reference frame.
 
 | Setting | Default | Recommended | Description |
 |---------|---------|-------------|-------------|
-| Distortion Correction | Unchecked | **Unchecked** | ⚠️ Counter-intuitive: leave OFF for this rig. Empirical 2026-05-27 ([[../../05_Sessions/2026/Capture/2026-05-25-Capture\|Mel 111 dataset]]): enabling Distortion Correction breaks the post-drizzle astrometric solve (`RANSAC: Unable to find a valid set of star pair matches`, 3 of 4 masters fail). With it off, all solve cleanly. Spline-warped output is non-projectively consistent → plate solver can't match catalog stars. RedCat 51 field-edge correction is done in Phase 2.4 via BlurXTerminator "Correct Only" — proper tool for optics, not registration. |
+| Distortion Correction | Unchecked | **Enabled** | Corrects field distortion (important for [[RedCat-51]] edge stars) |
 | Max Spline Points | 2000 | **4000** | Higher = more accurate distortion model |
 
 ### Local Normalization

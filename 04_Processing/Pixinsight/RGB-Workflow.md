@@ -74,7 +74,7 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
 
 - **Subframe Weighting:** PSF Signal Weight
 - **Image Registration:** Enabled
-  - **Distortion Correction:** **Disabled**. Empirical finding 2026-05-27 (Mel 111 dataset, [[2026-05-25-Capture]]): enabling Distortion Correction causes the post-drizzle astrometric solve to fail with `RANSAC: Unable to find a valid set of star pair matches`. WBPP's execution monitor reports the failure as `Astrometric solution: 1 solved, 3 failed`. With Distortion Correction off, all master outputs solve cleanly on first attempt. The spline-based local warp Distortion Correction applies leaves the registered output non-projectively consistent, which the plate solver can't match against catalog stars. Field curvature compensation is handled downstream in Phase 2.4 by **BlurXTerminator's "Correct Only" mode** — the proper tool for optical aberration correction.
+  - **Distortion Correction:** Enabled (max spline points **4000**) — corrects [[RedCat-51]] field curvature at edges, improves Drizzle 2x quality
 - **Local Normalization:** Enabled (critical for multi-night stacks)
 - **Image Integration:**
   - Combination: Average
