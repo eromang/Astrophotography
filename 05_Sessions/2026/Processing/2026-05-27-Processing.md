@@ -56,12 +56,13 @@ Goal: determine which WBPP settings affect the post-pipeline astrometric solve.
 
 **Actual finding (after extensive debugging):** the ONLY WBPP variable that affects the astrometric outcome is **the Image Solver default Pixel size**, which **WBPP silently auto-changes from 3.76 → 1.88 µm after each completed run**. All "1 solved, 3 failed" results below were caused by the auto-reset; once pixel size was manually re-set to 3.76 before each launch, all runs achieved `4 solved ✓`.
 
-| # | Pixel size at launch | Distortion Correction | Allow Clustered (Image Reg) | Cosmetic Correction | Master Dark mode | Optimize Master Dark | Astrometric result | Elapsed |
-|---|---|---|---|---|---|---|---|---|
-| 1 | **3.76** (initial) | ON | OFF | Auto | 25 raws (WBPP stacks) | OFF | **4 solved ✓** | 21:30 |
-| 2a | 1.88 (auto-reset, not noticed) | ON | OFF | Template `WBPP_CC_Dark` | Pre-built master | OFF | 1 solved, 3 failed | 23:53 |
-| 2b | **3.76** (manually reset) | ON | OFF | Template `WBPP_CC_Dark` | Pre-built master | OFF | **4 solved ✓** | 21:10 |
-| 3 | **3.76** (manually reset) | ON | **ON** | Template `WBPP_CC_Dark` | Pre-built master | OFF | **4 solved ✓** | 21:38 |
+| # | Pixel size at launch | Distortion Correction | Allow Clustered (Image Reg) | Cosmetic Correction | Master Dark mode | Optimize Master Dark | Full calibration | Drizzle Fast Mode | Astrometric result | Elapsed |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | **3.76** (initial) | ON | OFF | Auto | 25 raws (WBPP stacks) | OFF | lights+darks only | OFF | **4 solved ✓** | 21:30 |
+| 2a | 1.88 (auto-reset, not noticed) | ON | OFF | Template `WBPP_CC_Dark` | Pre-built master | OFF | lights+darks only | OFF | 1 solved, 3 failed | 23:53 |
+| 2b | **3.76** (manually reset) | ON | OFF | Template `WBPP_CC_Dark` | Pre-built master | OFF | lights+darks only | OFF | **4 solved ✓** | 21:10 |
+| 3 | **3.76** (manually reset) | ON | **ON** | Template `WBPP_CC_Dark` | Pre-built master | OFF | lights+darks only | OFF | **4 solved ✓** | 21:38 |
+| **4 (PRODUCTION)** | **3.76** (manually reset) | ON | ON | Template `WBPP_CC_Dark` | Pre-built master | **ON** (now bias loaded) | **bias + flat + dark-flat + dark** | OFF | **4 solved ✓** | 21:31 |
 
 **Conclusion**: The WBPP toggles tested (Distortion Correction, Allow Clustered Sources in Image Registration, CC template vs Automatic, 25 raws vs pre-built master dark) do NOT affect the astrometric solve outcome when pixel size is correct (3.76 µm).
 
@@ -233,9 +234,36 @@ Calibration tab summary row:
 
 ---
 
-## Phase 2 — Linear Processing (TBD)
+## Phase 2 — Linear Processing
 
-Pending: run standalone ImageSolver on the drizzle 2x autocrop master with **pixel size 1.88 µm** (correct for drizzle output, different from WBPP's pre-drizzle 3.76 µm), then continue with [[../../04_Processing/Pixinsight/RGB-Workflow#Phase 2 Linear Processing]].
+**Production master:** `Results/master/masterLight_BIN-1_6248x4176_EXPOSURE-120.00s_FILTER-NoFilter_RGB_drizzle_2x_autocrop.xisf` (Test 4 output)
+
+Per the Test 4 WBPP log, **all 4 masters got astrometric solutions embedded** (including the drizzle 2x autocrop):
+```
+Astrometric solution completed: ...RGB.xisf                      ✓
+Astrometric solution completed: ...RGB_autocrop.xisf             ✓
+Astrometric solution completed: ...RGB_drizzle_2x.xisf           ✓
+Astrometric solution completed: ...RGB_drizzle_2x_autocrop.xisf  ✓
+```
+
+Per [[../../04_Processing/Pixinsight/RGB-Workflow#2.2 ImageSolver]]: *"ImageSolver is needed if WBPP didn't solve the image or if the autocrop lost the solution."* Neither applies — **skip Phase 2 step 2.2** and proceed directly to:
+- 2.1 AutoStretch (visual sanity)
+- 2.3 Gradient Removal (MGC with MARS DR1 now that T7 is plugged in; GraXpert fallback if MARS lacks broadband coverage for this field)
+- 2.4 BlurXTerminator Correct Only
+- 2.5 BlurXTerminator full sharpen
+- 2.6 Background Reference
+- 2.7 SPCC
+- 2.8-2.10 per workflow
+
+**Calibration masters used (from T7 SSD):**
+- Bias: `/Users/ericromang/Desktop/Astro/Mel 111/masters/masterBias_BIN-1_6248x4176_BIAS-1.0ms.xisf`
+- Dark: `/Users/ericromang/Desktop/Astro/Mel 111/Results/master/masterDark_BIN-1_6248x4176_EXPOSURE-120.00s.xisf` (built from 25 raws in this session)
+- Flat: `/Users/ericromang/Desktop/Astro/Mel 111/masters/masterFlat_BIN-1_6248x4176_FILTER-LPro_CFA_FLAT-60ms.xisf`
+- Dark Flat: matched via WBPP's Bias tab auto-match
+
+**Reference frame for registration**: frame 0011 (`...0011_c_cc_d.xisf`) — auto-picked by WBPP as the top PSF Signal Weight frame, consistent with the SubFrameSelector analysis at the top of this note (frame 11 had PSW 0.0303, the best of 52).
+
+**Local Normalization reference**: built from 17 of 52 frames (best by PSF Signal Weight, capped at 20).
 
 ---
 
