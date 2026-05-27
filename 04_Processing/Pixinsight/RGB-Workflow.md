@@ -86,6 +86,7 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
   - Focal distance: **250 mm**
   - Pixel size: **3.76 µm** (native — Drizzle is applied post-registration)
   - **Force values: Unchecked** — ASIAIR writes RA/DEC to FITS headers
+  - ⚠️ **CRITICAL**: WBPP auto-changes the Image Solver default Pixel size from 3.76 → 1.88 after each run completes (presumably matching the drizzle-scaled output for "next" use). **Manually re-verify 3.76 µm before EVERY WBPP launch** — running with 1.88 makes the per-frame solver fail and produces `Astrometric solution: 1 solved, 3 failed` in the execution monitor. Empirical 2026-05-27 ([[../../05_Sessions/2026/Processing/2026-05-27-Processing|Mel 111 processing session]]).
 
 #### Pipeline Tab
 

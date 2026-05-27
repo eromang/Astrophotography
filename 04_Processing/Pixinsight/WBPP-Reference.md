@@ -155,7 +155,7 @@ Plate-solves each frame for distortion correction and alignment.
 | Declination | — | Target Dec | Approximate target coordinates |
 | Date and time | — | Approx session date | Approximate observation date |
 | Focal distance | — | **250 mm** | Telescope focal length ([[RedCat-51]]) |
-| Pixel size | — | **3.76 µm** | Native pixel size ([[ASI2600MCPro]]). Use native even with Drizzle — Drizzle is applied post-registration |
+| Pixel size | — | **3.76 µm** ⚠️ | Native pixel size ([[ASI2600MCPro]]). Use native even with Drizzle — Drizzle is applied post-registration. **WBPP auto-changes this from 3.76 → 1.88 after each run** (presumably matches drizzle output for the "next" solve); manually re-verify 3.76 before EVERY launch or per-frame solver fails with `1 solved, 3 failed`. Empirical 2026-05-27. |
 | **Force values** | Unchecked | **Unchecked** | **Never check** — fails on rotated images. ASIAIR writes RA/DEC to FITS headers, solver uses those hints. See [[#Lessons Learned]] |
 
 ---
