@@ -37,7 +37,7 @@ tags:
 
 **Total realized integration:** 52 × 120s = **104 min (1.7 h)**
 
-**Data location:** raw FITS archived to T7 SSD on 2026-05-30 — `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` (52 lights + the session's 120 s dark master, all MD5-verified) per [[project-vault-structure|standard SSD layout]]. Working copy still on `~/Desktop/Astro/Mel 111/` (MacBook).
+**Data location:** archived to T7 SSD on 2026-05-30 — `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` (52 raw lights + the session 120 s dark master + the production master `masterLight_…RGB_drizzle_2x_autocrop.xisf`, all MD5-verified) per [[project-vault-structure|standard SSD layout]]. Desktop working copies (lights, intermediate masters, `.pxiproject`, `Results/`) deleted after verification; only `log/` remains on the MacBook.
 
 **Calibration archive status (verified 2026-05-30):** bias (1 ms), flat (L-Pro 60 ms), and dark-flat (60 ms) masters are **MD5-identical** to the [[Master-Library]] copies on T7. The 120 s dark master was *rebuilt in-session* (differs from the Apr-19 library master), so the exact session build was archived next to the lights in `Mel111_Coma/`; its 25 raws are also on T7 (`Templates/Dark/DARK11-BIN1-120s-10/`, MD5-identical).
 

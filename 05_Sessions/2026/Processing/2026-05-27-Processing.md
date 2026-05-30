@@ -237,7 +237,7 @@ Calibration tab summary row:
 
 ## Phase 2 — Linear Processing
 
-**Production master:** `Results/master/masterLight_BIN-1_6248x4176_EXPOSURE-120.00s_FILTER-NoFilter_RGB_drizzle_2x_autocrop.xisf` (Test 4 output)
+**Production master:** `masterLight_BIN-1_6248x4176_EXPOSURE-120.00s_FILTER-NoFilter_RGB_drizzle_2x_autocrop.xisf` (Test 4 output) — archived to T7 `Objects/…/Mel111_Coma/` (MD5-verified 2026-05-30); the other Desktop `Results/` masters + intermediates were discarded as regenerable.
 
 Per the Test 4 WBPP log, **all 4 masters got astrometric solutions embedded** (including the drizzle 2x autocrop):
 ```
