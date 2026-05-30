@@ -37,14 +37,26 @@ tags:
 
 **Total realized integration:** 52 × 120s = **104 min (1.7 h)**
 
-**Data location:** raw FITS currently on `~/Desktop/Astro/Mel 111/` (MacBook). To be moved to `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` per [[project-vault-structure|standard SSD layout]].
+**Data location:** raw FITS archived to T7 SSD on 2026-05-30 — `/Volumes/T7/Astrophotography/Objects/Open_Star_Clusters/ASI2600MC-REDCAT51/Mel111_Coma/` (52 lights + the session's 120 s dark master, all MD5-verified) per [[project-vault-structure|standard SSD layout]]. Working copy still on `~/Desktop/Astro/Mel 111/` (MacBook).
+
+**Calibration archive status (verified 2026-05-30):** bias (1 ms), flat (L-Pro 60 ms), and dark-flat (60 ms) masters are **MD5-identical** to the [[Master-Library]] copies on T7. The 120 s dark master was *rebuilt in-session* (differs from the Apr-19 library master), so the exact session build was archived next to the lights in `Mel111_Coma/`; its 25 raws are also on T7 (`Templates/Dark/DARK11-BIN1-120s-10/`, MD5-identical).
+
+## Processed Result
+
+![[Mel111-ASI2600.jpg]]
+
+*First-light master, 52 × 120 s (1.7 h) L-Pro, processed 2026-05-27 → 2026-05-30 — see [[2026-05-27-Processing]]. Drizzle 2× integration, SPFC + GraXpert/ABE gradient + SPCC, BlurXTerminator, stretched in PixInsight 1.9.4. Tight round stars to the corners, clean blue/orange star-colour separation, and a scatter of background Coma galaxies preserved (face-on spiral lower-right, edge-on/lenticular pairs in the SE corner). γ Com retains a soft blue halo — flagged for a future star-separated reprocess.*
 
 ## Processing
 
+**Production master:** `Results/master/masterLight_…_drizzle_2x_autocrop.xisf` (WBPP Test 4). Full session log: [[2026-05-27-Processing]].
+
 - Multi-night campaign originally planned for Apr 2026 — none of the 4 April nights executed (weather / personal availability). First light delivered 2026-05-25 instead.
-- [[RGB-Workflow]]
-- Star reduction (BlurXTerminator) advised — bright cluster will saturate γ Com etc.
-- For tonight's first-light data specifically: SPCC BN gradient correction will be critical due to elevated background from 75 % moon at 28°. Cluster stars themselves are bright enough to handle the penalty; faint context (IFN) is the casualty.
+- [[RGB-Workflow]]; drizzle 2× at integration (cluster is point-source-dominated, drizzle resolves tight pairs cleanly).
+- **Gradient:** planned MGC/MARS path was abandoned — MARS lacks broadband coverage for this field; **GraXpert + ABE** used instead (gradient from 75 % moon at 28° handled well).
+- **Colour:** SPFC (flux) then SPCC — Gaia DR3/SP, G2V white reference, WB factors 1.000 / 0.722 / 0.800, R/G σ 0.30 / B/G σ 0.46. Clean fit.
+- **Stars:** handled with [[Star-Console-Reference|Star Console]] (Hidden Light Photography PI script) — auto-measures FWHM → runs BlurXTerminator at that PSF diameter → StarXTerminator star removal, giving a starless + stars pair processed separately. **Open item:** γ Com still shows a bloated blue halo on the stars layer; gentler star stretch / halo reduction next time would tighten it.
+- **Filter — confirmed L-Pro:** the lights' FITS `FILTER` keyword is **blank**, which is why WBPP labelled the stack `NoFilter`. The ASIAIR filenames embed `_LPro_`, and SPCC/SPFC both modelled Optolong L-Pro R/G/B — so the capture was through the [[Optolong-LPro]]; only the header was unpopulated. No discrepancy, just a missing keyword.
 
 ## Visibility from Tuntange Balcony
 

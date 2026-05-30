@@ -1,7 +1,8 @@
 ---
-title: "2026-05-27 Processing Session — Mel 111 WBPP A/B tests"
+title: "2026-05-27 Processing Session — Mel 111 WBPP A/B tests → finished master"
 type: processing-session
 date: 2026-05-27
+date_completed: 2026-05-30
 software: "PixInsight 1.9.4 (arm64)"
 targets_processed:
   - "[[Mel111-Coma]]"
@@ -255,15 +256,67 @@ Per [[../../04_Processing/Pixinsight/RGB-Workflow#2.2 ImageSolver]]: *"ImageSolv
 - 2.7 SPCC
 - 2.8-2.10 per workflow
 
-**Calibration masters used (from T7 SSD):**
-- Bias: `/Users/ericromang/Desktop/Astro/Mel 111/masters/masterBias_BIN-1_6248x4176_BIAS-1.0ms.xisf`
-- Dark: `/Users/ericromang/Desktop/Astro/Mel 111/Results/master/masterDark_BIN-1_6248x4176_EXPOSURE-120.00s.xisf` (built from 25 raws in this session)
-- Flat: `/Users/ericromang/Desktop/Astro/Mel 111/masters/masterFlat_BIN-1_6248x4176_FILTER-LPro_CFA_FLAT-60ms.xisf`
-- Dark Flat: matched via WBPP's Bias tab auto-match
+**Calibration masters used** (archive status MD5-verified 2026-05-30):
+- Bias: `masterBias_…BIAS-1.0ms.xisf` — **MD5-identical** to T7 `Templates/Masters/Bias/`
+- Dark: `Results/master/masterDark_…120.00s.xisf` — **rebuilt in-session** from 25 raws; differs from the Apr-19 T7 library master, so this exact build was archived to T7 `Objects/…/Mel111_Coma/` next to the lights (raws also on T7 `Templates/Dark/DARK11-BIN1-120s-10/`, MD5-identical)
+- Flat: `masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` — **MD5-identical** to T7 `Templates/Masters/Flat/`
+- Dark Flat: `masterDark_…0.06s.xisf` (60 ms) — **MD5-identical** to T7 `Templates/Masters/Dark/FQuad/`; matched via WBPP's Bias tab auto-match
 
 **Reference frame for registration**: frame 0011 (`...0011_c_cc_d.xisf`) — auto-picked by WBPP as the top PSF Signal Weight frame, consistent with the SubFrameSelector analysis at the top of this note (frame 11 had PSW 0.0303, the best of 52).
 
 **Local Normalization reference**: built from 17 of 52 frames (best by PSF Signal Weight, capped at 20).
+
+---
+
+## Phase 2/3 — Actual Processing (completed 2026-05-30)
+
+Reconstructed from the SPFC/SPCC reports (`log/SPFC.pdf`, `log/SPCC.pdf`) and process-icon set; final export `Results/Mel-111.jpg` + `Results/master/Image43.fit` written 2026-05-30 15:54.
+
+### Realized step order
+
+1. **WBPP Test 4** → production master `…_drizzle_2x_autocrop.xisf` (full calibration: bias + flat + dark-flat + dark; astrometric solution embedded).
+2. **SPFC** (Spectrophotometric Flux Calibration) on `MasterLight_NoFilter` — 2026-05-27 12:59 UTC.
+3. **GraXpert + ABE** gradient removal → `MasterLight_NoFilter_GraXpert_ABE`. **The planned MGC/MARS path was dropped** — MARS DR1 lacks usable broadband coverage for this field, so the GraXpert fallback (noted in the Phase 2 plan) became the actual path.
+4. **SPCC** (Spectrophotometric Colour Calibration) — 2026-05-27 14:10 UTC.
+5. **Star handling via [[Star-Console-Reference|Star Console]]** (Hidden Light Photography script, `Script → HLP → Star Console`). The script: extracts luminance from the OSC image → measures median FWHM/eccentricity → rounds FWHM and auto-loads it into **BlurXTerminator** PSF diameter and runs full BXT → then **Star Removal (StarXTerminator)**, unscreening the stars. Output is a **starless + stars pair** processed separately. Full settings: [[Star-Console-Reference]].
+6. Stretch (Bill's Stretch from the icon set), recombine stars, final cosmetic/colour work → JPEG export.
+
+### SPFC result (`log/SPFC.pdf`)
+
+| Field | Value |
+|---|---|
+| Catalog | Gaia DR3/SP |
+| Filters | Optolong L-Pro R/G/B |
+| QE curve | Sony IMX571 (IMX411/455/461/533/571 family) |
+| Total sources | R 278 / G 276 / B 279 |
+| Scale factors | R 8.85e-02 · G 1.380e-01 · B 1.261e-01 |
+| Dispersions | R 1.87e-03 · G 2.64e-03 · B 2.56e-03 (tight) |
+
+### SPCC result (`log/SPCC.pdf`)
+
+| Field | Value |
+|---|---|
+| Catalog | Gaia DR3/SP |
+| White reference | G2V Star |
+| Total sources | 763 |
+| R/G linear fit | y = 1.2986·x + 0.0382, σ = 0.300 |
+| B/G linear fit | y = 1.2871·x − 0.0246, σ = 0.457 |
+| White balance factors | 1.0000 / 0.7218 / 0.8003 |
+
+Clean colour solution; B/G a touch more scattered (σ 0.46) as expected for broadband from Bortle 4 under a 75 % moon.
+
+### Filter — confirmed L-Pro (resolved 2026-05-30)
+
+WBPP labelled the stack `NoFilter` and that string propagated into the master filenames. Root cause confirmed by inspecting a raw light: the FITS **`FILTER` keyword is blank/absent**, so WBPP defaulted to `NoFilter`. The capture was genuinely through the **Optolong L-Pro** — the ASIAIR filenames embed `_LPro_` (`Light_13 Comae Berenices_…_LPro_0001.fit`), the flat master is L-Pro, and SPCC/SPFC both modelled Optolong L-Pro R/G/B. No real mismatch; the calibration is self-consistent. The `NoFilter` master filenames are cosmetic only.
+
+### Result assessment
+
+Final: `Results/Mel-111.jpg` (12088×7814) — copied to vault as [[Mel111-Coma#Processed Result|`Mel111-ASI2600.jpg`]].
+
+- **Stars:** round and tight across the full frame, corners included — RedCat 51 flat field + BXT, no coma/elongation.
+- **Colour:** strong blue-white (B−V cluster members) vs orange field-star separation; neutral background overall.
+- **Background galaxies:** preserved with structure — face-on spiral (right-of-centre), edge-on/lenticular pairs in the SE corner, several fainter smudges. Strong for 1.7 h broadband.
+- **Open items:** (1) γ Com and the brightest members show a **bloated soft blue halo**. Stars were already separated via Star Console / StarXTerminator, so this is in the **stars-image** processing — tackle it on the stars layer next time (gentler star stretch, halo/morphological reduction, or SCNR-green-then-curves before re-screening); (2) faint warm chroma mottle + a few colour speckles in the corners (limited integration, no dithered chroma cleanup beyond CC) — more integration or a light chroma-denoise would clear it; (3) no IFN/dust context at 1.7 h (expected — needs 5 h+).
 
 ---
 

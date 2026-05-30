@@ -32,6 +32,7 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 | Workflow Gaps | `04_Processing/Pixinsight/Workflow-Gaps.md` | Topics still to clarify |
 | Process Icons | `04_Processing/Pixinsight/Icon-Review.md` | PI icon inventory and updates needed |
 | Modules | `04_Processing/Pixinsight/Modules.md` | Installed PI modules and scripts |
+| Star Console | `04_Processing/Pixinsight/Star-Console-Reference.md` | HLP script — auto FWHM→BXT + SXT star removal; SubFrame Star Check |
 
 ---
 
@@ -50,6 +51,7 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 |---|---|---|
 | Reprocessing Plan | `04_Processing/Reprocessing-Plan.md` | 5 priority targets |
 | NGC 5746 reprocess | Priority 1 | Mid-process: stretched, BN applied, needs NXT final + curves + star reintegration |
+| Mel 111 first light | `05_Sessions/2026/Processing/2026-05-27-Processing.md` | **Done** — processed + archived to T7 (2026-05-30). Open: γ Com bloated-blue-halo reprocess on the stars layer (Star Console / SXT) |
 
 ---
 
