@@ -52,7 +52,7 @@ tags:
 **Production master:** `Results/master/masterLight_…_drizzle_2x_autocrop.xisf` (WBPP Test 4). Full session log: [[2026-05-27-Processing]].
 
 - Multi-night campaign originally planned for Apr 2026 — none of the 4 April nights executed (weather / personal availability). First light delivered 2026-05-25 instead.
-- [[RGB-Workflow]]; drizzle 2× at integration (cluster is point-source-dominated, drizzle resolves tight pairs cleanly).
+- [[OpenCluster-Workflow]]; drizzle 2× at integration (cluster is point-source-dominated, drizzle resolves tight pairs cleanly).
 - **Gradient:** planned MGC/MARS path was abandoned — MARS lacks broadband coverage for this field; **GraXpert + ABE** used instead (gradient from 75 % moon at 28° handled well).
 - **Colour:** SPFC (flux) then SPCC — Gaia DR3/SP, G2V white reference, WB factors 1.000 / 0.722 / 0.800, R/G σ 0.30 / B/G σ 0.46. Clean fit.
 - **Stars:** handled with [[Star-Console-Reference|Star Console]] (Hidden Light Photography PI script) — auto-measures FWHM → runs BlurXTerminator at that PSF diameter → StarXTerminator star removal, giving a starless + stars pair processed separately. **Open item:** γ Com still shows a bloated blue halo on the stars layer; gentler star stretch / halo reduction next time would tighten it.

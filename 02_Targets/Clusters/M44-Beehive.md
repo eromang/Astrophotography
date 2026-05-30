@@ -77,4 +77,4 @@ tags:
 - Mid-evening target (22:30–01:30)
 - Nearby galaxies in FOV: IC2407, IC2406, IC2409
 - **Quad Band is suboptimal for open clusters** — [[Optolong-LPro]] is more appropriate
-- Use [[RGB-Workflow]]
+- Use [[OpenCluster-Workflow]]

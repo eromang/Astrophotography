@@ -62,5 +62,5 @@ tags:
 - Late-night target (RA 15h 19m) — rises late, best after midnight from Tuntange
 - D5300 result shows well-resolved core with bright star 5 Serpentis in field
 - **Quad Band is suboptimal for clusters** — 2025 sessions used [[Antlia-FQuad]] but [[Optolong-LPro]] is more appropriate since there's no emission nebulosity
-- Use [[RGB-Workflow]] with [[Optolong-LPro]], 120s subs
+- Use [[OpenCluster-Workflow]] with [[Optolong-LPro]], 120s subs
 - Summer target — best May–August

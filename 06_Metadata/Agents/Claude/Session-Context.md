@@ -25,7 +25,8 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 
 | Workflow | File | Use for |
 |---|---|---|
-| RGB Broadband | `04_Processing/Pixinsight/RGB-Workflow.md` | Galaxies, clusters, reflection nebulae (L-Pro) |
+| RGB Broadband | `04_Processing/Pixinsight/RGB-Workflow.md` | Galaxies, reflection nebulae (L-Pro) |
+| Open Star Cluster | `04_Processing/Pixinsight/OpenCluster-Workflow.md` | Star clusters — drizzle, star/starless separation, colour-pop (L-Pro) |
 | QuadBand Narrowband | `04_Processing/Pixinsight/QuadBand-OSC-Workflow.md` | Emission nebulae (Quad Band) |
 | HDR | `04_Processing/Pixinsight/HDR-Workflow.md` | Bright-core targets (M42, M16, M31 nucleus) |
 | DBE Reference | `04_Processing/Pixinsight/DBE-Reference.md` | Gradient removal fallback |

@@ -8,8 +8,9 @@ tags:
 
 # RGB Broadband Processing (OSC)
 
-Processing workflow for broadband data captured with the [[Optolong-LPro]] filter on the [[ASI2600MCPro]] (color/OSC camera). Use this for galaxies, clusters, and reflection nebulae.
+Processing workflow for broadband data captured with the [[Optolong-LPro]] filter on the [[ASI2600MCPro]] (color/OSC camera). Use this for galaxies and reflection nebulae.
 
+> **For open star clusters** (star-dominated fields, no nebulosity), use the [[OpenCluster-Workflow]] instead.
 > **For emission nebulae with the Quad Band filter**, use the [[QuadBand-OSC-Workflow]] instead.
 
 ## Resources

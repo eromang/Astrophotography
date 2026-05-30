@@ -61,7 +61,7 @@ tags:
 - Best globular cluster in the northern sky — 20' angular size, well-resolved at 250mm
 - Late-night target (rises late, best after midnight from Tuntange)
 - Star colors well-resolved: blue-white core, orange/red giants in outer halo
-- Use [[RGB-Workflow]] with [[Optolong-LPro]]
+- Use [[OpenCluster-Workflow]] with [[Optolong-LPro]]
 
 ### Observations
 
