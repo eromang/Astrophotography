@@ -3,7 +3,7 @@
 ********************************************************************
 PixInsight XML Process Serialization Module - XPSM 1.0
 ********************************************************************
-Generated on 2026-05-26T12:05:07.088Z
+Generated on 2026-05-30T13:48:15.694Z
 PixInsight Core 1.9.4 (arm64)
 Copyright (c) 2003-2026 Pleiades Astrophoto
 ********************************************************************
@@ -79,7 +79,7 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
       <parameter id="sharpen_nonstellar" value="0.90"/>
    </instance>
    <instance class="NoiseXTerminator" version="256" id="NEX_instance">
-      <parameter id="ai_file">NoiseXTerminator.2.mlpackage</parameter>
+      <parameter id="ai_file">NoiseXTerminator.3.mlpackage</parameter>
       <parameter id="enable_color_separation" value="false"/>
       <parameter id="enable_frequency_separation" value="false"/>
       <parameter id="denoise" value="0.90"/>
@@ -118,6 +118,7 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
       <parameter id="noGUIMessages" value="false"/>
    </instance>
    <instance class="SCNR" version="256" id="SCNR_instance">
+      <time start="2026-05-30T13:38:14.236Z" span="1.2163805"/>
       <parameter id="amount" value="0.75"/>
       <parameter id="protectionMethod" value="AverageNeutral"/>
       <parameter id="colorToRemove" value="Green"/>
@@ -353,7 +354,7 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
    </instance>
    <instance class="CosmeticCorrection" version="256" id="WBPP_CC_Dark_instance">
       <table id="targetFrames" rows="0"/>
-      <parameter id="masterDarkPath">/Volumes/T7/Astrophotography/Templates/Masters/Dark/masterDark_BIN-1_6248x4176_EXPOSURE-60.00s_DARK-60.0s.xisf</parameter>
+      <parameter id="masterDarkPath">/Users/ericromang/Desktop/Astro/Mel 111/Results/master/masterDark_BIN-1_6248x4176_EXPOSURE-120.00s.xisf</parameter>
       <parameter id="outputDir"></parameter>
       <parameter id="outputExtension">.xisf</parameter>
       <parameter id="prefix"></parameter>
@@ -363,10 +364,10 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
       <parameter id="amount" value="1.00"/>
       <parameter id="cfa" value="false"/>
       <parameter id="useMasterDark" value="true"/>
-      <parameter id="hotDarkCheck" value="false"/>
-      <parameter id="hotDarkLevel" value="1.0000000"/>
+      <parameter id="hotDarkCheck" value="true"/>
+      <parameter id="hotDarkLevel" value="0.0121462"/>
       <parameter id="coldDarkCheck" value="false"/>
-      <parameter id="coldDarkLevel" value="0.0000000"/>
+      <parameter id="coldDarkLevel" value="0.0061189"/>
       <parameter id="useAutoDetect" value="false"/>
       <parameter id="hotAutoCheck" value="false"/>
       <parameter id="hotAutoValue" value="3.0"/>
@@ -665,25 +666,238 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
       <parameter id="generateTextFiles" value="false"/>
       <parameter id="outputDirectory"></parameter>
    </instance>
-   <icon id="WBPP_CC_Auto" instance="WBPP_CC_Auto_instance" xpos="1232" ypos="32" workspace="Workspace01"/>
-   <icon id="STF" instance="STF_instance" xpos="1256" ypos="112" workspace="Workspace01"/>
-   <icon id="BTX" instance="BTX_instance" xpos="1264" ypos="472" workspace="Workspace01"/>
-   <icon id="NEX" instance="NEX_instance" xpos="1264" ypos="504" workspace="Workspace01"/>
-   <icon id="DynamicCrop" instance="DynamicCrop_instance" xpos="1240" ypos="144" workspace="Workspace01"/>
-   <icon id="SCNR" instance="SCNR_instance" xpos="1264" ypos="440" workspace="Workspace01"/>
-   <icon id="STX" instance="STX_instance" xpos="1264" ypos="544" workspace="Workspace01"/>
-   <icon id="HT" instance="HT_instance" xpos="1264" ypos="584" workspace="Workspace01"/>
-   <icon id="ABE" instance="ABE_instance" xpos="1240" ypos="184" workspace="Workspace01"/>
-   <icon id="DBE" instance="DBE_instance" xpos="1320" ypos="184" workspace="Workspace01"/>
-   <icon id="CT" instance="CT_instance" xpos="1264" ypos="624" workspace="Workspace01"/>
-   <icon id="WBPP_CC_Dark" instance="WBPP_CC_Dark_instance" xpos="1232" ypos="72" workspace="Workspace01"/>
-   <icon id="SPFC_Quad" instance="SPFC_Quad_instance" xpos="1248" ypos="256" workspace="Workspace01"/>
-   <icon id="RS" instance="RS_instance" xpos="1264" ypos="704" workspace="Workspace01"/>
-   <icon id="LHE" instance="LHE_instance" xpos="1264" ypos="664" workspace="Workspace01"/>
-   <icon id="PM" instance="PM_instance" xpos="1264" ypos="736" workspace="Workspace01"/>
-   <icon id="MGC" instance="MGC_instance" xpos="1248" ypos="288" workspace="Workspace01"/>
-   <icon id="SPCC_LPro" instance="SPCC_LPro_instance" xpos="1248" ypos="320" workspace="Workspace01"/>
-   <icon id="SPCC_Quad" instance="SPCC_Quad_instance" xpos="1248" ypos="344" workspace="Workspace01"/>
-   <icon id="BN" instance="BN_instance" xpos="1256" ypos="392" workspace="Workspace01"/>
-   <icon id="SPFC_LPro" instance="SPFC_LPro_instance" xpos="1096" ypos="208" workspace="Workspace01"/>
+   <instance class="PixelMath" version="256" id="Bills_Stretch_Unlinked_V6_instance">
+      <parameter id="expression">/*      Unlinked Stretch Test with Curve Adjustment         
+                    by Bill Blanshan                     */
+
+
+Stretch=  0.20 ; //&lt;-- Target background value
+Curve=    1.00 ; //&lt;-- 1= Normal Stretch, &gt;1= Arcsin style
+Clip=      2.8 ; //&lt;-- Increase to prevent shadow clipping
+
+
+/*Drag the bottom left arrow over into the image you want stretched 
+
+
+Notes:  If you are stretching an image that has been denoised, you
+        may need to reduce the &quot;Stretch&quot; value. 
+
+
+Release notes:
+
+1) New Curve feature:  This feature allows you to modify the
+   curve being used, so a value higher than 1, e.g. 1.03, will
+   give you a more &quot;arcsin&quot; style curve thus reducing the highlights.
+   This is helpful on very bright nebula so you don&apos;t blow out
+   the core when stretching.
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+E1= min(max(0,med($T)+-Clip*1.4826*mdev($T)),1);
+E2= max(0,($T-E1)/~E1); 
+E3= med($T)-E1;
+E4= min(1,(1/Curve));
+E5= ((Stretch-1)*E3) / ((2*Stretch-1) * E3^E4-Stretch); //MTF value
+E6= ( (E5-1)*E2) / ( (2*E5-1) * E2^E4-E5);
+
+E6</parameter>
+      <parameter id="expression1"></parameter>
+      <parameter id="expression2"></parameter>
+      <parameter id="expression3"></parameter>
+      <parameter id="useSingleExpression" value="true"/>
+      <parameter id="symbols">Stretch,Curve,Clip,
+E1,E2,E3,E4,E5,E6,E7,</parameter>
+      <parameter id="clearImageCacheAndExit" value="false"/>
+      <parameter id="cacheGeneratedImages" value="false"/>
+      <parameter id="generateOutput" value="true"/>
+      <parameter id="singleThreaded" value="false"/>
+      <parameter id="optimization" value="true"/>
+      <parameter id="use64BitWorkingImage" value="false"/>
+      <parameter id="rescale" value="false"/>
+      <parameter id="rescaleLower" value="0"/>
+      <parameter id="rescaleUpper" value="1"/>
+      <parameter id="truncate" value="true"/>
+      <parameter id="truncateLower" value="0"/>
+      <parameter id="truncateUpper" value="1"/>
+      <parameter id="createNewImage" value="false"/>
+      <parameter id="showNewImage" value="true"/>
+      <parameter id="newImageId"></parameter>
+      <parameter id="newImageWidth" value="0"/>
+      <parameter id="newImageHeight" value="0"/>
+      <parameter id="newImageAlpha" value="false"/>
+      <parameter id="newImageColorSpace" value="SameAsTarget"/>
+      <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+      <table id="outputData" rows="0"/>
+   </instance>
+   <instance class="PixelMath" version="256" id="Bills_Stretch_Llinked__V6_instance">
+      <time start="2026-05-30T13:28:39.440Z" span="6.9155433"/>
+      <parameter id="expression">/*        Linked Stretch Test with Curve Adjustment         
+                    by Bill Blanshan                     */
+
+
+Stretch=  0.20 ; //&lt;-- Target background value
+Curve=    1.00 ; //&lt;-- 1= Normal Stretch, &gt;1= Arcsin style
+Clip=      2.8 ; //&lt;-- Increase to prevent shadow clipping
+
+
+/*Drag the bottom left arrow over into the image you want stretched 
+
+
+Notes:  If you are stretching an image that has been denoised, you
+        may need to reduce the &quot;Stretch&quot; value. 
+
+
+Release notes:
+
+1) New Curve feature:  This feature allows you to modify the
+   curve being used, so a value higher than 1, e.g. 1.03, will
+   give you a more &quot;arcsin&quot; style curve thus reducing the highlights.
+   This is helpful on very bright nebula so you don&apos;t blow out
+   the core when stretching.
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+m = (med($T[0])+med($T[1])+med($T[2]))/3;
+d = (mdev($T[0])+mdev($T[1])+mdev($T[2]))/3;
+E1= min(max(0,m+-Clip*1.4826*d),1);
+E2= max(0,($T-E1)/~E1);
+E3= med($T)-E1;
+E4= min(1,(1/Curve));
+E5= ((Stretch-1)*E3) / ((2*Stretch-1) * E3^E4-Stretch); //MTF value
+E6= ( (E5-1)*E2) / ( (2*E5-1) * E2^E4-E5);
+
+E6</parameter>
+      <parameter id="expression1"></parameter>
+      <parameter id="expression2"></parameter>
+      <parameter id="expression3"></parameter>
+      <parameter id="useSingleExpression" value="true"/>
+      <parameter id="symbols">Stretch,Curve,Clip,m,d,
+E1,E2,E3,E4,E5,E6,E7,</parameter>
+      <parameter id="clearImageCacheAndExit" value="false"/>
+      <parameter id="cacheGeneratedImages" value="false"/>
+      <parameter id="generateOutput" value="true"/>
+      <parameter id="singleThreaded" value="false"/>
+      <parameter id="optimization" value="true"/>
+      <parameter id="use64BitWorkingImage" value="false"/>
+      <parameter id="rescale" value="false"/>
+      <parameter id="rescaleLower" value="0"/>
+      <parameter id="rescaleUpper" value="1"/>
+      <parameter id="truncate" value="true"/>
+      <parameter id="truncateLower" value="0"/>
+      <parameter id="truncateUpper" value="1"/>
+      <parameter id="createNewImage" value="false"/>
+      <parameter id="showNewImage" value="true"/>
+      <parameter id="newImageId"></parameter>
+      <parameter id="newImageWidth" value="0"/>
+      <parameter id="newImageHeight" value="0"/>
+      <parameter id="newImageAlpha" value="false"/>
+      <parameter id="newImageColorSpace" value="SameAsTarget"/>
+      <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+      <table id="outputData" rows="0"/>
+   </instance>
+   <instance class="StarMask" version="256" id="StarMask_instance">
+      <parameter id="shadowsClipping" value="0.00000"/>
+      <parameter id="midtonesBalance" value="0.50000"/>
+      <parameter id="highlightsClipping" value="1.00000"/>
+      <parameter id="waveletLayers" value="5"/>
+      <parameter id="structureContours" value="false"/>
+      <parameter id="noiseThreshold" value="0.10000"/>
+      <parameter id="aggregateStructures" value="false"/>
+      <parameter id="binarizeStructures" value="false"/>
+      <parameter id="largeScaleGrowth" value="2"/>
+      <parameter id="smallScaleGrowth" value="1"/>
+      <parameter id="growthCompensation" value="2"/>
+      <parameter id="smoothness" value="16"/>
+      <parameter id="invert" value="false"/>
+      <parameter id="truncation" value="1.00000"/>
+      <parameter id="limit" value="1.00000"/>
+      <parameter id="mode" value="StarMask"/>
+   </instance>
+   <instance class="PixelMath" version="256" id="StartsRecombination_instance">
+      <parameter id="expression">~((~stars)*(~starless))</parameter>
+      <parameter id="expression1"></parameter>
+      <parameter id="expression2"></parameter>
+      <parameter id="expression3"></parameter>
+      <parameter id="useSingleExpression" value="true"/>
+      <parameter id="symbols"></parameter>
+      <parameter id="clearImageCacheAndExit" value="false"/>
+      <parameter id="cacheGeneratedImages" value="false"/>
+      <parameter id="generateOutput" value="true"/>
+      <parameter id="singleThreaded" value="false"/>
+      <parameter id="optimization" value="true"/>
+      <parameter id="use64BitWorkingImage" value="false"/>
+      <parameter id="rescale" value="false"/>
+      <parameter id="rescaleLower" value="0"/>
+      <parameter id="rescaleUpper" value="1"/>
+      <parameter id="truncate" value="true"/>
+      <parameter id="truncateLower" value="0"/>
+      <parameter id="truncateUpper" value="1"/>
+      <parameter id="createNewImage" value="true"/>
+      <parameter id="showNewImage" value="true"/>
+      <parameter id="newImageId"></parameter>
+      <parameter id="newImageWidth" value="0"/>
+      <parameter id="newImageHeight" value="0"/>
+      <parameter id="newImageAlpha" value="false"/>
+      <parameter id="newImageColorSpace" value="SameAsTarget"/>
+      <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+      <table id="outputData" rows="0"/>
+   </instance>
+   <icon id="WBPP_CC_Auto" instance="WBPP_CC_Auto_instance" xpos="1328" ypos="16" workspace="Workspace01"/>
+   <icon id="STF" instance="STF_instance" xpos="1352" ypos="96" workspace="Workspace01"/>
+   <icon id="BTX" instance="BTX_instance" xpos="1352" ypos="512" workspace="Workspace01"/>
+   <icon id="NEX" instance="NEX_instance" xpos="1352" ypos="544" workspace="Workspace01"/>
+   <icon id="DynamicCrop" instance="DynamicCrop_instance" xpos="1328" ypos="136" workspace="Workspace01"/>
+   <icon id="SCNR" instance="SCNR_instance" xpos="1352" ypos="480" workspace="Workspace01"/>
+   <icon id="STX" instance="STX_instance" xpos="1352" ypos="576" workspace="Workspace01"/>
+   <icon id="HT" instance="HT_instance" xpos="1360" ypos="616" workspace="Workspace01"/>
+   <icon id="ABE" instance="ABE_instance" xpos="1320" ypos="176" workspace="Workspace01"/>
+   <icon id="DBE" instance="DBE_instance" xpos="1400" ypos="176" workspace="Workspace01"/>
+   <icon id="CT" instance="CT_instance" xpos="1360" ypos="648" workspace="Workspace01"/>
+   <icon id="WBPP_CC_Dark" instance="WBPP_CC_Dark_instance" xpos="1328" ypos="56" workspace="Workspace01"/>
+   <icon id="SPFC_Quad" instance="SPFC_Quad_instance" xpos="1336" ypos="248" workspace="Workspace01"/>
+   <icon id="RS" instance="RS_instance" xpos="1312" ypos="712" workspace="Workspace01"/>
+   <icon id="LHE" instance="LHE_instance" xpos="1352" ypos="680" workspace="Workspace01"/>
+   <icon id="PM" instance="PM_instance" xpos="1384" ypos="720" workspace="Workspace01"/>
+   <icon id="MGC" instance="MGC_instance" xpos="1352" ypos="280" workspace="Workspace01"/>
+   <icon id="SPCC_LPro" instance="SPCC_LPro_instance" xpos="1336" ypos="344" workspace="Workspace01"/>
+   <icon id="SPCC_Quad" instance="SPCC_Quad_instance" xpos="1328" ypos="312" workspace="Workspace01"/>
+   <icon id="BN" instance="BN_instance" xpos="1360" ypos="448" workspace="Workspace01"/>
+   <icon id="SPFC_LPro" instance="SPFC_LPro_instance" xpos="1344" ypos="216" workspace="Workspace01"/>
+   <icon id="Bills_Stretch_Unlinked_V6" instance="Bills_Stretch_Unlinked_V6_instance" xpos="1296" ypos="376" workspace="Workspace01"/>
+   <icon id="Bills_Stretch_Llinked__V6" instance="Bills_Stretch_Llinked__V6_instance" xpos="1296" ypos="408" workspace="Workspace01"/>
+   <icon id="StarMask" instance="StarMask_instance" xpos="1336" ypos="752" workspace="Workspace01"/>
+   <icon id="StartsRecombination" instance="StartsRecombination_instance" xpos="1312" ypos="792" workspace="Workspace01"/>
 </xpsm>
