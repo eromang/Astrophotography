@@ -100,4 +100,6 @@ Reprocess of the [[2026-05-25-Capture|2026-05-25 Mel 111 dataset]] to fix the **
 | SNR | 1.30 / sub | 3.90 | 3.14 (deconvolution cost) |
 | Background median | 0.0211 | 0.0094 | 0.0094 |
 
-**Outcome:** systematic eccentricity (0.63) corrected to ~0.38; residual cross-field eccentricity variation (~0.11) persists → capture-side lead is **sensor tilt** for the next cluster. γ Com halo addressed via BXT −0.15 + MorphologicalTransformation erosion (visual confirmation pending). See [[Mel111-Coma]].
+**Outcome:** systematic eccentricity (0.63) corrected to ~0.38; residual cross-field eccentricity variation (~0.11) persists → capture-side lead is **sensor tilt** for the next cluster.
+
+**γ Com halo (visual review, the goal of this run): reduced, not fully resolved.** BXT Halos −0.15 + the MorphologicalTransformation erosion shrank the bright members and removed the worst of the v1 bloat — at normal viewing size the image reads cleanly. But at 1:1 the brightest members (γ Com, the bright blue pair) still carry a **soft blue halo with a faint asymmetric wing**. The asymmetry points to a **reflection** component, likely the **L-Pro filter's own reflection signature that was never flat-corrected** — this stack used **FQuad flats, not L-Pro** ([[Master-Library]] — no genuine L-Pro flat exists). **Best next fix: re-stack once a real L-Pro flat is shot;** failing that, BXT Halos −0.20/−0.25 or a dedicated halo-reduction pass on γ Com. See [[Mel111-Coma]].
