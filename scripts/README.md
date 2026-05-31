@@ -20,6 +20,42 @@ Output: `03_Techniques/images/fov-atlas-allsky.png`. Embedded in [[../03_Techniq
 
 ---
 
+## psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)
+
+Offline replacement for PixInsight's **PSFImage** script (Hartmut V. Bornemann). Detects stars, fits an elliptical **Moffat/Gaussian** PSF to the best ~50, and reports the **median FWHM → the number you put in BlurXTerminator's PSF Diameter**. Optionally renders a synthetic PSF image (FITS, the "external PSF" use) and a per-star CSV. Referenced from [[../04_Processing/Pixinsight/RGB-Workflow.md#2.5 Star Sharpening]].
+
+Stdlib + **numpy/scipy** only — no astropy/photutils. Reads **FITS** (`.fit/.fits`) and **uncompressed monolithic XISF** (`.xisf`, Float32/UInt16).
+
+```bash
+python3 scripts/psf_image.py <image>                       # FWHM -> BXT diameter
+python3 scripts/psf_image.py img.xisf --beta 4             # fix Moffat beta (match SubFrameSelector)
+python3 scripts/psf_image.py img.fit --psf-out psf.fits --csv stars.csv
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--function moffat\|gaussian` | moffat | PSF model |
+| `--beta N` | free | fix Moffat β (PixInsight SubFrameSelector default is 4) |
+| `--max-stars` / `--use-stars` | 200 / 50 | detect / keep (best by residual) |
+| `--box N` | 10 | half-window (px) fit per star |
+| `-k N` | 6.0 | detection threshold (σ above background) |
+| `--psf-out FILE` | — | write synthetic PSF FITS (with FWHMX/FWHMY/BETA keys) |
+| `--csv FILE` | — | per-star fits (cx,cy,fwhmx,fwhmy,fwhm,beta,ecc,rmad) |
+
+**Output:** prints FWHM x/y, eccentricity, β, median FWHM, and `==> BXT PSF Diameter: N`.
+
+> ⚠️ **Run it on the debayered/processed image you'll actually deconvolve, not raw CFA subs.** On a raw Bayer frame the mosaic sampling differs from PixInsight's CFA handling (~10 % low). Validation on a Mel 111 light: this script **2.03 px** vs PixInsight SubFrameSelector **2.28 px**, with **eccentricity 0.61 vs 0.63** (near-exact) — the offset is the CFA, the shape characterisation matches. Also match the **image scale**: a PSF measured on the native master must not be reused on a drizzle-2× master (stars ~2× wider).
+
+### Tests
+
+```bash
+python3 scripts/test_psf_image.py     # synthetic Moffat/Gaussian recovery + FITS round-trip
+```
+
+Synthetic recovery is exact (Moffat 3.20 → 3.200 px, Gaussian 2.80 → 2.800 px).
+
+---
+
 ## mount.py — CEM26 read-only diagnostics + safe config helpers
 
 CLI for talking to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). All subcommands are non-moving (except the slow sidereal tracking that `unpark` starts and `timesync` config writes which don't drive the motors). Useful for pre-session readiness checks, session-state logging, time sync, and quick diagnostics when ASIAIR isn't running.
