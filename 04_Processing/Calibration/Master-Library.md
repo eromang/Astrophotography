@@ -123,7 +123,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Filter | Exposure | Temp | Raws | Master | Raw folder |
 |--------|----------|------|------|--------|-----------|
-| [[Optolong-LPro]] | 60 ms | −10 °C | — | ⚠️ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` — **mislabeled; actually FQuad** (see note) | *(none — no genuine L-Pro flat exists)* |
+| [[Optolong-LPro]] | 60 ms | — | — | ❌ **none — to shoot** (`Flat/LPro/` is an empty placeholder; mislabeled FQuad relabel deleted 2026-05-31) | — |
 | [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
 | [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
 | No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
@@ -135,7 +135,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 >
 > 🚩 **L-Pro flat provenance — RESOLVED 2026-05-31: there is no genuine L-Pro flat.** The "L-Pro 60 ms master" was built from the **`FLAT6` raws, which are FQuad flats** (shot 2025-03-08 through the Quad Band filter — the [[2025-03-08-Processing]] session was FQuad-only: *"Flat frames avec FQuad — 60 ms"*). Proof: the L-Pro master's internal `DATE-OBS` (`2025-03-08T19:02:36.688`) is **identical** to both the FQuad 60 ms master and the FLAT6 raw frames — same source data, just integrated twice and one copy **mislabeled `L-Pro`**. No L-Pro-tagged raw flat folder exists anywhere on T7.
 >
-> **Implication:** every L-Pro session calibrated with this master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats**. The optical-train vignetting overlaps, so the error is modest, but it mis-corrects the L-Pro filter's own dust/reflections. **Action: shoot a genuine L-Pro flat set** (same train, L-Pro in place) and rebuild the master. Until then the `Flat/LPro/` master should be treated as a stand-in FQuad flat (consider deleting it as a redundant FLAT6 integration).
+> **Implication:** every L-Pro session calibrated with this master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats**. The optical-train vignetting overlaps, so the error is modest, but it mis-corrects the L-Pro filter's own dust/reflections. **Action: shoot a genuine L-Pro flat set** (same train, L-Pro in place) and rebuild the master — tracked in [[Calibration-Strategy]]. The mislabeled relabel master was **deleted 2026-05-31** (redundant FLAT6 integration; FLAT6 raws + the canonical FQuad 60 ms master are intact); `Flat/LPro/` is now an empty placeholder.
 
 **Can be shot outside a session: No** — must match the exact optical train.
 

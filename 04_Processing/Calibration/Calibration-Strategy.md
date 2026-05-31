@@ -129,10 +129,13 @@ Flats remain valid as long as **nothing changes** in the optical train:
 
 | Filter | Flat available? | Notes |
 |---|---|---|
-| [[Optolong-LPro]] | 60ms master (2025-03) | Verify still valid if train changed |
+| [[Optolong-LPro]] | ❌ **None — to shoot** | The former "L-Pro 60 ms master" was a **mislabeled FQuad flat** (built from FLAT6 raws, deleted 2026-05-31 — see [[Master-Library]]). No genuine L-Pro flat has ever been captured. |
 | [[Antlia-FQuad]] | 50ms master (2024-12) + 60ms master (2025-03) | Two sets available — verify still valid if train changed |
 
 > **Important:** Each filter requires its own flat set. The Quad Band and L-Pro filters have different thicknesses and coatings, producing different vignetting and dust shadow patterns.
+
+> [!todo] Outstanding calibration item — shoot **L-Pro flats**
+> The only real gap in the library. Capture ~50 × flats with the **[[Optolong-LPro]]** in the train (same scope/sensor/focus/rotation as L-Pro lights), auto-exposed to ~40–50 % histogram, then build the master into `Masters/Flat/LPro/`. Until then, L-Pro broadband sessions ([[Mel111-Coma]], galaxies) are flat-calibrated with FQuad flats — vignetting roughly overlaps, but filter-specific dust/reflections are mis-corrected. Can be shot any clear session-end with the L-Pro mounted.
 
 ---
 
