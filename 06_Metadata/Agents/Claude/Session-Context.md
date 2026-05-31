@@ -52,7 +52,7 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 |---|---|---|
 | Reprocessing Plan | `04_Processing/Reprocessing-Plan.md` | 5 priority targets |
 | NGC 5746 reprocess | Priority 1 | Mid-process: stretched, BN applied, needs NXT final + curves + star reintegration |
-| Mel 111 first light | `05_Sessions/2026/Processing/2026-05-27-Processing.md` | **Done** — processed + archived to T7 (2026-05-30). Open: γ Com bloated-blue-halo reprocess on the stars layer (Star Console / SXT) |
+| Mel 111 first light | `05_Sessions/2026/Processing/2026-05-31-Processing.md` | **Done + reprocessed 2026-05-31** (halo-fix run: BXT Halos −0.15 + MorphologicalTransformation; Ecc 0.63→0.38, FWHM −30%). Archived to T7. **Open: visual confirm γ Com halo on the new export** (then mark resolved) |
 | Calibration library reorg | `04_Processing/Calibration/Master-Library.md` | **Done 2026-05-31** — T7 `Templates/` reorganized by filter-independence (Bias/Dark/DarkFlat by type, Flat by filter); 17 masters + 881 raws verified; dup + mislabeled-L-Pro masters removed; 0 ms bias & two FQuad flats clarified |
 | **L-Pro flats — to shoot** | `04_Processing/Calibration/Calibration-Strategy.md` | ⚠️ Only real calibration gap — no genuine L-Pro flat exists (old master was mislabeled FQuad). Shoot ~50 × with L-Pro mounted at a session-end → build into `Masters/Flat/LPro/` |
 
