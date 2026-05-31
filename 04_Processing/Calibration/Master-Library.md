@@ -123,7 +123,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Filter | Exposure | Temp | Raws | Master | Raw folder |
 |--------|----------|------|------|--------|-----------|
-| [[Optolong-LPro]] | 60 ms | −10 °C | — | ✅ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` | *(see provenance note)* |
+| [[Optolong-LPro]] | 60 ms | −10 °C | — | ⚠️ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` — **mislabeled; actually FQuad** (see note) | *(none — no genuine L-Pro flat exists)* |
 | [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
 | [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
 | No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
@@ -133,7 +133,9 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 >
 > ⚠️ **FQuad flat filenames still read `FILTER-NoFilter` *inside* the XISF** (manual-filter blank-keyword quirk — the file was renamed to `FILTER-FQuad`, but the internal keyword wasn't edited). WBPP matches by header, so it treats them as `NoFilter`; this is harmless because the FQuad lights also carry a blank keyword and match. The folder (`Flat/FQuad/`) is the authoritative filter marker.
 >
-> ⚠️ **L-Pro raw flat provenance unclear.** The 60 ms L-Pro master is present, but no L-Pro-tagged raw flat folder exists on T7 — `FLAT6` raws are FQuad-tagged (the old "shared dir" note). `Flat/LPro/` raw folder is empty pending clarification or a re-shoot.
+> 🚩 **L-Pro flat provenance — RESOLVED 2026-05-31: there is no genuine L-Pro flat.** The "L-Pro 60 ms master" was built from the **`FLAT6` raws, which are FQuad flats** (shot 2025-03-08 through the Quad Band filter — the [[2025-03-08-Processing]] session was FQuad-only: *"Flat frames avec FQuad — 60 ms"*). Proof: the L-Pro master's internal `DATE-OBS` (`2025-03-08T19:02:36.688`) is **identical** to both the FQuad 60 ms master and the FLAT6 raw frames — same source data, just integrated twice and one copy **mislabeled `L-Pro`**. No L-Pro-tagged raw flat folder exists anywhere on T7.
+>
+> **Implication:** every L-Pro session calibrated with this master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats**. The optical-train vignetting overlaps, so the error is modest, but it mis-corrects the L-Pro filter's own dust/reflections. **Action: shoot a genuine L-Pro flat set** (same train, L-Pro in place) and rebuild the master. Until then the `Flat/LPro/` master should be treated as a stand-in FQuad flat (consider deleting it as a redundant FLAT6 integration).
 
 **Can be shot outside a session: No** — must match the exact optical train.
 
@@ -141,14 +143,15 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 ## Complete Needs Summary
 
-**Nothing outstanding** under the −10 °C standard. All standard sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters. Both filters have flats + matching dark-flats. Bias complete.
+Darks, dark-flats, and bias are complete. **One real gap: no genuine L-Pro flat** (the "L-Pro" master is mislabeled FQuad — see Flat section). All standard dark sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters.
 
 | Frame | Status |
 |-------|--------|
 | Bias (0.0 / 1 / 10 / 100 ms) | Complete |
 | Dark-flats (10 / 50 / 60 ms) | Complete |
 | Darks 30 s … 300 s, −10 °C | Complete |
-| Flats — L-Pro 60 ms, FQuad 50 + 60 ms, NoFilter 10 ms | Complete (L-Pro *raw* provenance to clarify) |
+| Flats — FQuad 50 + 60 ms, NoFilter 10 ms | Complete |
+| Flat — **L-Pro 60 ms** | ❌ **Missing** — shoot a real L-Pro flat set (current master is relabeled FQuad) |
 
 ---
 
