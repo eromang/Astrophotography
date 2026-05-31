@@ -61,6 +61,8 @@ tags:
 ## Notes
 
 - Open star cluster with reflection nebulosity — primarily broadband target
-- Shot with [[Antlia-FQuad]] but M45 is a reflection nebula (no emission lines) — [[Optolong-LPro]] would be more appropriate for future sessions
+- ⚠️ **Filter — Quad Band, and uniquely wrong here.** The 2024-12 ASI2600 data was shot with [[Antlia-FQuad]], but M45 is a **reflection nebula** — it scatters broadband starlight (continuum/blue) with **no emission lines**, so the Quad Band's narrow Hα/Hβ/OIII passbands let through almost none of the nebulosity. The Quad Band master gives the stars but **essentially deletes the blue dust — the whole subject.** Worse than the [[M44-Beehive|M44]] Quad-Band case (which only lost star colour); no reprocessing recovers it. (Data also at −20 °C, predating the −10 °C [[Master-Library|cooling standard]].)
+- **The legacy D5300 broadband data currently holds the nebulosity** (2023-02-13 recomposition, shown above) — for the dust, the old DSLR data is the better dataset than the newer ASI2600 Quad Band frames.
+- **Recapture in [[Optolong-LPro]]** — winter Taurus target (~Nov–Feb), at −10 °C — is the only path to a proper M45.
 - At 110' fits well in the [[RedCat-51]] FOV (5.4° × 3.6°)
-- Use [[RGB-Workflow]] if reshot with L-Pro, or [[QuadBand-OSC-Workflow]] for existing Quad Band data (though narrowband adds little to reflection nebulae)
+- **Workflow (when reshot in L-Pro):** M45 is a **hybrid**, not a pure cluster. Use the [[OpenCluster-Workflow]] *star handling* for the bright, bloat-prone Pleiades stars (Merope etc. — BXT Halos −0.15 + MorphologicalTransformation reduction), but treat the **reflection nebula with gentle [[RGB-Workflow]] structure work** (preserve the faint blue dust, don't crush it). [[QuadBand-OSC-Workflow]] on the existing Quad Band data adds little — narrowband ≠ reflection nebula.
