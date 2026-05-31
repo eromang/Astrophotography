@@ -77,4 +77,4 @@ tags:
 - Mid-evening target (22:30–01:30)
 - Nearby galaxies in FOV: IC2407, IC2406, IC2409
 - **Quad Band is suboptimal for open clusters** — [[Optolong-LPro]] is more appropriate
-- Use [[OpenCluster-Workflow]]
+- **Workflow:** [[OpenCluster-Workflow]], but the existing ASI2600 data is **Quad Band** — wrong filter for the workflow's natural-star-colour goal (narrowband suppresses broadband star colour). **For a full result, recapture in [[Optolong-LPro]]** (M44 season ~Nov→Mar), then run the workflow. The existing Quad Band master can be reprocessed for **structure only** (BXT halo/star reduction, background-galaxy protection for IC 2406/2407/2409) with SPCC set to the Quad Band filter profile — but reprocessing won't fix the filter choice. Nearby galaxies make the ★ galaxy-protection step relevant here.

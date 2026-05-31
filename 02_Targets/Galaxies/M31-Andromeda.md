@@ -81,7 +81,7 @@ Alternative processing with `final.jpg` / `final.xisf` output.
 - Fall target (RA 0h 43m) — best September–November from Tuntange
 - **60s exposures are short** for galaxy imaging — workflow default is 180s with [[Optolong-LPro]]. The 60s subs limit SNR on the faint outer arms. Consider reshooting with 180s for better depth.
 - Night 1 had low yield (22 frames) — likely cut short by weather or setup issues
-- Filter not tagged in ASIAIR filenames (`FILTER-NoFilter`) — configure ASIAIR to record filter name
+- **Filter — L-Pro (correct for a galaxy), but unrecorded in the data.** The raw lights carry **no filter token in the filename** and a **blank FITS `FILTER` keyword** — manual filters / no EFW, so the ASIAIR can't write it. `FILTER-NoFilter` appears only on the WBPP master (a default from the blank keyword), *not* a filterless capture. The L-Pro attribution rests solely on the capture-history table above. **Next session:** set the filter label in the ASIAIR capture plan so it lands in the filename. **If reprocessing:** set SPCC's filter to L-Pro manually (nothing to auto-read).
 - 23% frame rejection rate — some nights had subpar conditions
 
 ### Future Plans
