@@ -54,7 +54,7 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 | NGC 5746 reprocess | Priority 1 | Mid-process: stretched, BN applied, needs NXT final + curves + star reintegration |
 | Mel 111 first light | `05_Sessions/2026/Processing/2026-05-31-Processing.md` | **Reprocessed 2026-05-31** (BXT Halos −0.15 + MorphologicalTransformation; Ecc 0.63→0.38, FWHM −30%); new export is the vault result image. **γ Com halo reduced, soft blue residual remains** → re-stack candidate once a real L-Pro flat is shot (residual is likely uncorrected L-Pro filter reflection) |
 | Calibration library reorg | `04_Processing/Calibration/Master-Library.md` | **Done 2026-05-31** — T7 `Templates/` reorganized by filter-independence (Bias/Dark/DarkFlat by type, Flat by filter); 17 masters + 881 raws verified; dup + mislabeled-L-Pro masters removed; 0 ms bias & two FQuad flats clarified |
-| **L-Pro flats — to shoot** | `04_Processing/Calibration/Calibration-Strategy.md` | ⚠️ Only real calibration gap — no genuine L-Pro flat exists (old master was mislabeled FQuad). Shoot ~50 × with L-Pro mounted at a session-end → build into `Masters/Flat/LPro/` |
+| L-Pro flats — build master | `04_Processing/Calibration/Master-Library.md` | **Raws shot 2026-05-31** (50 × 10 ms, on T7 `Flat/LPro/FLAT7…`). Remaining: build master in WBPP (+ 10 ms dark-flat) → `Masters/Flat/LPro/`, rename to FILTER-LPro. Then re-stack Mel 111 with the real flat |
 
 ---
 

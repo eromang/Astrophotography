@@ -123,7 +123,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Filter | Exposure | Temp | Raws | Master | Raw folder |
 |--------|----------|------|------|--------|-----------|
-| [[Optolong-LPro]] | 60 ms | — | — | ❌ **none — to shoot** (`Flat/LPro/` is an empty placeholder; mislabeled FQuad relabel deleted 2026-05-31) | — |
+| [[Optolong-LPro]] | 10 ms | −10 °C | 50 | ⏳ **raws shot 2026-05-31 — master to build** | `Flat/LPro/FLAT7-BIN1-10ms-10/` |
 | [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
 | [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
 | No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
@@ -135,7 +135,9 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 >
 > 🚩 **L-Pro flat provenance — RESOLVED 2026-05-31: there is no genuine L-Pro flat.** The "L-Pro 60 ms master" was built from the **`FLAT6` raws, which are FQuad flats** (shot 2025-03-08 through the Quad Band filter — the [[2025-03-08-Processing]] session was FQuad-only: *"Flat frames avec FQuad — 60 ms"*). Proof: the L-Pro master's internal `DATE-OBS` (`2025-03-08T19:02:36.688`) is **identical** to both the FQuad 60 ms master and the FLAT6 raw frames — same source data, just integrated twice and one copy **mislabeled `L-Pro`**. No L-Pro-tagged raw flat folder exists anywhere on T7.
 >
-> **Implication:** every L-Pro session calibrated with this master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats**. The optical-train vignetting overlaps, so the error is modest, but it mis-corrects the L-Pro filter's own dust/reflections. **Action: shoot a genuine L-Pro flat set** (same train, L-Pro in place) and rebuild the master — tracked in [[Calibration-Strategy]]. The mislabeled relabel master was **deleted 2026-05-31** (redundant FLAT6 integration; FLAT6 raws + the canonical FQuad 60 ms master are intact); `Flat/LPro/` is now an empty placeholder.
+> **Implication:** every L-Pro session calibrated with the old master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats** — mis-correcting the L-Pro filter's own dust/reflections. The mislabeled relabel master was **deleted 2026-05-31**.
+>
+> ✅ **Genuine L-Pro flats shot 2026-05-31** (50 × **10 ms**, −10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`. **Master still to build** in WBPP (flats + the 10 ms dark-flat master → `Masters/Flat/LPro/`). ⚠️ The raws' FITS `FILTER` keyword is **absent** (manual filter — `LPro` is in the filename only), so WBPP will name the master `FILTER-NoFilter` → **rename to `…FILTER-LPro_CFA_FLAT-10ms.xisf`** after building. Re-stacking [[Mel111-Coma|Mel 111]] with the real L-Pro flat is the candidate fix for the residual γ Com halo.
 
 **Can be shot outside a session: No** — must match the exact optical train.
 
@@ -143,15 +145,15 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 ## Complete Needs Summary
 
-Darks, dark-flats, and bias are complete. **One real gap: no genuine L-Pro flat** (the "L-Pro" master is mislabeled FQuad — see Flat section). All standard dark sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters.
+Darks, dark-flats, and bias are complete. **L-Pro flats now shot (2026-05-31) — master just needs building.** All standard dark sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters.
 
-| Frame | Status |
-|-------|--------|
-| Bias (0.0 / 1 / 10 / 100 ms) | Complete |
-| Dark-flats (10 / 50 / 60 ms) | Complete |
-| Darks 30 s … 300 s, −10 °C | Complete |
-| Flats — FQuad 50 + 60 ms, NoFilter 10 ms | Complete |
-| Flat — **L-Pro 60 ms** | ❌ **Missing** — shoot a real L-Pro flat set (current master is relabeled FQuad) |
+| Frame                                    | Status                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Bias (0.0 / 1 / 10 / 100 ms)             | Complete                                                                        |
+| Dark-flats (10 / 50 / 60 ms)             | Complete                                                                        |
+| Darks 30 s … 300 s, −10 °C               | Complete                                                                        |
+| Flats — FQuad 50 + 60 ms, NoFilter 10 ms | Complete                                                                        |
+| Flat — **L-Pro 10 ms**                   | ⏳ **Raws shot** 2026-05-31 (50 × 10 ms, `Flat/LPro/FLAT7…`) — **build the master** (flats + 10 ms dark-flat → `Masters/Flat/LPro/`, rename to FILTER-LPro) |
 
 ---
 
