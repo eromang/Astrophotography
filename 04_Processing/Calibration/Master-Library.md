@@ -8,149 +8,147 @@ tags:
 
 # Calibration Master Library
 
-Full inventory of calibration frames for the [[ASI2600MCPro]] at Gain 100. Covers all exposure/temperature combinations needed by the [[RGB-Workflow]], [[QuadBand-OSC-Workflow]], and [[HDR-Workflow]].
+Full inventory of calibration frames for the [[ASI2600MCPro]] at Gain 100. Covers all exposure/temperature combinations needed by the [[RGB-Workflow]], [[OpenCluster-Workflow]], [[QuadBand-OSC-Workflow]], and [[HDR-Workflow]].
 
 > See [[Calibration-Strategy]] for acquisition procedures and maintenance schedule.
 
-**Storage:** `/Volumes/T7/Astrophotography/Templates/`
+> **Reorganized 2026-05-31** to reflect the filter-independence principle (below): **Bias / Dark / Dark-Flat are filter-independent → filed by type only; Flats are filter-dependent → filed by filter.** The old `Bias/FQuad/` and `Dark/FQuad/` subfolders (filter-independent frames misfiled under a filter name) are gone. Historical session notes that reference the old paths are left as-is.
+
+**Storage root:** `/Volumes/T7/Astrophotography/Templates/`
+
+```
+Templates/
+├── Masters/
+│   ├── Bias/        ← filter-independent (0.0 / 1.0 / 10 / 100 ms)
+│   ├── Dark/        ← filter-independent (30 / 60 / 120 / 160 / 180 / 220 / 300 s)
+│   ├── DarkFlat/    ← filter-independent (10 / 50 / 60 ms)
+│   └── Flat/        ← filter-DEPENDENT, by filter:
+│       ├── LPro/        (60 ms)
+│       ├── FQuad/       (50 ms, 60 ms)
+│       └── NoFilter/    (10 ms)
+├── Bias/        ← raw, filter-independent (BIAS1–3, exposure-named)
+├── Dark/        ← raw, filter-independent (DARK2/3/4/7/8/9/11)  + _deprecated/ (−20 °C)
+├── DarkFlat/    ← raw, filter-independent (DARK1/6/10)
+└── Flat/        ← raw, by filter: LPro/  FQuad/(FLAT5,6)  NoFilter/(FLAT1,2,3)
+```
+
+---
+
+## The filter-independence rule (why the structure is shaped this way)
+
+| Frame | Filter-dependent? | Must match | Filed by |
+|-------|-------------------|-----------|----------|
+| **Bias** | ❌ No | gain | type |
+| **Dark** | ❌ No | exposure + gain + **temperature** | type |
+| **Dark Flat** | ❌ No | flat exposure + gain | type |
+| **Flat** | ✅ **Yes** | filter + exact optical train | **filter** |
+
+Bias, darks, and dark-flats are shot with the **sensor capped** — no light reaches it, so the filter in the train is irrelevant. **Flats are the only frame shot with light through the optical train**, so each filter's vignetting / dust shadows / transmission are baked in: **flats from one filter cannot be used for another.**
 
 ---
 
 ## Dark Frames
 
-Dark frames must match light frame **exposure + gain + temperature** exactly. Filter-independent (sensor is capped).
+Filter-independent. Must match light frame **exposure + gain + temperature** exactly.
 
-**Raw frames:** `/Volumes/T7/Astrophotography/Templates/Dark/`
-**Masters:** `/Volumes/T7/Astrophotography/Templates/Masters/Dark/`
+**Raw:** `Templates/Dark/`  ·  **Masters:** `Templates/Masters/Dark/`
 
-### Inventory
+| Exposure | Gain | Temp | Raws | Master | Raw folder | Status |
+|----------|------|------|------|--------|-----------|--------|
+| 30 s | g100 | −10 °C | — | ✅ | — | Available |
+| 60 s | g100 | −10 °C | 50 | ✅ | `Dark/DARK3-BIN1-60s-10/` | Available |
+| 120 s | g100 | −10 °C | 25 | ✅ | `Dark/DARK11-BIN1-120s-10/` | Available (2026-04-19) |
+| 160 s | g100 | −10 °C | 10 | ✅ | `Dark/DARK9-BIN1-160s-10/` | Available |
+| 180 s | g100 | −10 °C | 10 | ✅ | `Dark/DARK8-BIN1-180s-10/` | Available |
+| 220 s | g100 | −10 °C | 10 | ✅ | `Dark/DARK7-BIN1-220s-10/` | Available |
+| 300 s | g100 | −10 °C | 50 | ✅ | `Dark/DARK4-BIN1-300s-10/` | Available |
+| 180 s | g100 | −20 °C | 20 | — | `Dark/_deprecated/DARK5-BIN1-180s-20/` | **Deprecated** (−20 °C, no master) |
 
-| Exposure | Gain | Temp | Raws | Master? | Date | Location | Status |
-|----------|------|------|------|---------|------|----------|--------|
-| 10ms | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 30s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 60s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 120s | g100 | -10°C | 25 | Yes | 2026-04-19 | `Dark/DARK11-BIN1-120s-10/` | Available |
-| 120s | g100 | -20°C | — | — | — | — | Deprecated — see cooling standard note |
-| 160s | g100 | -10°C | 26 | Yes | 2025-03 | `Dark/FQuad/DARK9` | Available |
-| 160s | g100 | -20°C | — | — | — | — | Deprecated |
-| 180s | g100 | -10°C | 25 | Yes | 2025-03 | `Dark/FQuad/DARK8` | Available |
-| 180s | g100 | -20°C | 20 | No | 2024-12 | `Dark/FQuad/DARK5` | Deprecated (incomplete legacy set) |
-| 220s | g100 | -10°C | 25 | Yes | 2025-03 | `Dark/FQuad/DARK7` | Available |
-| 220s | g100 | -20°C | — | — | — | — | Deprecated |
-| 300s | g100 | -10°C | — | Yes | — | `Masters/Dark/` | Available |
-| 300s | g100 | -20°C | — | — | — | — | Deprecated |
+> **Cooling standard (2026-04-19):** standardized on **−10 °C year-round** — see [[ASIAIR]] camera profile. −20 °C frames are kept under `Dark/_deprecated/` for legacy reprocessing only and won't be refreshed.
 
-> **Cooling standard (2026-04-19):** Standardized on **-10 °C year-round** — see [[ASIAIR]] camera profile for rationale. At Bortle 4 the dark-current penalty vs -20 °C is below the sky-noise floor; the operational simplicity of a single dark library wins. -20 °C entries above are kept for reference / legacy reprocessing only and will not be refreshed.
-
-### Usage Map
+### Usage map
 
 | Exposure | Used by | Filter | Workflow |
 |----------|---------|--------|----------|
-| 120s | Clusters | [[Optolong-LPro]] | [[RGB-Workflow]] |
-| 180s | Galaxies | [[Optolong-LPro]] | [[RGB-Workflow]] |
-| 300s | Emission nebulae | [[Antlia-FQuad]] | [[QuadBand-OSC-Workflow]] |
-| 10ms, 30s, 60s | Short exposures / testing | — | — |
-| 160s, 220s | Legacy sessions | Various | Reprocessing only |
+| 120 s | Clusters | [[Optolong-LPro]] | [[OpenCluster-Workflow]] |
+| 180 s | Galaxies | [[Optolong-LPro]] | [[RGB-Workflow]] |
+| 300 s | Emission nebulae | [[Antlia-FQuad]] | [[QuadBand-OSC-Workflow]] |
+| 30 s / 60 s | Short / testing | — | — |
+| 160 s / 220 s | Legacy sessions | various | reprocessing only |
 
-### Can be done outside a session: **Yes**
-
-Only requires: capped sensor, matching exposure + gain + temperature. No optical train needed. Shoot on cloudy nights, rainy evenings, or during the day.
-
----
-
-## Flat Frames
-
-Flat frames must match the **optical train state** of the lights: same scope, filter, focus position, camera rotation.
-
-> **Filter-dependent:** Flats are the only calibration frame that depends on the filter. Each filter produces different vignetting, dust shadows, and illumination patterns. **Flats from one filter cannot be used for another.** Darks, dark flats, and bias are all filter-independent (sensor is capped).
-
-**Raw frames:** `/Volumes/T7/Astrophotography/Templates/Flat/`
-**Masters:** `/Volumes/T7/Astrophotography/Templates/Masters/Flat/`
-
-### Inventory
-
-| Filter | Exposure | Gain | Raws | Master? | Date | Location | Status |
-|--------|----------|------|------|---------|------|----------|--------|
-| No filter | 10ms | g100 | — | Yes | — | `Masters/Flat/` | Available |
-| [[Antlia-FQuad]] | 50ms | g100 | 30 | Yes | 2024-12 | `Flat/FLAT5-BIN1-50ms-20-FQuad/` | Available (-20°C session) |
-| [[Antlia-FQuad]] | 60ms | g100 | 50 | Yes | 2025-03 | `Flat/FLAT6-BIN1-60ms-10-FQuad/` | Available (-10°C session) |
-| [[Optolong-LPro]] | 60ms | g100 | 50 | Yes | 2025-03 | `Flat/FLAT6` (shared dir) | Available |
-
-**L-Pro master flat:** `Masters/Flat/masterFlat_BIN-1_6248x4176_FILTER-LPro_CFA_FLAT-60ms.xisf` — generated by WBPP from 50 raws (calibrated with bias only), 2026-04-01.
-
-> **Quad Band flats exist!** Two sets: 50ms from Dec 2024 (-20°C session) and 60ms from Mar 2025 (-10°C session). Master flats in `Masters/Flat/FQuad/`. Revalidate if the optical train has changed since those dates.
-
-### Can be done outside a session: **No**
-
-Must match the exact optical train state (focus, rotation, filter) of the lights. Capture at the end of each session before dismounting, or at twilight with the same setup.
+**Can be shot outside a session: Yes** — capped sensor + matching exposure/gain/temperature. No optical train needed.
 
 ---
 
 ## Dark Flat Frames
 
-Dark flats match the **flat frame exposure + gain**. Remove bias and thermal noise from flats. Filter-independent.
+Filter-independent. Match the **flat exposure + gain** (temperature not critical).
 
-**Raw frames:** `/Volumes/T7/Astrophotography/Templates/Dark/FQuad/`
-**Masters:** `/Volumes/T7/Astrophotography/Templates/Masters/Dark/FQuad/`
+**Raw:** `Templates/DarkFlat/`  ·  **Masters:** `Templates/Masters/DarkFlat/`
 
-### Inventory
+| Exposure | Gain | Raws | Master | Raw folder | Pairs with |
+|----------|------|------|--------|-----------|-----------|
+| 10 ms | g100 | 10 | ✅ | `DarkFlat/DARK1-BIN1-10ms-10/` | 10 ms flats |
+| 50 ms | g100 | 29 | ✅ | `DarkFlat/DARK6-BIN1-50ms-20/` | 50 ms FQuad flats |
+| 60 ms | g100 | 50 | ✅ | `DarkFlat/DARK10-BIN1-60ms-10/` | 60 ms flats (L-Pro / FQuad) |
 
-| Exposure | Gain | Raws | Master? | Date | Location | Status |
-|----------|------|------|---------|------|----------|--------|
-| 50ms | g100 | 20 | Yes | 2024-12 | `Dark/FQuad/DARK6` | Available (matches 50ms FQuad flats) |
-| 60ms | g100 | 50 | Yes | 2025-03 | `Dark/FQuad/DARK10` | Available (matches 60ms flats) |
-
-### Can be done outside a session: **Yes**
-
-Only requires: capped sensor, matching flat exposure + gain. Temperature not critical.
+**Can be shot outside a session: Yes.**
 
 ---
 
 ## Bias Frames
 
-Bias captures read noise only — independent of exposure, temperature, and filter. One master per gain setting.
+Filter-independent. Read noise only — independent of exposure, temperature, and filter. One master per base exposure.
 
-**Masters:** `/Volumes/T7/Astrophotography/Templates/Masters/Bias/`
+**Raw:** `Templates/Bias/`  ·  **Masters:** `Templates/Masters/Bias/`
 
-### Inventory
+| Exposure | Gain | Master | Raw folder(s) | Notes |
+|----------|------|--------|--------------|-------|
+| 0.0 ms | g100 | ✅ | — | True 0-exposure bias (Dec 2024) — purest read noise |
+| 1 ms | g100 | ✅ | `Bias/BIAS1-BIN1-1ms-10/`, `BIAS1-BIN1-1ms-20/`, `BIAS2-BIN1-1ms-10/` | Recommended default |
+| 10 ms | g100 | ✅ | `Bias/BIAS2-BIN1-10ms-10/` | |
+| 100 ms | g100 | ✅ | `Bias/BIAS3-BIN1-100ms-10/` | |
 
-| Gain | Exposure | Master? | Date | Location | Status |
-|------|----------|---------|------|----------|--------|
-| g100 | 1ms | Yes | — | `Masters/Bias/` | Available |
-| g100 | 10ms | Yes | — | `Masters/Bias/` | Available |
-| g100 | 100ms | Yes | — | `Masters/Bias/FQuad/` | Available |
+> A duplicate 100 ms bias master (formerly `Bias/FQuad/`) was MD5-verified identical and removed in the 2026-05-31 reorg.
 
-Multiple bias masters at different base exposures. The 1ms master is the most correct (shortest exposure = purest read noise).
+**Can be shot outside a session: Yes.**
 
-### Can be done outside a session: **Yes**
+---
 
-Only requires: capped sensor, shortest exposure, matching gain. Temperature not critical.
+## Flat Frames
+
+**Filter-dependent — the only calibration frame that is.** Each filter needs its own set; they are not interchangeable. Must match the **exact optical train** (scope, filter, focus, rotation) of the lights.
+
+**Raw:** `Templates/Flat/{LPro,FQuad,NoFilter}/`  ·  **Masters:** `Templates/Masters/Flat/{LPro,FQuad,NoFilter}/`
+
+| Filter | Exposure | Temp | Raws | Master | Raw folder |
+|--------|----------|------|------|--------|-----------|
+| [[Optolong-LPro]] | 60 ms | −10 °C | — | ✅ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` | *(see provenance note)* |
+| [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
+| [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
+| No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
+| No filter | 20 ms / 100 ms | — | 9 / 30 | — | `Flat/NoFilter/FLAT2…/`, `FLAT3…/` |
+
+> **Two distinct FQuad flat sets** (50 ms Dec 2024 −20 °C, 60 ms Mar 2025 −10 °C). The 60 ms master was formerly the misnamed `…CFA copy.xisf` — confirmed a separate flat, not a duplicate, and renamed in the reorg.
+>
+> ⚠️ **FQuad flat filenames still read `FILTER-NoFilter` *inside* the XISF** (manual-filter blank-keyword quirk — the file was renamed to `FILTER-FQuad`, but the internal keyword wasn't edited). WBPP matches by header, so it treats them as `NoFilter`; this is harmless because the FQuad lights also carry a blank keyword and match. The folder (`Flat/FQuad/`) is the authoritative filter marker.
+>
+> ⚠️ **L-Pro raw flat provenance unclear.** The 60 ms L-Pro master is present, but no L-Pro-tagged raw flat folder exists on T7 — `FLAT6` raws are FQuad-tagged (the old "shared dir" note). `Flat/LPro/` raw folder is empty pending clarification or a re-shoot.
+
+**Can be shot outside a session: No** — must match the exact optical train.
 
 ---
 
 ## Complete Needs Summary
 
-### Frames to acquire outside sessions
-
-**None outstanding** under the -10 °C year-round standard. The 120 s @ -10 °C dark was captured 2026-04-19 (25 raws in `Dark/DARK11-BIN1-120s-10/`, master in `Masters/Dark/`), closing the last gap. All standard sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) are now covered. -20 °C entries are deprecated under the new cooling standard.
-
-### Frames that are complete
+**Nothing outstanding** under the −10 °C standard. All standard sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters. Both filters have flats + matching dark-flats. Bias complete.
 
 | Frame | Status |
 |-------|--------|
-| Bias (g100, multiple masters) | Complete |
-| Dark flat 50ms (g100) | Complete |
-| Dark flat 60ms (g100) | Complete |
-| Dark 160s, -10°C | Complete (master + 26 raws) |
-| Dark 180s, -10°C | Complete (master + 25 raws) |
-| Dark 220s, -10°C | Complete (master + 25 raws) |
-| Dark 300s, -10°C | Complete (master) |
-| Dark 120s, -10°C | Complete (master + 25 raws, 2026-04-19) |
-| Dark 10ms, 30s, 60s, -10°C | Complete (masters) |
-| Flat [[Antlia-FQuad]] 50ms | Complete (30 raws + master, Dec 2024) |
-| Flat [[Antlia-FQuad]] 60ms | Complete (50 raws + master, Mar 2025) |
-| Flat [[Optolong-LPro]] 60ms | Complete (50 raws + master, Mar 2025) |
+| Bias (0.0 / 1 / 10 / 100 ms) | Complete |
+| Dark-flats (10 / 50 / 60 ms) | Complete |
+| Darks 30 s … 300 s, −10 °C | Complete |
+| Flats — L-Pro 60 ms, FQuad 50 + 60 ms, NoFilter 10 ms | Complete (L-Pro *raw* provenance to clarify) |
 
 ---
 
@@ -160,18 +158,17 @@ Only requires: capped sensor, shortest exposure, matching gain. Temperature not 
 |----------|----------|---------|
 | MARS DR1 database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-1.1.1.xmars` | MGC gradient correction |
 | MARS-U database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-u01-1.0.1.xmars` | MGC (user contributed) |
-| Gaia DR3/SP catalog | `/Volumes/T7/Astrophotography/Gaia DR3:SP (complete set)/` (20 files) | SPCC/SPFC astrometry |
-| Antlia Quadband filter curves | `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/` | SPFC/SPCC combined curves |
-| PixInsight processing templates | `/Volumes/T7/Astrophotography/Templates/PixInsight_templates/` | WBPP folder structure |
-| Siril processing templates | `/Volumes/T7/Astrophotography/Templates/Siril_templates/` | Siril folder structure |
+| Gaia DR3/SP catalog | `/Volumes/T7/Astrophotography/Gaia DR3:SP (complete set)/` | SPCC/SPFC |
+| Antlia Quadband filter curves | `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/` | SPFC/SPCC |
+| PixInsight templates | `/Volumes/T7/Astrophotography/Templates/PixInsight_templates/` | WBPP folder structure |
+| Siril templates | `/Volumes/T7/Astrophotography/Templates/Siril_templates/` | Siril folder structure |
 
 ---
 
 ## Notes
 
-- All frames shot with [[ASI2600MCPro]] at Gain 100
-- Dark frames must match light frame temperature and exposure exactly — filter is irrelevant
-- Flat frames must match the exact optical train (scope + filter + focus + rotation)
-- Each filter requires its own flat set — [[Antlia-FQuad]] and [[Optolong-LPro]] are not interchangeable
-- "FQuad" in folder names is organizational only — darks in those folders are filter-independent
-- See [[Calibration-Strategy]] for acquisition procedures and maintenance schedule
+- All frames shot with [[ASI2600MCPro]] at Gain 100.
+- **Filing rule:** Bias / Dark / Dark-Flat by **type** (filter-independent); Flat by **filter**. Do not re-introduce filter subfolders under Bias/Dark/DarkFlat.
+- **WBPP rebuilds re-emit default names** (`_DARK-` suffix on darks; `FILTER-NoFilter` for blank-keyword filters). After a rebuild, re-file the master into the right type/filter folder and rename to match this convention. Better: set the filter label in the ASIAIR capture plan so the keyword is populated at the source.
+- Darks must match light **temperature** and exposure exactly — filter irrelevant.
+- See [[Calibration-Strategy]] for acquisition procedures and maintenance schedule.

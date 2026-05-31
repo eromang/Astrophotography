@@ -37,6 +37,8 @@ Only one calibration frame type depends on the filter:
 
 > **Critical:** The [[Antlia-FQuad]] and [[Optolong-LPro]] require separate flat sets. Using L-Pro flats for Quad Band data introduces incorrect vignetting correction — the two filters have different optical properties.
 
+> **Folder structure (T7, reorganized 2026-05-31):** this rule is now reflected on disk — Bias / Dark / Dark-Flat are filed **by type** (no filter subfolders), Flats **by filter** (`Flat/{LPro,FQuad,NoFilter}/`). Full layout in [[Master-Library]].
+
 ---
 
 ## Dark Frame Library Plan

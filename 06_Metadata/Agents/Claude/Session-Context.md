@@ -63,7 +63,7 @@ External SSD: `/Volumes/T7/Astrophotography/`
 | Path | Content |
 |---|---|
 | `Objects/` | Imaging data by type → by rig |
-| `Templates/Masters/` | Master calibration frames (Dark, Flat, Bias) |
+| `Templates/Masters/` | Master calibration frames — Bias / Dark / DarkFlat (by type), Flat/{LPro,FQuad,NoFilter} (by filter); see [[Master-Library]] |
 | `XMARS/` | MARS databases for MGC |
 | `Gaia DR3:SP/` | Gaia catalog for SPCC/SPFC |
 | `Filters/` | PI filter curve CSVs |
