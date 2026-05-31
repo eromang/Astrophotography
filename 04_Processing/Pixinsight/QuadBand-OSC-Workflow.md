@@ -180,7 +180,7 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
 
 **BlurXTerminator**
 - Model: `BlurXTerminator.4.mlpackage`
-- Evaluate PSF Diameter with **PSFImage** render script
+- Evaluate PSF Diameter with **PSFImage** render script — or, offline, `python3 scripts/psf_image.py <image>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]])
   - Or use Automatic PSF
 - Configuration:
   - Sharpen Stars: 0.20

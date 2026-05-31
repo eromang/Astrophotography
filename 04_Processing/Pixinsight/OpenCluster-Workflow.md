@@ -65,7 +65,7 @@ Second pass — deconvolve and sharpen, with explicit halo control (the primary 
 
 | Parameter | Value | Note |
 |---|---|---|
-| PSF Diameter | **Automatic** | or the measured median FWHM. ⚠️ match image scale — a PSF measured on the native master must not be reused on the drizzle 2× master (stars ~2× wider) |
+| PSF Diameter | **Automatic** | or the measured median FWHM — offline via `python3 scripts/psf_image.py <image>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]]). ⚠️ match image scale — a PSF measured on the native master must not be reused on the drizzle 2× master (stars ~2× wider) |
 | Sharpen Stars | **0.25** | moderate; soft data + bright members artefact first if pushed high |
 | **Adjust Star Halos** | **−0.15** | ⭐ the key knob — pulls in the bloated blue halo at the source (−0.10 for milder fields) |
 | Sharpen Nonstellar | **0.70** | ↓ from the generic 0.90 — modest cluster SNR; avoids amplifying background grain |
