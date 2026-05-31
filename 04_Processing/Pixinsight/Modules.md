@@ -49,7 +49,7 @@ Key scripts in `/Applications/PixInsight/src/scripts/`. Only listing those relev
 | SubframeSelector | Evaluate and select sub-frames | [[RGB-Workflow]], [[QuadBand-OSC-Workflow]] |
 | ImageSolver | Plate solving | [[RGB-Workflow]] |
 | FindBackground | Background reference selection | [[RGB-Workflow]] |
-| PSFImage | PSF diameter evaluation for BlurXTerminator | [[RGB-Workflow]], [[QuadBand-OSC-Workflow]] |
+| PSFImage | PSF diameter evaluation for BlurXTerminator (offline equivalent: `scripts/psf_image.py`, see [[../../scripts/README.md]]) | [[RGB-Workflow]], [[OpenCluster-Workflow]], [[QuadBand-OSC-Workflow]] |
 | statisticalstretch | Statistical Astro Stretching | [[RGB-Workflow]] |
 | DarkStructureEnhance | Enhance dark nebula lanes | [[RGB-Workflow]], [[QuadBand-OSC-Workflow]] |
 | ReintegrateStars | Star reintegration after StarXTerminator | [[RGB-Workflow]], [[QuadBand-OSC-Workflow]] |
