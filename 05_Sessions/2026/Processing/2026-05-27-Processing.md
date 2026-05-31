@@ -259,8 +259,8 @@ Per [[../../04_Processing/Pixinsight/RGB-Workflow#2.2 ImageSolver]]: *"ImageSolv
 **Calibration masters used** (archive status MD5-verified 2026-05-30):
 - Bias: `masterBias_…BIAS-1.0ms.xisf` — **MD5-identical** to T7 `Templates/Masters/Bias/`
 - Dark: `Results/master/masterDark_…120.00s.xisf` — **rebuilt in-session** from 25 raws; differs from the Apr-19 T7 library master, so this exact build was archived to T7 `Objects/…/Mel111_Coma/` next to the lights (raws also on T7 `Templates/Dark/DARK11-BIN1-120s-10/`, MD5-identical)
-- Flat: `masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` — **MD5-identical** to T7 `Templates/Masters/Flat/`
-- Dark Flat: `masterDark_…0.06s.xisf` (60 ms) — **MD5-identical** to T7 `Templates/Masters/Dark/FQuad/`; matched via WBPP's Bias tab auto-match
+- Flat: `masterFlat_…FILTER-LPro_CFA_FLAT-60ms.xisf` — **MD5-identical** to T7 `Templates/Masters/Flat/LPro/`
+- Dark Flat: `masterDarkFlat_…0.06s.xisf` (60 ms) — **MD5-identical** to T7 `Templates/Masters/DarkFlat/`; matched via WBPP's Bias tab auto-match
 
 **Reference frame for registration**: frame 0011 (`...0011_c_cc_d.xisf`) — auto-picked by WBPP as the top PSF Signal Weight frame, consistent with the SubFrameSelector analysis at the top of this note (frame 11 had PSW 0.0303, the best of 52).
 

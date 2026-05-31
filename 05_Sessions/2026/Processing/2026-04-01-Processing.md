@@ -52,6 +52,8 @@ NGC7000_Reprocessing/
 | Dark Flat | 60ms, g100 | 1 | Master | `Calibration/DarkFlat/masterDark_BIN-1_6248x4176_EXPOSURE-0.06s.xisf` |
 | Bias | g100, 1ms | 1 | Master | `Calibration/Bias/masterBias_BIN-1_6248x4176_BIAS-1.0ms.xisf` |
 
+> The `Calibration/…` paths above are that session's Desktop working copies. On the SSD, masters were reorganized/renamed in the **2026-05-31 [[Master-Library]] reorg**: 300 s dark → `Masters/Dark/masterDark_…EXPOSURE-300.00s.xisf`; 60 ms dark-flat → `Masters/DarkFlat/masterDarkFlat_…EXPOSURE-0.06s.xisf`; flats → `Masters/Flat/{LPro,FQuad,NoFilter}/`.
+
 > The -20°C nights were excluded to avoid calibration mismatch (no 300s -20°C dark master). If you acquire one in the future, reintegrate those 41 frames for the full 24h stack.
 
 ---

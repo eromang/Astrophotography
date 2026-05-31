@@ -57,9 +57,9 @@ Gain: g100
 ### Darks frames avec FQuad
 
 Expositions requises:
-- 220s - DARK7-BIN1-220s-10-FQuad: 25
-- 180s - DARK8-BIN1-180s-10-FQuad: 25
-- 160s - DARK9-BIN1-160s-10-FQuad: 25
+- 220s - DARK7-BIN1-220s-10: 25
+- 180s - DARK8-BIN1-180s-10: 25
+- 160s - DARK9-BIN1-160s-10: 25
 
 ### Flat frames avec FQuad
 
