@@ -107,6 +107,31 @@ def read_image(path: str) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------- #
+# CFA (Bayer) green-channel extraction                                        #
+# --------------------------------------------------------------------------- #
+def extract_green(img: np.ndarray, pattern: str = "RGGB") -> np.ndarray:
+    """Full-resolution green channel from a raw Bayer frame.
+
+    Keeps native pixel scale: green pixels are kept; the R/B positions are filled
+    with the 4-neighbour green average (which are all green for a quincunx). This
+    removes the R/B mosaic modulation so star profiles fit cleanly, without the
+    resolution loss of 2x2 super-pixel binning. Default RGGB (ASI2600MC).
+    """
+    # green-pixel positions per pattern (row%2, col%2)
+    greens = {"RGGB": [(0, 1), (1, 0)], "BGGR": [(0, 1), (1, 0)],
+              "GRBG": [(0, 0), (1, 1)], "GBRG": [(0, 0), (1, 1)]}
+    if pattern not in greens:
+        raise ValueError(f"unknown CFA pattern: {pattern}")
+    g = img.astype(np.float64)
+    is_green = np.zeros(img.shape, bool)
+    for r, c in greens[pattern]:
+        is_green[r::2, c::2] = True
+    k = np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]], float) / 4.0
+    interp = ndimage.convolve(g, k, mode="nearest")   # 4-neighbour avg
+    return np.where(is_green, g, interp).astype(np.float32)
+
+
+# --------------------------------------------------------------------------- #
 # Star detection                                                              #
 # --------------------------------------------------------------------------- #
 def estimate_background(img: np.ndarray):
@@ -276,8 +301,11 @@ def write_fits(path, img, keywords=None):
 # Main                                                                        #
 # --------------------------------------------------------------------------- #
 def measure(path, function="moffat", max_stars=200, use_stars=50,
-            box=10, k=6.0, fixed_beta=None, verbose=True):
+            box=10, k=6.0, fixed_beta=None, cfa=None, cfa_pattern="RGGB",
+            verbose=True):
     img = read_image(path)
+    if cfa == "green":
+        img = extract_green(img, cfa_pattern)
     bg, sigma = estimate_background(img)
     cands = detect_stars(img, bg, sigma, k=k)[:max_stars]
     fits = []
@@ -313,17 +341,24 @@ def main(argv=None):
     ap.add_argument("--use-stars", type=int, default=50)
     ap.add_argument("--box", type=int, default=10, help="half-window (px) per star")
     ap.add_argument("-k", type=float, default=6.0, help="detection threshold (sigma)")
+    ap.add_argument("--cfa", choices=["none", "green"], default="none",
+                    help="green: extract full-res green channel from a raw Bayer frame")
+    ap.add_argument("--cfa-pattern", choices=["RGGB", "BGGR", "GRBG", "GBRG"],
+                    default="RGGB", help="Bayer pattern for --cfa (default RGGB)")
     ap.add_argument("--psf-out", help="write synthetic PSF image to this FITS path")
     ap.add_argument("--csv", help="write per-star fits to this CSV path")
     args = ap.parse_args(argv)
 
     r = measure(args.image, function=args.function, max_stars=args.max_stars,
                 use_stars=args.use_stars, box=args.box, k=args.k,
-                fixed_beta=args.beta)
+                fixed_beta=args.beta,
+                cfa=(None if args.cfa == "none" else args.cfa),
+                cfa_pattern=args.cfa_pattern)
 
     print(f"Image      : {args.image}")
     print(f"Function   : {args.function}" +
-          (f" (beta fixed {args.beta})" if args.beta else ""))
+          (f" (beta fixed {args.beta})" if args.beta else "") +
+          (f"  [CFA green {args.cfa_pattern}]" if args.cfa == "green" else ""))
     print(f"Stars used : {r['n']}  (bg {r['bg']:.5g}, sigma {r['sigma']:.3g})")
     print(f"FWHM x/y   : {r['fwhmx']:.3f} / {r['fwhmy']:.3f} px   (ecc {r['ecc']:.3f})")
     if not np.isnan(r["beta"]):

@@ -73,6 +73,50 @@ def test_fits_roundtrip():
     print(f"  fits round-trip: shape {back.shape} OK")
 
 
+def test_cfa_green_extraction():
+    # smooth function sampled by a green quincunx -> extraction recovers it
+    yy, xx = np.mgrid[0:64, 0:64]
+    smooth = (1000 + 5 * xx + 3 * yy).astype(np.float32)
+    mosaic = smooth.copy()
+    # corrupt the non-green (R/B) positions; RGGB greens at (0,1) & (1,0)
+    is_green = np.zeros((64, 64), bool)
+    is_green[0::2, 1::2] = True
+    is_green[1::2, 0::2] = True
+    mosaic[~is_green] = -9999.0
+    out = P.extract_green(mosaic, "RGGB")
+    # green positions preserved exactly
+    assert np.allclose(out[is_green], smooth[is_green])
+    # interpolated positions close to the underlying smooth function (interior)
+    interior = np.zeros((64, 64), bool)
+    interior[2:-2, 2:-2] = True
+    sel = interior & ~is_green
+    err = np.max(np.abs(out[sel] - smooth[sel]))
+    print(f"  cfa green: max interior interp error {err:.2f} ADU (smooth gradient)")
+    assert err < 2.0
+
+
+def test_cfa_green_fwhm_consistency():
+    # a star sampled on a green quincunx; --cfa green should recover ~same FWHM
+    fwhm_true, beta = 3.0, 4.0
+    rng = np.random.default_rng(7)
+    stars = [(rng.uniform(20, 480), rng.uniform(20, 480), rng.uniform(3000, 9000))
+             for _ in range(40)]
+    img = _inject_moffat((500, 500), stars, fwhm_true, beta, noise=1.0)
+    is_green = np.zeros((500, 500), bool)
+    is_green[0::2, 1::2] = True
+    is_green[1::2, 0::2] = True
+    # simulate a mild R/B offset (mosaic): drop non-green by 30% toward bg
+    mosaic = img.copy()
+    mosaic[~is_green] = 100 + 0.7 * (img[~is_green] - 100)
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "cfa.fits")
+        P.write_fits(f, mosaic.astype(np.float32))
+        r = P.measure(f, function="moffat", fixed_beta=beta, cfa="green")
+    err = abs(r["fwhm"] - fwhm_true)
+    print(f"  cfa green fwhm: true {fwhm_true:.2f} -> {r['fwhm']:.3f} px (err {err:.3f})")
+    assert err < 0.30
+
+
 def test_render_psf():
     psf = P.render_psf(3.0, 3.0)
     assert abs(psf.max() - 1.0) < 1e-6 and psf.shape[0] == psf.shape[1]

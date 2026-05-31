@@ -39,12 +39,14 @@ python3 scripts/psf_image.py img.fit --psf-out psf.fits --csv stars.csv
 | `--max-stars` / `--use-stars` | 200 / 50 | detect / keep (best by residual) |
 | `--box N` | 10 | half-window (px) fit per star |
 | `-k N` | 6.0 | detection threshold (σ above background) |
+| `--cfa green` | none | extract a full-res green channel from a raw Bayer frame before fitting |
+| `--cfa-pattern` | RGGB | Bayer pattern for `--cfa` (ASI2600MC is RGGB) |
 | `--psf-out FILE` | — | write synthetic PSF FITS (with FWHMX/FWHMY/BETA keys) |
 | `--csv FILE` | — | per-star fits (cx,cy,fwhmx,fwhmy,fwhm,beta,ecc,rmad) |
 
 **Output:** prints FWHM x/y, eccentricity, β, median FWHM, and `==> BXT PSF Diameter: N`.
 
-> ⚠️ **Run it on the debayered/processed image you'll actually deconvolve, not raw CFA subs.** On a raw Bayer frame the mosaic sampling differs from PixInsight's CFA handling (~10 % low). Validation on a Mel 111 light: this script **2.03 px** vs PixInsight SubFrameSelector **2.28 px**, with **eccentricity 0.61 vs 0.63** (near-exact) — the offset is the CFA, the shape characterisation matches. Also match the **image scale**: a PSF measured on the native master must not be reused on a drizzle-2× master (stars ~2× wider).
+> ⚠️ **For the BXT number, measure on the same image you'll deconvolve.** Best on a debayered/processed image. On a **raw Bayer frame**, the R/B mosaic biases the fit — use **`--cfa green`** (interpolates the full-res green channel, removing the mosaic at native scale). Validation on a Mel 111 light vs PixInsight SubFrameSelector (2.28 px): raw CFA **2.03 px** (11 % low) → **`--cfa green` 2.36 px** (~3.5 % — much closer). Synthetic (no CFA) recovery is exact. Also match the **image scale** — a PSF measured on the native master must not be reused on a drizzle-2× master (stars ~2× wider).
 
 ### Tests
 
