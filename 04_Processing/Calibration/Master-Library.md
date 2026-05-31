@@ -123,7 +123,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Filter | Exposure | Temp | Raws | Master | Raw folder |
 |--------|----------|------|------|--------|-----------|
-| [[Optolong-LPro]] | 10 ms | −10 °C | 50 | ⏳ **raws shot 2026-05-31 — master to build** | `Flat/LPro/FLAT7-BIN1-10ms-10/` |
+| [[Optolong-LPro]] | 10 ms | −10 °C | 50 | ✅ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-10ms.xisf` (2026-05-31) | `Flat/LPro/FLAT7-BIN1-10ms-10/` |
 | [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
 | [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
 | No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
@@ -137,7 +137,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 >
 > **Implication:** every L-Pro session calibrated with the old master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats** — mis-correcting the L-Pro filter's own dust/reflections. The mislabeled relabel master was **deleted 2026-05-31**.
 >
-> ✅ **Genuine L-Pro flats shot 2026-05-31** (50 × **10 ms**, −10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`. **Master still to build** in WBPP (flats + the 10 ms dark-flat master → `Masters/Flat/LPro/`). ⚠️ The raws' FITS `FILTER` keyword is **absent** (manual filter — `LPro` is in the filename only), so WBPP will name the master `FILTER-NoFilter` → **rename to `…FILTER-LPro_CFA_FLAT-10ms.xisf`** after building. Re-stacking [[Mel111-Coma|Mel 111]] with the real L-Pro flat is the candidate fix for the residual γ Com halo.
+> ✅ **Genuine L-Pro flat now exists (2026-05-31).** 50 × **10 ms** raws (−10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`; master built (flats + 10 ms dark-flat), renamed to `…FILTER-LPro_CFA_FLAT-10ms.xisf`, in `Masters/Flat/LPro/`. (Internal XISF `FILTER` keyword reads `NoFilter` — the manual-filter quirk; folder + filename are the authoritative markers.) **Next:** re-stack [[Mel111-Coma|Mel 111]] with this flat — candidate fix for the residual γ Com halo.
 
 **Can be shot outside a session: No** — must match the exact optical train.
 
@@ -145,7 +145,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 ## Complete Needs Summary
 
-Darks, dark-flats, and bias are complete. **L-Pro flats now shot (2026-05-31) — master just needs building.** All standard dark sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) have masters.
+**Library complete.** Darks, dark-flats, bias, and all three flat sets (L-Pro, FQuad, NoFilter) have masters. The L-Pro flat — the last gap — was shot and built 2026-05-31. All standard dark sub lengths (10 ms, 30 s, 60 s, 120 s, 160 s, 180 s, 220 s, 300 s) covered.
 
 | Frame                                    | Status                                                                          |
 | ---------------------------------------- | ------------------------------------------------------------------------------- |
@@ -153,7 +153,7 @@ Darks, dark-flats, and bias are complete. **L-Pro flats now shot (2026-05-31) �
 | Dark-flats (10 / 50 / 60 ms)             | Complete                                                                        |
 | Darks 30 s … 300 s, −10 °C               | Complete                                                                        |
 | Flats — FQuad 50 + 60 ms, NoFilter 10 ms | Complete                                                                        |
-| Flat — **L-Pro 10 ms**                   | ⏳ **Raws shot** 2026-05-31 (50 × 10 ms, `Flat/LPro/FLAT7…`) — **build the master** (flats + 10 ms dark-flat → `Masters/Flat/LPro/`, rename to FILTER-LPro) |
+| Flat — **L-Pro 10 ms**                   | ✅ Complete (shot + built 2026-05-31, `Masters/Flat/LPro/`) |
 
 ---
 

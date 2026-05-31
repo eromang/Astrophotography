@@ -129,13 +129,13 @@ Flats remain valid as long as **nothing changes** in the optical train:
 
 | Filter | Flat available? | Notes |
 |---|---|---|
-| [[Optolong-LPro]] | ⏳ **Raws shot 2026-05-31** (50 × 10 ms) — master to build | First genuine L-Pro flat set (the old "L-Pro master" was a mislabeled FQuad flat, deleted 2026-05-31 — see [[Master-Library]]). Raws at `Flat/LPro/FLAT7-BIN1-10ms-10/`. |
+| [[Optolong-LPro]] | ✅ 10 ms master (2026-05-31) | First genuine L-Pro flat — shot + built 2026-05-31 (the old "L-Pro master" was a mislabeled FQuad flat, deleted). `Masters/Flat/LPro/`. |
 | [[Antlia-FQuad]] | 50ms master (2024-12) + 60ms master (2025-03) | Two sets available — verify still valid if train changed |
 
 > **Important:** Each filter requires its own flat set. The Quad Band and L-Pro filters have different thicknesses and coatings, producing different vignetting and dust shadow patterns.
 
-> [!todo] Build the L-Pro flat master
-> L-Pro flats were captured 2026-05-31 (50 × 10 ms, −10 °C, flat panel). **Remaining step:** build the master in WBPP (flats + the **10 ms dark-flat** master → `Masters/Flat/LPro/`), and **rename** the output to `…FILTER-LPro_CFA_FLAT-10ms.xisf` (raws carry no FITS `FILTER` keyword — `LPro` is in the filename only). Then re-stack [[Mel111-Coma]] with the real flat (candidate fix for the residual γ Com halo).
+> [!success] L-Pro flat — done (2026-05-31)
+> All three filters now have flat masters. **Follow-up:** re-stack [[Mel111-Coma]] with the new L-Pro flat — candidate fix for the residual γ Com halo (the prior stack used FQuad flats). Note: a flat shot today matches the *current* train; dust-shadow correction for Mel 111 is only exact if the camera rotation is unchanged from May.
 
 ---
 
