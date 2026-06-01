@@ -58,6 +58,38 @@ Synthetic recovery is exact (Moffat 3.20 → 3.200 px, Gaussian 2.80 → 2.800 p
 
 ---
 
+## set_filter.py — write the FITS FILTER keyword before WBPP
+
+Manual filters (no EFW) mean the ASIAIR never writes the FITS **`FILTER`** keyword — it only puts the filter in the **filename** (`…-9.6C_LPro_0001.fit`). The empty keyword is why WBPP can't auto-match filter-specific flats, can't tell L-Pro from FQuad (all read `NoFilter`), and names masters `FILTER-NoFilter`. This reads the filter **from the filename** (or `--filter`) and writes it into each raw frame's header, so WBPP groups flats by filter and you can stop hand-loading one flat at a time. See [[../04_Processing/Calibration/Calibration-Strategy.md]].
+
+Stdlib only. **Data-preserving:** when the header has a free card slot (the normal case) only the header region is rewritten — the pixel data is never touched (verified by unchanged data-block MD5).
+
+```bash
+python3 scripts/set_filter.py <folder>                 # DRY RUN — preview only
+python3 scripts/set_filter.py <folder> --apply         # write FILTER from filename
+python3 scripts/set_filter.py <folder> --filter FQuad --apply   # force a value (untokened frames)
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--apply` | off (dry run) | actually write; default just previews |
+| `--filter VALUE` | auto from filename | force a filter (for old frames with no token, e.g. Dec-2024 FQuad flats) |
+| `--recursive` | off | recurse into subfolders |
+
+- **Darks / bias / dark-flats are skipped** — they have no filename token and are filter-independent (don't force `--filter` on them).
+- **Run on the lights + flats before WBPP.** Then load all flats and WBPP matches by filter automatically — no more "only one flat" workaround.
+- Complements the ASIAIR slot-label habit (which is what puts the token in the filename to begin with). A motorized EFW would write the keyword directly and make this unnecessary.
+
+### Tests
+
+```bash
+python3 scripts/test_set_filter.py     # autodetect + insert/replace + data-MD5-unchanged + full-rewrite fallback
+```
+
+The key safety test asserts the **pixel-data block is byte-identical** after the edit (header-only and full-rewrite paths).
+
+---
+
 ## mount.py — CEM26 read-only diagnostics + safe config helpers
 
 CLI for talking to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). All subcommands are non-moving (except the slow sidereal tracking that `unpark` starts and `timesync` config writes which don't drive the motors). Useful for pre-session readiness checks, session-state logging, time sync, and quick diagnostics when ASIAIR isn't running.

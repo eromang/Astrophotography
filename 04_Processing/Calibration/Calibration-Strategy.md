@@ -39,6 +39,8 @@ Only one calibration frame type depends on the filter:
 
 > **Folder structure (T7, reorganized 2026-05-31):** this rule is now reflected on disk — Bias / Dark / Dark-Flat are filed **by type** (no filter subfolders), Flats **by filter** (`Flat/{LPro,FQuad,NoFilter}/`). Full layout in [[Master-Library]].
 
+> **FITS FILTER keyword fix:** with manual filters (no EFW) the ASIAIR leaves the FITS `FILTER` keyword blank — only the filename carries the filter — so WBPP can't auto-match flats and you must hand-load one flat at a time. **Run `python3 scripts/set_filter.py <folder> --apply` on the lights + flats before WBPP** to write `FILTER` from the filename token; WBPP then groups flats by filter automatically. Data-preserving (header-only edit). See `scripts/README.md`.
+
 ---
 
 ## Dark Frame Library Plan
