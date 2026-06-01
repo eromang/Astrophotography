@@ -55,6 +55,7 @@ Astrophotography knowledge base. See `CLAUDE.md` at root for full conventions.
 | Mel 111 first light | `05_Sessions/2026/Processing/2026-05-31-Processing.md` | **Reprocessed 2026-05-31** (BXT Halos −0.15 + MorphologicalTransformation; Ecc 0.63→0.38, FWHM −30%); new export is the vault result image. **γ Com halo reduced, soft blue residual remains** → re-stack candidate once a real L-Pro flat is shot (residual is likely uncorrected L-Pro filter reflection) |
 | Calibration library reorg | `04_Processing/Calibration/Master-Library.md` | **Done 2026-05-31** — T7 `Templates/` reorganized by filter-independence (Bias/Dark/DarkFlat by type, Flat by filter); 17 masters + 881 raws verified; dup + mislabeled-L-Pro masters removed; 0 ms bias & two FQuad flats clarified |
 | L-Pro flat | `04_Processing/Calibration/Master-Library.md` | **✅ Done 2026-05-31** — first genuine L-Pro flat shot + built (50 × 10 ms → `Masters/Flat/LPro/`); calibration library now complete. **Follow-up: re-stack Mel 111** with the real flat (candidate γ Com halo fix) |
+| Astrometric solve failure | `05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis.md` | **✅ Resolved 2026-06-01** — WBPP/ImageSolver RANSAC failures root-caused to the catalog: only Gaia DR3/**SP** (SPCC-only) was installed. Installed the **astrometric** Gaia DR3 XPSD (`gdr3-1.0.0-01.xpsd` → T7 `Gaia DR3 (astrometric)/`); WBPP in-pipeline solve now **2 solved** (was 2 failed). Scale/drizzle/force-values were red herrings |
 
 ---
 
@@ -67,7 +68,8 @@ External SSD: `/Volumes/T7/Astrophotography/`
 | `Objects/` | Imaging data by type → by rig |
 | `Templates/Masters/` | Master calibration frames — Bias / Dark / DarkFlat (by type), Flat/{LPro,FQuad,NoFilter} (by filter); see [[Master-Library]] |
 | `XMARS/` | MARS databases for MGC |
-| `Gaia DR3:SP/` | Gaia catalog for SPCC/SPFC |
+| `Gaia DR3:SP/` | Gaia **spectrophotometric** catalog — **SPCC/SPFC only** (too sparse to plate-solve) |
+| `Gaia DR3 (astrometric)/` | Gaia **astrometric** catalog (`gdr3-*.xpsd`) for **plate-solving** (ImageSolver/WBPP) — added 2026-06-01 |
 | `Filters/` | PI filter curve CSVs |
 
 ---

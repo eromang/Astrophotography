@@ -91,6 +91,7 @@ Second pass — deconvolve and sharpen, with explicit halo control (the primary 
 ### 3.2 ImageSolver (skip if already solved)
 
 - Only needed if the master lacks an astrometric solution. WBPP normally embeds one, so SPCC reads it directly — **skip this step** unless SPCC complains. If needed: pixel size matches the stack (1.88 µm for Drizzle 2×), sensitivity 0.30, don't force values. See [[RGB-Workflow#2.2 ImageSolver]].
+- ⚠️ **Cluster fields fail to solve if the local catalog is Gaia DR3/SP.** A dense cluster needs the **astrometric** Gaia DR3 XPSD (`gdr3-*.xpsd`) — the SP subset lacks the bright anchor stars and the solve dies with `RANSAC: Unable to find a valid set of star pair matches` even when scale/center are perfect. If you lack the astrometric XPSD, use **Online → Gaia DR2 + limit-mag 16**. Full root cause: [[../../05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis]].
 
 ### 3.3 SPCC (SpectrophotometricColorCalibration)
 

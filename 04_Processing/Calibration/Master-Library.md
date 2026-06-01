@@ -163,7 +163,8 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 |----------|----------|---------|
 | MARS DR1 database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-1.1.1.xmars` | MGC gradient correction |
 | MARS-U database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-u01-1.0.1.xmars` | MGC (user contributed) |
-| Gaia DR3/SP catalog | `/Volumes/T7/Astrophotography/Gaia DR3:SP (complete set)/` | SPCC/SPFC |
+| Gaia DR3/SP catalog | `/Volumes/T7/Astrophotography/Gaia DR3:SP (complete set)/` | **SPCC/SPFC only** — spectrophotometric subset, **do not** plate-solve with it (too sparse → ImageSolver RANSAC failures) |
+| Gaia DR3 astrometric catalog | `/Volumes/T7/Astrophotography/Gaia DR3 (astrometric)/` (`gdr3-1.0.0-01.xpsd` ≤mag 16.59; add `-02` to 17.61 for margin) | **Plate-solving** (ImageSolver / WBPP astrometric step). Register in PixInsight: Process → Gaia → Data release **Gaia DR3** → add the `.xpsd` files. Added 2026-06-01 — see [[../../05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis]] |
 | Antlia Quadband filter curves | `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/` | SPFC/SPCC |
 | PixInsight templates | `/Volumes/T7/Astrophotography/Templates/PixInsight_templates/` | WBPP folder structure |
 | Siril templates | `/Volumes/T7/Astrophotography/Templates/Siril_templates/` | Siril folder structure |

@@ -119,8 +119,11 @@ Plate-solve the image for SPFC/SPCC to work correctly.
   - **3.76 µm** for standard stack (no drizzle or Drizzle 1x)
   - **1.88 µm** for Drizzle 2x (pixel size halved)
 - **Enable Distortion Correction** for better star matching
-- Catalog: **Gaia DR3** for plate solving (DR3/SP is only needed for SPCC spectroscopic data)
-- **Do NOT check "Force values"** — let the solver use FITS header hints. Forcing values fails when the image has a non-standard rotation (e.g., 90° from camera angle).
+- **Catalog — this is the #1 cause of solve failures, see warning below:**
+  - For **local/offline** solving, the **Local XPSD server must be the *astrometric* Gaia DR3** (`gdr3-*.xpsd`), **NOT** the spectrophotometric **DR3/SP** (`gdr3sp-*.xpsd`). SP is for SPCC only — it's too sparse/biased to plate-solve. Astrometric catalog on T7: `Gaia DR3 (astrometric)/` (file `gdr3-1.0.0-01.xpsd`, ≤ mag 16.59; +`-02` to 17.61 for margin).
+  - **Online fallback** (no astrometric XPSD installed): select **Online star catalog → Gaia DR2**, **uncheck "Automatic limit magnitude", set Limit magnitude 16** (a deep auto-limit truncates the VizieR query at its 50k-row cap → only a handful of in-frame stars → fail).
+- **Do NOT check "Force values"** — let the solver use FITS header hints.
+- **Image scale** — either path works, they're equivalent: **Focal 250 mm + Pixel 3.76 µm**, *or* **Resolution 3.10 ″/px** native (**1.548 ″/px** for Drizzle 2×). If the Resolution readout looks half-scale (1.55 when you expect 3.10), it's a stale-field artifact — re-type it; it is *not* what blocks a solve.
 - **Advanced Parameters:**
   - Sensitivity: **0.30** (lower than default 0.50 — detects more stars for matching)
   - **Try with apparent coordinates on failure:** checked
@@ -128,7 +131,7 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 > Since PI 1.8.9-1, astrometric solutions are calculated automatically during pre-processing. ImageSolver is needed if WBPP didn't solve the image or if the autocrop lost the solution.
 
-> **Troubleshooting RANSAC failures:** If the solve fails with "RANSAC: Unable to find a valid set of star pair matches", verify: (1) "Force values" is unchecked, (2) exhaustive star matching is enabled, (3) sensitivity is 0.30, (4) pixel size matches the stack (3.76 µm native, 1.88 µm Drizzle 2x). The most common cause is forcing values on a rotated image.
+> **Troubleshooting RANSAC failures — root cause is almost always the CATALOG, not the geometry.** Confirmed empirically on Mel 111 ([[../../05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis|2026-06-01 diagnosis]]): with **correct** scale, center, and clean stars, the solve still failed `RANSAC: Unable to find a valid set of star pair matches` — because the only local catalog installed was **Gaia DR3/SP**. The SP subset exhausts at ~6000 stars in a field (the magnitude search flatlines and maxes the limit at 25.56) and lacks the bright anchor stars a cluster field needs. **Fix, in order:** (1) use the **astrometric** Gaia DR3 XPSD locally, or online Gaia DR2 + manual limit-mag 16; (2) sensitivity 0.30 + exhaustive matching; (3) "Force values" unchecked; (4) scale right (3.76 µm native / 1.88 µm Drizzle 2×). Scale, rotation, and "force values" are **rarely** the real culprit — check the catalog first.
 
 ### 2.3 Gradient Removal
 
