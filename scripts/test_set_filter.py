@@ -6,6 +6,7 @@ Stdlib only.
 """
 import hashlib
 import os
+import struct
 import sys
 import tempfile
 
@@ -111,6 +112,145 @@ def test_full_rewrite_fallback():
         assert hdr1 == hdr0 + BLOCK, "should have grown by one header block"
         assert _data_md5(f, hdr1) == before, "data changed in full rewrite!"
         print(f"  full-rewrite fallback: {status}; +1 block; data unchanged ✓")
+
+
+# --------------------------------------------------------------------------
+# XISF tests
+# --------------------------------------------------------------------------
+def _make_xisf(path, filter_value="NoFilter", self_closing=False, with_prop=True,
+               n_data=8192, data_start=4096):
+    """Write a minimal monolithic XISF with a Filter:Name property + data block."""
+    if not with_prop:
+        prop = ""                       # older masters: property absent entirely
+    elif self_closing:
+        prop = '<Property id="Instrument:Filter:Name" type="String"/>'
+    else:
+        prop = f'<Property id="Instrument:Filter:Name" type="String">{filter_value}</Property>'
+    fits_filter = (filter_value or "").ljust(8) if filter_value else "        "
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<xisf version="1.0" xmlns="http://www.pixinsight.com/xisf">'
+        f'<Image geometry="64:64:1" sampleFormat="Float32" colorSpace="Gray" '
+        f'location="attachment:{data_start}:{n_data}">'
+        '<FITSKeyword name="IMAGETYP" value="\'Master Flat\'" comment="Type of image"/>'
+        f'<FITSKeyword name="FILTER" value="\'{fits_filter}\'" comment="Filter used when taking image"/>'
+        '<Property id="Instrument:Camera:Name" type="String">ZWO ASI2600MC Pro</Property>'
+        f'{prop}'
+        '</Image>'
+        '</xisf>')
+    xml_b = xml.encode("utf-8")
+    hlen = len(xml_b)
+    assert 16 + hlen <= data_start, "synthetic header too big"
+    data = bytes((i * 13) % 256 for i in range(n_data))
+    with open(path, "wb") as fh:
+        fh.write(S.XISF_SIG)
+        fh.write(struct.pack("<I", hlen))
+        fh.write(b"\x00\x00\x00\x00")
+        fh.write(xml_b)
+        fh.write(b"\x00" * (data_start - 16 - hlen))
+        fh.write(data)
+    return data_start
+
+
+def _xisf_data_md5(path, data_start):
+    with open(path, "rb") as fh:
+        fh.seek(data_start)
+        return hashlib.md5(fh.read()).hexdigest()
+
+
+def _xisf_prop(path):
+    with open(path, "rb") as fh:
+        blob = fh.read()
+    _, xml = S._xisf_header(blob)
+    return S.xisf_current_filter(xml)
+
+
+def test_xisf_master_autodetect():
+    cases = {
+        "masterFlat_BIN-1_6248x4176_FILTER-LPro_CFA_FLAT-10ms.xisf": "LPro",
+        "masterFlat_BIN-1_6248x4176_FILTER-FQuad_CFA_FLAT-60ms.xisf": "FQuad",
+        "masterFlat_BIN-1_6248x4176_FILTER-NoFilter_CFA_FLAT-10.0ms.xisf": "NoFilter",
+        "masterDark_BIN-1_6248x4176_EXPOSURE-120.00s.xisf": None,
+    }
+    for name, exp in cases.items():
+        got = S.filter_from_name(name)
+        assert got == exp, f"{name}: expected {exp}, got {got}"
+    print(f"  master-filename autodetect: {len(cases)} names parsed (darks -> None) ✓")
+
+
+def test_xisf_set_preserves_data():
+    # NoFilter (8) -> LPro (4): XML shrinks, padding grows; data must be identical
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "m.xisf")
+        ds = _make_xisf(f, filter_value="NoFilter")
+        before = _xisf_data_md5(f, ds)
+        status = S.set_filter_xisf(f, "LPro", apply=True)
+        assert _xisf_prop(f) == "LPro", f"property not LPro: {_xisf_prop(f)!r}"
+        after = _xisf_data_md5(f, ds)
+        assert after == before, "DATA CHANGED — must be header-only!"
+        # FITS keyword updated too
+        with open(f, "rb") as fh:
+            _, xml = S._xisf_header(fh.read())
+        assert "value=\"'LPro    '\"" in xml, "FITS FILTER keyword not updated"
+        print(f"  xisf set NoFilter->LPro: {status}; data MD5 unchanged ({after[:8]}…) ✓")
+
+
+def test_xisf_empty_to_longer_value():
+    # self-closing empty property -> FQuad (XML grows); data must be identical
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "e.xisf")
+        ds = _make_xisf(f, self_closing=True)
+        before = _xisf_data_md5(f, ds)
+        assert _xisf_prop(f) == "", "synthetic empty prop not empty"
+        S.set_filter_xisf(f, "FQuad", apply=True)
+        assert _xisf_prop(f) == "FQuad"
+        assert _xisf_data_md5(f, ds) == before, "data changed on grow path!"
+        print("  xisf empty->FQuad (XML grows): property set; data unchanged ✓")
+
+
+def test_xisf_insert_when_absent():
+    # older masters (e.g. FQuad) have NO Filter:Name property -> must insert it
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "old.xisf")
+        ds = _make_xisf(f, filter_value="NoFilter", with_prop=False)
+        before = _xisf_data_md5(f, ds)
+        assert _xisf_prop(f) is None, "synthetic should have no property"
+        status = S.set_filter_xisf(f, "FQuad", apply=True)
+        assert "inserted" in status, status
+        assert _xisf_prop(f) == "FQuad"
+        assert _xisf_data_md5(f, ds) == before, "data changed on insert!"
+        # FITS keyword corrected too (was 'NoFilter ')
+        with open(f, "rb") as fh:
+            _, xml = S._xisf_header(fh.read())
+        assert "value=\"'FQuad   '\"" in xml, "FITS FILTER not corrected"
+        print(f"  xisf insert (property absent): {status}; data unchanged ✓")
+
+
+def test_xisf_dryrun_and_idempotent():
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "z.xisf")
+        ds = _make_xisf(f, filter_value="NoFilter")
+        before = _xisf_data_md5(f, ds)
+        assert S.set_filter_xisf(f, "LPro", apply=False).startswith("DRY")
+        assert _xisf_prop(f) == "NoFilter", "dry run must not write"
+        assert _xisf_data_md5(f, ds) == before
+        S.set_filter_xisf(f, "LPro", apply=True)
+        assert S.set_filter_xisf(f, "LPro", apply=True) == "already LPro"
+        print("  xisf dry-run writes nothing; second apply -> 'already LPro' ✓")
+
+
+def test_xisf_dispatch_and_filesize_offset():
+    # the data attachment offset must remain reachable (data_start unchanged)
+    with tempfile.TemporaryDirectory() as d:
+        f = os.path.join(d, "d.xisf")
+        ds = _make_xisf(f, filter_value="NoFilter")
+        assert S.is_xisf(f), "is_xisf should detect the synthetic XISF"
+        S.set_filter_any(f, "LPro", apply=True)   # dispatch should pick XISF path
+        with open(f, "rb") as fh:
+            blob = fh.read()
+        _, xml = S._xisf_header(blob)
+        assert S._xisf_data_start(xml) == ds, "data offset moved!"
+        print("  set_filter_any dispatches XISF; data offset preserved ✓")
 
 
 if __name__ == "__main__":

@@ -58,35 +58,46 @@ Synthetic recovery is exact (Moffat 3.20 → 3.200 px, Gaussian 2.80 → 2.800 p
 
 ---
 
-## set_filter.py — write the FITS FILTER keyword before WBPP
+## set_filter.py — write the filter into frames/masters before WBPP
 
-Manual filters (no EFW) mean the ASIAIR never writes the FITS **`FILTER`** keyword — it only puts the filter in the **filename** (`…-9.6C_LPro_0001.fit`). The empty keyword is why WBPP can't auto-match filter-specific flats, can't tell L-Pro from FQuad (all read `NoFilter`), and names masters `FILTER-NoFilter`. This reads the filter **from the filename** (or `--filter`) and writes it into each raw frame's header, so WBPP groups flats by filter and you can stop hand-loading one flat at a time. See [[../04_Processing/Calibration/Calibration-Strategy.md]].
+Manual filters (no EFW) mean the ASIAIR never records the filter in frame metadata — it only puts it in the **filename** (`…-9.6C_LPro_0001.fit`). That's why WBPP can't auto-match filter-specific flats, can't tell L-Pro from FQuad (all read `NoFilter`), and names masters `FILTER-NoFilter`. This reads the filter **from the filename** (or `--filter`) and writes it where WBPP actually looks. See [[../04_Processing/Calibration/Calibration-Strategy.md]].
 
-Stdlib only. **Data-preserving:** when the header has a free card slot (the normal case) only the header region is rewritten — the pixel data is never touched (verified by unchanged data-block MD5).
+It handles **two file types**, because WBPP reads filter from a *different* place in each:
+
+| File type | What WBPP reads | What the script writes |
+|---|---|---|
+| **FITS** `.fit/.fits` (raw lights/flats) | the FITS **`FILTER`** keyword | sets the `FILTER` keyword |
+| **XISF** `.xisf` (master flats) | the native **`Instrument:Filter:Name` property** (it **ignores** the FITS keyword here!) | sets the property (and the FITS keyword too) |
+
+> ⚠️ **The XISF gotcha (paid for on Mel 111, 2026-06-01):** a master flat whose *filename* and FITS `FILTER` keyword both say `LPro` still grouped under **NoFilter** in WBPP, because its `Instrument:Filter:Name` **property** was empty/absent. Setting only the FITS keyword is not enough for `.xisf` masters — you must set the property. Older masters may lack the property entirely; the script **inserts** it.
+
+Stdlib only. **Data-preserving on both paths:** FITS rewrites only the header region; XISF rewrites only the XML header and re-pads so the data block stays at its original absolute (alignment-padded) offset. Every write verifies the **data-block MD5 is unchanged** and aborts if not.
 
 ```bash
 python3 scripts/set_filter.py <folder>                 # DRY RUN — preview only
-python3 scripts/set_filter.py <folder> --apply         # write FILTER from filename
-python3 scripts/set_filter.py <folder> --filter FQuad --apply   # force a value (untokened frames)
+python3 scripts/set_filter.py <folder> --apply         # write filter from filename
+python3 scripts/set_filter.py <master.xisf> --filter FQuad --apply   # force a value
+python3 scripts/set_filter.py <folder> --recursive --apply           # whole master library
 ```
 
 | Option | Default | Meaning |
 |---|---|---|
 | `--apply` | off (dry run) | actually write; default just previews |
-| `--filter VALUE` | auto from filename | force a filter (for old frames with no token, e.g. Dec-2024 FQuad flats) |
+| `--filter VALUE` | auto from filename | force a filter (raw frames with no token, or to override) |
 | `--recursive` | off | recurse into subfolders |
 
-- **Darks / bias / dark-flats are skipped** — they have no filename token and are filter-independent (don't force `--filter` on them).
-- **Run on the lights + flats before WBPP.** Then load all flats and WBPP matches by filter automatically — no more "only one flat" workaround.
-- Complements the ASIAIR slot-label habit (which is what puts the token in the filename to begin with). A motorized EFW would write the keyword directly and make this unnecessary.
+- Auto-detects the filter from raw tokens (`…_-9.6C_LPro_0001.fit`) **and** master tokens (`…_FILTER-LPro_…xisf`).
+- **Darks / bias / dark-flats are skipped** — no filename token, filter-independent (don't force `--filter` on them).
+- **Run on the lights + flats (and master flats) before WBPP.** Then WBPP matches flats to lights by filter automatically — no more "only one flat" workaround.
+- A motorized EFW would write the filter directly and make this unnecessary.
 
 ### Tests
 
 ```bash
-python3 scripts/test_set_filter.py     # autodetect + insert/replace + data-MD5-unchanged + full-rewrite fallback
+python3 scripts/test_set_filter.py     # FITS + XISF: autodetect, insert/replace/grow, data-MD5-unchanged, full-rewrite fallback
 ```
 
-The key safety test asserts the **pixel-data block is byte-identical** after the edit (header-only and full-rewrite paths).
+The key safety tests assert the **pixel/attachment data block is byte-identical** after the edit — across the FITS header-only path, FITS full-rewrite, and all three XISF paths (replace, grow, insert-when-absent).
 
 ---
 
