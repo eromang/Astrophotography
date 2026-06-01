@@ -45,11 +45,14 @@ tags:
 
 ![[Mel111-ASI2600.jpg]]
 
-*First-light master, 52 × 120 s (1.7 h) L-Pro. **Reprocessed 2026-05-31** with the [[OpenCluster-Workflow]] (halo-fix run: BXT Halos −0.15 + MorphologicalTransformation star reduction, galaxy-protected curve) — see [[2026-05-31-Processing]]. Clean neutral background, tight round star cores (Ecc 0.63→0.38, FWHM −30%), clean blue/orange colour separation, and the background Coma galaxies preserved. **γ Com halo: reduced vs. the first version but a soft blue residual remains** (visible at 1:1, with a faint asymmetric wing) — likely partly filter-reflection that the (missing) L-Pro flat would help correct.*
+*First-light master, 52 × 120 s (1.7 h) L-Pro. **Production master 2026-06-01** — the first stack with the **genuine L-Pro flat** and a working **astrometric solution** (drizzle 2×, 4/4 solved offline). Full [[OpenCluster-Workflow]] as-executed: [[2026-06-01-Processing]]. Clean neutral background (R/G/B medians within 0.0006), tight round star cores (Ecc 0.37→**0.26**, FWHM 4.36→**1.85 px** on the drizzle master), clean blue/orange colour separation, and the background Coma galaxies preserved. **γ Com halo resolved** — the genuine L-Pro flat removed the underlying filter reflection that left a soft blue residual on the [[2026-05-31-Processing|2026-05-31 reprocess]], and BXT Halos −0.25 + a masked MorphologicalTransformation erosion finished the bright members.*
 
 ## Processing
 
-**Production master:** `Results/master/masterLight_…_drizzle_2x_autocrop.xisf` (WBPP Test 4). Full session log: [[2026-05-27-Processing]].
+**Production master:** `Results/master/masterLight_…_FILTER-LPro_RGB_drizzle_2x_autocrop.xisf` (2026-06-01 — genuine L-Pro flat, drizzle 2×, **4/4 astrometric solved offline**). Full as-executed log: [[2026-06-01-Processing]]. *(History: [[2026-05-27-Processing]] WBPP Test 4 and the [[2026-05-31-Processing]] reprocess used FQuad flats + an unsolved master — superseded.)*
+
+> [!success] Resolved 2026-06-01 — the two issues flagged below are fixed
+> **γ Com halo:** the soft blue residual was an uncorrected **L-Pro filter reflection** (the old stack used FQuad flats). Re-stacked with the **genuine L-Pro flat** → reflection gone; BXT Halos −0.25 + morphological erosion finished the bright members. **FILTER metadata:** lights now carry the FITS `FILTER` keyword and the master flat its XISF `Instrument:Filter:Name` property (both `LPro`) via `set_filter.py` — WBPP groups and applies the flat automatically. **Eccentricity** (capture-side, ~0.11 field deviation = sensor tilt) is still worth chasing before the next cluster.
 
 - Multi-night campaign originally planned for Apr 2026 — none of the 4 April nights executed (weather / personal availability). First light delivered 2026-05-25 instead.
 - [[OpenCluster-Workflow]]; drizzle 2× at integration (cluster is point-source-dominated, drizzle resolves tight pairs cleanly).
