@@ -137,7 +137,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 >
 > **Implication:** every L-Pro session calibrated with the old master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats** — mis-correcting the L-Pro filter's own dust/reflections. The mislabeled relabel master was **deleted 2026-05-31**.
 >
-> ✅ **Genuine L-Pro flat now exists (2026-05-31).** 50 × **10 ms** raws (−10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`; master built (flats + 10 ms dark-flat), renamed to `…FILTER-LPro_CFA_FLAT-10ms.xisf`, in `Masters/Flat/LPro/`. (Internal XISF `FILTER` keyword reads `NoFilter` — the manual-filter quirk; folder + filename are the authoritative markers.) **Next:** re-stack [[Mel111-Coma|Mel 111]] with this flat — candidate fix for the residual γ Com halo.
+> ✅ **Genuine L-Pro flat now exists (2026-05-31).** 50 × **10 ms** raws (−10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`; master built (flats + 10 ms dark-flat), renamed to `…FILTER-LPro_CFA_FLAT-10ms.xisf`, in `Masters/Flat/LPro/`. (Internal XISF `FILTER` keyword **set to `LPro` 2026-06-01** via an in-place same-length swap — data-block MD5 unchanged — so it now auto-pairs with the `FILTER=LPro` Mel 111 lights in WBPP.) **Next:** re-stack [[Mel111-Coma|Mel 111]] with this flat — candidate fix for the residual γ Com halo.
 
 **Can be shot outside a session: No** — must match the exact optical train.
 
