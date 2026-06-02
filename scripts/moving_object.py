@@ -115,23 +115,29 @@ def _parse_time(s):
 
 def _detect_one(args):
     """Worker (module-level → picklable): per-frame read+detect. Returns a
-    LIGHTWEIGHT result (no green array — that's re-read lazily by `_green`)."""
+    LIGHTWEIGHT result (no green array — that's re-read lazily by `_green`).
+    Handles raw .fit and .xisf lights; single-channel = CFA (→ green), multi-
+    channel = already debayered (→ luminance)."""
     path, cfa, k, cap = args
     name = os.path.basename(path)
     try:
-        kw = FI.read_meta(path)["kw"]
+        meta = FI.read_meta(path)
     except Exception as e:
         return ("skip", name, f"unreadable ({e})")
+    kw = meta["kw"]
     if not has_wcs(kw):
         return ("skip", name, "no WCS")
     t = _parse_time(kw.get("DATE-OBS"))
     if t is None:
         return ("skip", name, "no DATE-OBS")
-    green = P.extract_green(P.read_image(path), cfa)
-    bg, sigma = P.estimate_background(green)
-    dets = P.detect_stars(green, bg, sigma, k=k)[:cap]
-    return ("ok", dict(path=path, name=name, kw=kw, t=t, dets=dets,
-                       bg=float(bg), sigma=float(sigma), shape=green.shape, cfa=cfa))
+    is_cfa = (meta["dims"][2] or 1) == 1            # OSC single-channel = Bayer mosaic
+    img = P.read_image(path)
+    if is_cfa:
+        img = P.extract_green(img, cfa)
+    bg, sigma = P.estimate_background(img)
+    dets = P.detect_stars(img, bg, sigma, k=k)[:cap]
+    return ("ok", dict(path=path, name=name, kw=kw, t=t, dets=dets, bg=float(bg),
+                       sigma=float(sigma), shape=img.shape, cfa=cfa, is_cfa=is_cfa))
 
 
 def load_frames(folder, cfa_pattern="RGGB", k=6.0, max_per_frame=600,
@@ -146,7 +152,7 @@ def load_frames(folder, cfa_pattern="RGGB", k=6.0, max_per_frame=600,
     """
     args = [(p, cfa_pattern, k, max_per_frame)
             for p in sorted(FI.iter_files(folder, recursive))
-            if p.lower().endswith((".fit", ".fits", ".fts"))]
+            if p.lower().endswith((".fit", ".fits", ".fts", ".xisf"))]
     njobs = (os.cpu_count() or 1) if jobs <= 0 else jobs
     njobs = max(1, min(njobs, len(args)))
     if njobs > 1 and len(args) >= 4:
@@ -162,18 +168,25 @@ def load_frames(folder, cfa_pattern="RGGB", k=6.0, max_per_frame=600,
         else:
             log(f"  skip ({r[2]}): {r[1]}")
     frames.sort(key=lambda f: f["t"])
-    if frames:
-        t0 = frames[0]["t"]
-        for f in frames:
-            f["tmin"] = (f["t"] - t0).total_seconds() / 60.0   # minutes from start
-    return frames
+    # drop reprocessed duplicates (identical exposure timestamp, e.g. *_a_a.xisf)
+    seen, deduped = set(), []
+    for f in frames:
+        if f["t"] in seen:
+            continue
+        seen.add(f["t"])
+        deduped.append(f)
+    if len(deduped) < len(frames):
+        log(f"  dropped {len(frames) - len(deduped)} duplicate-timestamp frames")
+    return deduped
 
 
 def _green(frame):
-    """Lazily (re-)read a frame's green channel (workers don't return it)."""
+    """Lazily (re-)read a frame's detection image (workers don't return it)."""
     g = frame.get("_green")
     if g is None:
-        g = P.extract_green(P.read_image(frame["path"]), frame.get("cfa", "RGGB"))
+        g = P.read_image(frame["path"])
+        if frame.get("is_cfa", True):
+            g = P.extract_green(g, frame.get("cfa", "RGGB"))
     return g
 
 
@@ -183,7 +196,7 @@ def detections_sky(frames):
     for fi, f in enumerate(frames):
         for (cx, cy, peak, npix) in f["dets"]:
             ra, dec = pix2world(cx, cy, f["kw"])
-            recs.append(dict(fi=fi, name=f["name"], tmin=f["tmin"],
+            recs.append(dict(fi=fi, name=f["name"], tmin=f["tmin"], t_abs=f["t"],
                              x=float(cx), y=float(cy), ra=float(ra), dec=float(dec),
                              peak=float(peak), npix=int(npix)))
     return recs
@@ -472,34 +485,31 @@ def _merge_candidates(cands, scale, bin_):
 # --------------------------------------------------------------------------- #
 # Outputs                                                                      #
 # --------------------------------------------------------------------------- #
-def _utc(frames, tmin):
-    return (frames[0]["t"] + _dt.timedelta(minutes=tmin)).isoformat()
-
-
 def write_report(path, frames, tracks, ss_cands, scale, params):
     lines = []
     lines.append("# Moving-object report")
     lines.append(f"# folder : {params['folder']}")
-    lines.append(f"# frames : {len(frames)}  ·  scale {scale:.3f} \"/px (native)  ·  span "
-                 f"{frames[-1]['tmin']:.1f} min" if frames else "# frames: 0")
+    lines.append(f"# frames : {len(frames)} over {params.get('nights', 1)} night(s)  ·  "
+                 f"scale {scale:.3f} \"/px (native)")
     lines.append(f"# params : min-frames={params['min_frames']}, k={params['k']}, "
                  f"shift-stack={'on' if params['shift_stack'] else 'off'} "
                  f"(vmax={params['vmax']}\"/min, bin={params['bin']})")
-    lines.append("# NOTE   : magnitudes relative/instrumental; SIP ignored; "
-                 "shift-stack v-grid bounded at vmax (no silent truncation).")
+    lines.append("# NOTE   : linked WITHIN each night; magnitudes relative/instrumental; "
+                 "SIP ignored; shift-stack v-grid bounded at vmax.")
     lines.append("")
     if not tracks and not ss_cands:
         lines.append("No moving-object candidates (linear multi-frame tracks). "
                      "Single-frame transients (satellites/cosmic rays) excluded.")
     for i, tr in enumerate(tracks, 1):
         m = tr["members"]
-        lines.append(f"## Candidate L{i}  [linked, {tr['n']} frames]")
+        lines.append(f"## Candidate L{i}  [linked, {tr['n']} frames, night {m[0]['t_abs'].date()}]")
         lines.append(f"   motion : {tr['rate']:.2f} \"/min   PA {tr['pa']:.0f}°   "
-                     f"span {tr['span_min']:.1f} min   rms {tr['rms_px']:.2f} px")
+                     f"span {tr['span_min']:.1f} min   rms {tr['rms_px']:.2f} px   "
+                     f"pixel travel {tr['px_span']:.0f} px")
         lines.append(f"   start  : RA {FI._hms(m[0]['ra'])}  Dec {FI._dms(m[0]['dec'])}  "
-                     f"@ {_utc(frames, m[0]['tmin'])}")
+                     f"@ {m[0]['t_abs'].isoformat()}")
         lines.append(f"   end    : RA {FI._hms(m[-1]['ra'])}  Dec {FI._dms(m[-1]['dec'])}  "
-                     f"@ {_utc(frames, m[-1]['tmin'])}")
+                     f"@ {m[-1]['t_abs'].isoformat()}")
         lines.append("   track  : frame  t(min)   x       y       RA            Dec         peak")
         for r in m:
             lines.append(f"          {r['fi']:>3}  {r['tmin']:>6.1f}  {r['x']:>7.1f} {r['y']:>7.1f}  "
@@ -585,55 +595,78 @@ def write_annotated(path, frames, track):
 # --------------------------------------------------------------------------- #
 # Driver                                                                       #
 # --------------------------------------------------------------------------- #
-def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=True,
+def _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_rate, log):
+    """Detect movers within a single night's frames. Returns (tracks, ss)."""
+    t0 = nf[0]["t"]
+    for f in nf:
+        f["tmin"] = (f["t"] - t0).total_seconds() / 60.0
+    recs = detections_sky(nf)
+    nstar, nhot = reject_fixed(recs, len(nf), scale)
+    ntrans = sum(1 for r in recs if not r["static"] and not r["hot"])
+    log(f"  night {nf[0]['t'].date()}: {len(nf)} frames, span {nf[-1]['tmin']:.0f} min · "
+        f"{len(recs)} det · {nstar} stars · {nhot} hot · {ntrans} transient")
+    tracks = link_tracks(recs, nf, scale, min_frames=min_frames, vmax=vmax)
+    slow = [t for t in tracks if t["rate"] < min_rate]
+    tracks = [t for t in tracks if t["rate"] >= min_rate]
+    for t in tracks:
+        t["frames_ref"] = nf
+    log(f"    linked tracks: {len(tracks)} (dropped {len(slow)} below {min_rate}\"/min)")
+    ss = []
+    if shift_stack:
+        ss = shift_and_stack(nf, scale, bin_=bin_, vmax=vmax, vstep=vstep,
+                             k=max(4.0, k - 1.0), log=log)
+        ss = [c for c in ss if c["rate"] >= min_rate
+              and not any(abs(c["x"] - t["members"][len(t["members"]) // 2]["x"]) < 30 and
+                          abs(c["y"] - t["members"][len(t["members"]) // 2]["y"]) < 30 for t in tracks)]
+        log(f"    shift-stack faint: {len(ss)}")
+    return tracks, ss
+
+
+def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=False,
            vmax=5.0, vstep=0.5, bin_=4, max_per_frame=600, min_rate=0.5,
-           cfa_pattern="RGGB", recursive=False, jobs=0, make_png=True, log=print):
+           night_gap_h=6.0, cfa_pattern="RGGB", recursive=False, jobs=0,
+           make_png=True, log=print):
     frames = load_frames(folder, cfa_pattern=cfa_pattern, k=k,
                          max_per_frame=max_per_frame, recursive=recursive,
                          jobs=jobs, log=log)
     if len(frames) < min_frames:
         log(f"Only {len(frames)} usable frames (need >= {min_frames}). Stop.")
-        return dict(frames=frames, tracks=[], shift_stack=[])
+        return dict(frames=frames, tracks=[], shift_stack=[], scale=None, nights=0)
     scale = pixel_scale(frames[0]["kw"])
-    recs = detections_sky(frames)
-    nstar, nhot = reject_fixed(recs, len(frames), scale)
-    ntrans = sum(1 for r in recs if not r["static"] and not r["hot"])
-    log(f"{len(frames)} frames · scale {scale:.3f} \"/px · {len(recs)} detections · "
-        f"{nstar} stars (fixed sky) · {nhot} hot pixels (fixed sensor) · {ntrans} transient")
-    tracks = link_tracks(recs, frames, scale, min_frames=min_frames, vmax=vmax)
-    slow = [t for t in tracks if t["rate"] < min_rate]
-    tracks = [t for t in tracks if t["rate"] >= min_rate]
-    log(f"linked tracks (>= {min_frames} frames, linear): {len(tracks)} "
-        f"(dropped {len(slow)} below {min_rate}\"/min — effectively stationary, "
-        f"corner/SIP wobble)")
-    ss = []
-    if shift_stack:
-        ss = shift_and_stack(frames, scale, bin_=bin_, vmax=vmax, vstep=vstep,
-                             k=max(4.0, k - 1.0), log=log)
-        ss = [c for c in ss if c["rate"] >= min_rate]
-        # drop shift-stack hits that coincide with a linked track
-        ss = [c for c in ss if not any(
-            abs(c["x"] - tr["members"][len(tr["members"]) // 2]["x"]) < 30 and
-            abs(c["y"] - tr["members"][len(tr["members"]) // 2]["y"]) < 30 for tr in tracks)]
-        log(f"shift-stack faint candidates: {len(ss)}")
+    # group into nights — a mover only tracks WITHIN a night (it moves degrees/day)
+    nights = [[frames[0]]]
+    for f in frames[1:]:
+        if (f["t"] - nights[-1][-1]["t"]).total_seconds() > night_gap_h * 3600:
+            nights.append([f])
+        else:
+            nights[-1].append(f)
+    log(f"{len(frames)} frames · {len(nights)} night(s) · scale {scale:.3f} \"/px")
+    all_tracks, all_ss = [], []
+    for nf in nights:
+        if len(nf) < min_frames:
+            log(f"  night {nf[0]['t'].date()}: {len(nf)} frames (< {min_frames}) — skipped")
+            continue
+        tr, ss = _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_rate, log)
+        all_tracks += tr
+        all_ss += ss
     params = dict(folder=folder, min_frames=min_frames, k=k, shift_stack=shift_stack,
-                  vmax=vmax, bin=bin_)
+                  vmax=vmax, bin=bin_, nights=len(nights))
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
-        report = write_report(os.path.join(out_dir, "report.txt"), frames, tracks, ss, scale, params)
-        write_region(os.path.join(out_dir, "candidates.reg"), tracks, ss)
+        report = write_report(os.path.join(out_dir, "report.txt"), frames, all_tracks, all_ss, scale, params)
+        write_region(os.path.join(out_dir, "candidates.reg"), all_tracks, all_ss)
         if make_png:
-            for i, tr in enumerate(tracks, 1):
+            for i, tr in enumerate(all_tracks, 1):
                 try:
-                    write_montage(os.path.join(out_dir, f"candidate_L{i}_montage.png"), frames, tr)
-                    write_annotated(os.path.join(out_dir, f"candidate_L{i}_annotated.png"), frames, tr)
+                    write_montage(os.path.join(out_dir, f"candidate_L{i}_montage.png"), tr["frames_ref"], tr)
+                    write_annotated(os.path.join(out_dir, f"candidate_L{i}_annotated.png"), tr["frames_ref"], tr)
                 except Exception as e:
                     log(f"  (png L{i} failed: {e})")
-        log(f"\nwrote report.txt, candidates.reg" + (", PNGs" if make_png and tracks else "") +
+        log(f"\nwrote report.txt, candidates.reg" + (", PNGs" if make_png and all_tracks else "") +
             f" -> {out_dir}")
         log("")
         log(report)
-    return dict(frames=frames, tracks=tracks, shift_stack=ss, scale=scale)
+    return dict(frames=frames, tracks=all_tracks, shift_stack=all_ss, scale=scale, nights=len(nights))
 
 
 def main(argv=None):
@@ -650,6 +683,7 @@ def main(argv=None):
     ap.add_argument("--shift-stack", action="store_true", help="also run the (slow) faint-mover synthetic-tracking pass")
     ap.add_argument("--no-png", action="store_true", help="skip the montage/annotated PNGs")
     ap.add_argument("--jobs", type=int, default=0, help="parallel workers for the per-frame pass (0 = all cores, 1 = serial)")
+    ap.add_argument("--night-gap", type=float, default=6.0, help="hours of gap that splits frames into separate nights (linked within each)")
     ap.add_argument("--recursive", action="store_true")
     ap.add_argument("--cfa-pattern", default="RGGB", choices=["RGGB", "BGGR", "GRBG", "GBRG"])
     args = ap.parse_args(argv)
@@ -657,8 +691,8 @@ def main(argv=None):
     detect(args.folder, out_dir=out, min_frames=args.min_frames, k=args.k,
            shift_stack=args.shift_stack, vmax=args.vmax, vstep=args.vstep,
            bin_=args.bin, max_per_frame=args.max_per_frame, min_rate=args.min_rate,
-           cfa_pattern=args.cfa_pattern, recursive=args.recursive, jobs=args.jobs,
-           make_png=not args.no_png)
+           night_gap_h=args.night_gap, cfa_pattern=args.cfa_pattern,
+           recursive=args.recursive, jobs=args.jobs, make_png=not args.no_png)
     return 0
 
 

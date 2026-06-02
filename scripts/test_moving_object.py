@@ -192,6 +192,9 @@ def test_star_rejection():
     with tempfile.TemporaryDirectory() as d:
         _make_sequence(d, n=8, mover_amp=400.0, with_sat=False)
         frames = M.load_frames(d, k=6.0, log=QUIET)
+        t0 = frames[0]["t"]
+        for f in frames:
+            f["tmin"] = (f["t"] - t0).total_seconds() / 60.0
         scale = M.pixel_scale(frames[0]["kw"])
         recs = M.detections_sky(frames)
         nstar, nhot = M.reject_fixed(recs, len(frames), scale)

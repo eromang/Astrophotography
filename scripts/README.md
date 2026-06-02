@@ -129,7 +129,9 @@ python3 scripts/test_frame_info.py     # CD-scale/centre/rotation, XISF property
 
 Detects **moving objects** (asteroids, comets, NEOs) across a night's lights and **excludes satellites**. The discriminator: a real solar-system mover drifts along a roughly linear track across **many** frames against the fixed stars; a satellite is a streak in **one** frame only.
 
-Runs on **raw `.fit` lights** — each carries its own ASIAIR plate solution (CD matrix + CRVAL/CRPIX + DATE-OBS), so detections are mapped to **RA/Dec per frame** and movers are found in sky coordinates (pointing-independent; dithering is fine). Detection is on the de-mosaiced green channel (reuses `psf_image.py`).
+Runs on **`.fit` or `.xisf` lights** — each must carry its own plate solution (CD matrix + CRVAL/CRPIX + DATE-OBS), so detections are mapped to **RA/Dec per frame** and movers are found in sky coordinates (pointing-independent; dithering is fine). Single-channel frames are treated as CFA (de-mosaiced green); multi-channel as already-debayered luminance. Reuses `psf_image.py`.
+
+**Multi-night aware:** frames are grouped into nights (gap > `--night-gap` h, default 6) and linked **within** each night — a real mover crosses degrees per day, so cross-night linking is meaningless. Duplicate-timestamp frames (reprocessed `_a_a` etc.) are dropped automatically.
 
 ```bash
 python3 scripts/moving_object.py <lights-folder>                 # fast: per-frame linking (default)
@@ -158,6 +160,7 @@ Tracks slower than `--min-rate` are also dropped as effectively stationary (brig
 | `--vmax` / `--vstep` | 5.0 / 0.5 | searched motion range / step (″/min) |
 | `--bin` | 4 | binning for the shift-stack search |
 | `--jobs N` | 0 (all cores) | parallel workers for the per-frame read+detect pass; `1` = serial |
+| `--night-gap H` | 6 | hours of gap that splits frames into separate nights (linked within each) |
 | `--shift-stack` | off | also run the slow faint-mover pass |
 | `--no-png` | off | skip the candidate PNGs |
 
