@@ -101,6 +101,30 @@ The key safety tests assert the **pixel/attachment data block is byte-identical*
 
 ---
 
+## frame_info.py — inspect FITS / XISF metadata + astrometric status
+
+One-stop header reader for FITS **and** XISF (file or folder). Surfaces **filter** (FITS keyword *and* the XISF `Instrument:Filter:Name` property — and shows when they disagree), exposure / gain / temp, dimensions, **plate scale** (from the CD matrix, CDELT, or focal/pixel), **WCS solved? + centre coords + rotation**, and optionally channel stats. **Header-only by default** — never loads pixel data, so it's instant on multi-GB masters.
+
+Stdlib only (numpy only for `--stats`).
+
+```bash
+python3 scripts/frame_info.py <file>                 # detailed readout
+python3 scripts/frame_info.py <folder> [--recursive]  # one-row-per-file table (WCS triage)
+python3 scripts/frame_info.py <file> --stats          # + channel median/max/clip%
+```
+
+- **Folder mode is the reprocessing-triage view** — the `WCS` column flags masters that lack an astrometric solution (the ones a re-solve unblocks; see [[../05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis.md]]).
+- **Filter:** the XISF *property* wins over the FITS keyword (that's what WBPP groups by) — so this is the quick check for the "master flat reads NoFilter" trap that `set_filter.py` fixes.
+- Use it to confirm scale before BXT/ImageSolver (native 3.10 vs drizzle 1.548 ″/px), verify a master is solved before SPCC, or audit which filter a stack was really shot through.
+
+### Tests
+
+```bash
+python3 scripts/test_frame_info.py     # CD-scale/centre/rotation, XISF property-vs-keyword, WCS flag, sexagesimal, folder iteration
+```
+
+---
+
 ## mount.py — CEM26 read-only diagnostics + safe config helpers
 
 CLI for talking to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). All subcommands are non-moving (except the slow sidereal tracking that `unpark` starts and `timesync` config writes which don't drive the motors). Useful for pre-session readiness checks, session-state logging, time sync, and quick diagnostics when ASIAIR isn't running.
