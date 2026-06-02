@@ -147,6 +147,9 @@ It rejects three things that would otherwise fake a mover:
 - **stars** (fixed in sky);
 - **hot pixels / sensor defects** (fixed on the *sensor* — but they drift in sky coords under dithering, so they're caught by *pixel*-position clustering, flagged if pinned to one pixel in ≥ 4 frames);
 - **fixed-pixel + pointing-drift artifacts** — a stuck bright pixel whose sky coordinate is swept *linearly* by the night's cumulative mount drift looks exactly like a fast linear mover. A real mover must travel in **pixel** space too, so any track whose sky rate implies a large pixel motion but whose source barely moved on the sensor is rejected.
+- **two-clump tracks** — a fixed source detected in a *burst* of frames plus one coincidental distant detection fits a line but isn't a continuous moving object. Tracks with a large time gap (one clump + an outlier) are rejected; a real mover is continuous.
+
+It surfaces what survives for **visual review** (the montage/annotated PNGs) rather than auto-rejecting marginal cases — over-filtering would drop real movers entering/leaving the frame.
 
 Tracks slower than `--min-rate` are also dropped as effectively stationary (bright corner stars wobble at ~0.1–0.2 ″/min because SIP distortion is ignored).
 
@@ -156,7 +159,8 @@ Tracks slower than `--min-rate` are also dropped as effectively stationary (brig
 | `--min-frames N` | 4 | min frames a track must span |
 | `--min-rate R` | 0.5 | min motion to count as a mover (″/min); slower = stationary |
 | `-k N` | 6.0 | per-frame detection threshold (σ) |
-| `--max-per-frame N` | 600 | cap on detections kept per frame (brightest; bounds runtime on hot-pixel-heavy raw subs) |
+| `--max-per-frame N` | 600 | cap on detections kept per frame (brightest); raise it (+ lower `-k`) to chase faint movers in dense fields |
+| `--max-transients N` | 1500 | seed-pool cap for linking; raise to chase faint movers in dense (cluster / ecliptic) fields |
 | `--vmax` / `--vstep` | 5.0 / 0.5 | searched motion range / step (″/min) |
 | `--bin` | 4 | binning for the shift-stack search |
 | `--jobs N` | 0 (all cores) | parallel workers for the per-frame read+detect pass; `1` = serial |

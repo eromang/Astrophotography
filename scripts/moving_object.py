@@ -261,18 +261,20 @@ def reject_fixed(recs, n_frames, scale, sky_tol_px=2.5, pix_tol_px=1.5, min_frac
 # --------------------------------------------------------------------------- #
 # Bright-mover linking (per-frame-detectable)                                 #
 # --------------------------------------------------------------------------- #
-def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0, vmax=5.0):
+def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0, vmax=5.0, max_seeds=1500):
     """Link transient detections into linear sky tracks (constant velocity).
 
     Per-frame matching is vectorised, and each seed pair is pruned early by its
     implied rate (random noise pairs imply absurd velocities and are skipped
     before the expensive per-frame search) — keeps it fast on raw subs.
+    `max_seeds` bounds the seed pool to the brightest transients; raise it to
+    chase faint movers in dense (e.g. cluster / ecliptic) fields.
     """
     tol_deg = tol_px * scale / 3600.0
     vmax_deg = vmax / 3600.0                 # deg/min ceiling on implied rate
     trans = [r for r in recs if not r["static"] and not r.get("hot")]
     trans.sort(key=lambda r: -r["peak"])
-    trans = trans[:400]                      # bound the seed search
+    trans = trans[:max_seeds]                # bound the seed search
     if not trans:
         return []
     cosd = float(np.cos(np.median([r["dec"] for r in trans]) * DEG))
@@ -318,7 +320,10 @@ def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0, vmax=5.0):
                 # a big pixel motion (expected_px) but the source barely moved on the
                 # sensor, it's a fixed-pixel defect swept by pointing drift → reject.
                 drift_artifact = tr and tr["expected_px"] > 5 and tr["px_span"] < 0.5 * tr["expected_px"]
-                if tr and tr["rms_px"] <= 2.0 and not drift_artifact:
+                # a real mover is a CONTINUOUS source; a big time gap means two
+                # position-clumps (e.g. a fixed source + a coincidental outlier).
+                clumped = tr and tr["gap_frac"] > 0.5
+                if tr and tr["rms_px"] <= 2.0 and not drift_artifact and not clumped:
                     tracks.append(tr)
                     for m in members:
                         used.add(id(m))
@@ -358,10 +363,11 @@ def _fit_track(members):
     ys = np.array([r["y"] for r in m])
     px_span = float(np.hypot(np.ptp(xs), np.ptp(ys)))         # observed pixel travel
     expected_px = rate * span / sc                            # pixel travel implied by the sky rate
+    gap_frac = float(np.max(np.diff(t)) / span)               # biggest time gap / span
     return dict(members=m, vra=vra, vdec=vdec, rate=rate, pa=pa,
                 span_min=float(span), n=len(m),
                 rms_px=rms_deg * 3600.0 / max(sc, 1e-6),
-                px_span=px_span, expected_px=expected_px,
+                px_span=px_span, expected_px=expected_px, gap_frac=gap_frac,
                 method="link")
 
 
@@ -595,7 +601,8 @@ def write_annotated(path, frames, track):
 # --------------------------------------------------------------------------- #
 # Driver                                                                       #
 # --------------------------------------------------------------------------- #
-def _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_rate, log):
+def _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_rate,
+                  max_transients, log):
     """Detect movers within a single night's frames. Returns (tracks, ss)."""
     t0 = nf[0]["t"]
     for f in nf:
@@ -605,7 +612,8 @@ def _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_
     ntrans = sum(1 for r in recs if not r["static"] and not r["hot"])
     log(f"  night {nf[0]['t'].date()}: {len(nf)} frames, span {nf[-1]['tmin']:.0f} min · "
         f"{len(recs)} det · {nstar} stars · {nhot} hot · {ntrans} transient")
-    tracks = link_tracks(recs, nf, scale, min_frames=min_frames, vmax=vmax)
+    tracks = link_tracks(recs, nf, scale, min_frames=min_frames, vmax=vmax,
+                         max_seeds=max_transients)
     slow = [t for t in tracks if t["rate"] < min_rate]
     tracks = [t for t in tracks if t["rate"] >= min_rate]
     for t in tracks:
@@ -624,8 +632,8 @@ def _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_
 
 def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=False,
            vmax=5.0, vstep=0.5, bin_=4, max_per_frame=600, min_rate=0.5,
-           night_gap_h=6.0, cfa_pattern="RGGB", recursive=False, jobs=0,
-           make_png=True, log=print):
+           night_gap_h=6.0, max_transients=1500, cfa_pattern="RGGB", recursive=False,
+           jobs=0, make_png=True, log=print):
     frames = load_frames(folder, cfa_pattern=cfa_pattern, k=k,
                          max_per_frame=max_per_frame, recursive=recursive,
                          jobs=jobs, log=log)
@@ -646,7 +654,8 @@ def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=False,
         if len(nf) < min_frames:
             log(f"  night {nf[0]['t'].date()}: {len(nf)} frames (< {min_frames}) — skipped")
             continue
-        tr, ss = _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep, bin_, min_rate, log)
+        tr, ss = _detect_night(nf, scale, min_frames, k, shift_stack, vmax, vstep,
+                               bin_, min_rate, max_transients, log)
         all_tracks += tr
         all_ss += ss
     params = dict(folder=folder, min_frames=min_frames, k=k, shift_stack=shift_stack,
@@ -679,6 +688,7 @@ def main(argv=None):
     ap.add_argument("--vstep", type=float, default=0.5, help="shift-stack velocity step (arcsec/min)")
     ap.add_argument("--bin", type=int, default=4, help="binning for the shift-stack search")
     ap.add_argument("--max-per-frame", type=int, default=600, help="cap on detections kept per frame (brightest)")
+    ap.add_argument("--max-transients", type=int, default=1500, help="seed-pool cap for linking; raise to chase faint movers in dense fields")
     ap.add_argument("--min-rate", type=float, default=0.5, help="min motion to count as a mover (arcsec/min); slower = stationary")
     ap.add_argument("--shift-stack", action="store_true", help="also run the (slow) faint-mover synthetic-tracking pass")
     ap.add_argument("--no-png", action="store_true", help="skip the montage/annotated PNGs")
@@ -691,8 +701,9 @@ def main(argv=None):
     detect(args.folder, out_dir=out, min_frames=args.min_frames, k=args.k,
            shift_stack=args.shift_stack, vmax=args.vmax, vstep=args.vstep,
            bin_=args.bin, max_per_frame=args.max_per_frame, min_rate=args.min_rate,
-           night_gap_h=args.night_gap, cfa_pattern=args.cfa_pattern,
-           recursive=args.recursive, jobs=args.jobs, make_png=not args.no_png)
+           night_gap_h=args.night_gap, max_transients=args.max_transients,
+           cfa_pattern=args.cfa_pattern, recursive=args.recursive, jobs=args.jobs,
+           make_png=not args.no_png)
     return 0
 
 
