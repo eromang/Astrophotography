@@ -28,6 +28,7 @@ irrelevant at mover scale). Magnitudes are instrumental/relative.
 from __future__ import annotations
 import argparse
 import datetime as _dt
+import multiprocessing as mp
 import os
 import sys
 
@@ -112,39 +113,68 @@ def _parse_time(s):
         return None
 
 
-def load_frames(folder, cfa_pattern="RGGB", k=6.0, max_per_frame=600,
-                recursive=False, log=print):
-    """Return list of frame dicts with green data, kw, time, and detections.
+def _detect_one(args):
+    """Worker (module-level → picklable): per-frame read+detect. Returns a
+    LIGHTWEIGHT result (no green array — that's re-read lazily by `_green`)."""
+    path, cfa, k, cap = args
+    name = os.path.basename(path)
+    try:
+        kw = FI.read_meta(path)["kw"]
+    except Exception as e:
+        return ("skip", name, f"unreadable ({e})")
+    if not has_wcs(kw):
+        return ("skip", name, "no WCS")
+    t = _parse_time(kw.get("DATE-OBS"))
+    if t is None:
+        return ("skip", name, "no DATE-OBS")
+    green = P.extract_green(P.read_image(path), cfa)
+    bg, sigma = P.estimate_background(green)
+    dets = P.detect_stars(green, bg, sigma, k=k)[:cap]
+    return ("ok", dict(path=path, name=name, kw=kw, t=t, dets=dets,
+                       bg=float(bg), sigma=float(sigma), shape=green.shape, cfa=cfa))
 
-    Per-frame detections are capped to the brightest `max_per_frame` — raw
-    (uncalibrated) subs throw thousands of hot-pixel/noise sources that would
-    swamp the linker; real stars + movers dominate the bright end.
+
+def load_frames(folder, cfa_pattern="RGGB", k=6.0, max_per_frame=600,
+                recursive=False, jobs=0, log=print):
+    """Per-frame read → green → background → detect, parallelised across cores.
+
+    Detections are capped to the brightest `max_per_frame` (raw subs throw
+    thousands of hot-pixel/noise sources that would swamp the linker). Workers
+    return lightweight results only; the 100 MB green arrays are re-read on
+    demand by `_green` (shift-stack / PNGs) so IPC and RAM stay small.
+    `jobs<=0` → auto (all cores); `jobs=1` → serial.
     """
-    paths = [p for p in FI.iter_files(folder, recursive)
-             if p.lower().endswith((".fit", ".fits", ".fts"))]
+    args = [(p, cfa_pattern, k, max_per_frame)
+            for p in sorted(FI.iter_files(folder, recursive))
+            if p.lower().endswith((".fit", ".fits", ".fts"))]
+    njobs = (os.cpu_count() or 1) if jobs <= 0 else jobs
+    njobs = max(1, min(njobs, len(args)))
+    if njobs > 1 and len(args) >= 4:
+        log(f"  loading {len(args)} frames on {njobs} cores…")
+        with mp.get_context("spawn").Pool(njobs) as pool:
+            results = pool.map(_detect_one, args)
+    else:
+        results = [_detect_one(a) for a in args]
     frames = []
-    for p in sorted(paths):
-        kw = FI.read_meta(p)["kw"]
-        if not has_wcs(kw):
-            log(f"  skip (no WCS): {os.path.basename(p)}")
-            continue
-        t = _parse_time(kw.get("DATE-OBS"))
-        if t is None:
-            log(f"  skip (no DATE-OBS): {os.path.basename(p)}")
-            continue
-        raw = P.read_image(p)
-        green = P.extract_green(raw, cfa_pattern)
-        bg, sigma = P.estimate_background(green)
-        dets = P.detect_stars(green, bg, sigma, k=k)[:max_per_frame]
-        frames.append(dict(path=p, name=os.path.basename(p), kw=kw, t=t,
-                           green=green, bg=bg, sigma=sigma, dets=dets,
-                           shape=green.shape))
+    for r in results:
+        if r[0] == "ok":
+            frames.append(r[1])
+        else:
+            log(f"  skip ({r[2]}): {r[1]}")
     frames.sort(key=lambda f: f["t"])
     if frames:
         t0 = frames[0]["t"]
         for f in frames:
             f["tmin"] = (f["t"] - t0).total_seconds() / 60.0   # minutes from start
     return frames
+
+
+def _green(frame):
+    """Lazily (re-)read a frame's green channel (workers don't return it)."""
+    g = frame.get("_green")
+    if g is None:
+        g = P.extract_green(P.read_image(frame["path"]), frame.get("cfa", "RGGB"))
+    return g
 
 
 def detections_sky(frames):
@@ -162,29 +192,30 @@ def detections_sky(frames):
 # --------------------------------------------------------------------------- #
 # Static-source (star) rejection                                              #
 # --------------------------------------------------------------------------- #
-def _cluster(recs, posfn, distfn, tol, n_frames, min_frac):
-    """Greedy cluster recs by position. Return (member-index set of clusters seen
-    in >= min_frac of frames, total cluster count)."""
-    order = sorted(range(len(recs)), key=lambda i: -recs[i]["peak"])
-    clusters = []
-    for i in order:
-        p = posfn(recs[i])
-        best = None
-        for cl in clusters:
-            if distfn(p, cl["p"]) <= tol:
-                best = cl
-                break
-        if best is None:
-            clusters.append(dict(p=p, frames={recs[i]["fi"]}, members=[i]))
-        else:
-            best["frames"].add(recs[i]["fi"])
-            best["members"].append(i)
+def _cluster_grid(coords, frame_ids, cell, n_frames, min_frac):
+    """Indices of detections in a grid cell occupied by >= min_frac of frames.
+
+    Non-transitive (fixed cells), so a slow mover — whose detections spread across
+    neighbouring cells — is NOT merged into one 'fixed' blob, while a tightly
+    co-located star (one cell, every frame) is. O(N). A star straddling a cell
+    boundary may be missed, but a jittering non-linear source is then caught
+    downstream by the linearity + min-rate gates.
+    """
+    if len(coords) == 0:
+        return set()
+    q = np.floor(np.asarray(coords) / cell).astype(np.int64)
     need = max(2, int(round(min_frac * n_frames)))
+    frames_in = {}
+    members_in = {}
+    for i in range(len(q)):
+        key = (int(q[i, 0]), int(q[i, 1]))
+        frames_in.setdefault(key, set()).add(frame_ids[i])
+        members_in.setdefault(key, []).append(i)
     big = set()
-    for cl in clusters:
-        if len(cl["frames"]) >= need:
-            big.update(cl["members"])
-    return big, len(clusters)
+    for key, frs in frames_in.items():
+        if len(frs) >= need:
+            big.update(members_in[key])
+    return big
 
 
 def reject_fixed(recs, n_frames, scale, sky_tol_px=2.5, pix_tol_px=1.5, min_frac=0.5):
@@ -194,13 +225,16 @@ def reject_fixed(recs, n_frames, scale, sky_tol_px=2.5, pix_tol_px=1.5, min_frac
     stays put on the sensor — so we reject both fixed-sky and fixed-pixel sources.
     Sets rec['static'] (star) and rec['hot'] (hot pixel) in place.
     """
-    sky_tol = sky_tol_px * scale / 3600.0
-    stars, _ = _cluster(recs, lambda r: (r["ra"], r["dec"]),
-                        lambda a, b: angsep(a[0], a[1], b[0], b[1]),
-                        sky_tol, n_frames, min_frac)
-    hot, _ = _cluster(recs, lambda r: (r["x"], r["y"]),
-                      lambda a, b: float(np.hypot(a[0] - b[0], a[1] - b[1])),
-                      pix_tol_px, n_frames, min_frac)
+    if not recs:
+        return 0, 0
+    fid = [r["fi"] for r in recs]
+    ra = np.array([r["ra"] for r in recs])
+    dec = np.array([r["dec"] for r in recs])
+    cosd = np.cos(np.median(dec) * DEG)
+    sky_xy = np.column_stack([ra * cosd, dec])              # planar deg (small field)
+    stars = _cluster_grid(sky_xy, fid, sky_tol_px * scale / 3600.0, n_frames, min_frac)
+    pix_xy = np.column_stack([[r["x"] for r in recs], [r["y"] for r in recs]])
+    hot = _cluster_grid(pix_xy, fid, pix_tol_px, n_frames, min_frac)
     for i, r in enumerate(recs):
         r["static"] = i in stars
         r["hot"] = i in hot
@@ -210,50 +244,60 @@ def reject_fixed(recs, n_frames, scale, sky_tol_px=2.5, pix_tol_px=1.5, min_frac
 # --------------------------------------------------------------------------- #
 # Bright-mover linking (per-frame-detectable)                                 #
 # --------------------------------------------------------------------------- #
-def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0):
-    """Link transient detections into linear sky tracks (constant velocity)."""
+def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0, vmax=5.0):
+    """Link transient detections into linear sky tracks (constant velocity).
+
+    Per-frame matching is vectorised, and each seed pair is pruned early by its
+    implied rate (random noise pairs imply absurd velocities and are skipped
+    before the expensive per-frame search) — keeps it fast on raw subs.
+    """
     tol_deg = tol_px * scale / 3600.0
+    vmax_deg = vmax / 3600.0                 # deg/min ceiling on implied rate
     trans = [r for r in recs if not r["static"] and not r.get("hot")]
     trans.sort(key=lambda r: -r["peak"])
-    trans = trans[:400]                     # bound the O(D^2) seed search
-    by_frame = {}
+    trans = trans[:400]                      # bound the seed search
+    if not trans:
+        return []
+    cosd = float(np.cos(np.median([r["dec"] for r in trans]) * DEG))
+    frame_arr = {}                           # fi -> (ra[], dec[], reclist) for vectorised match
     for r in trans:
-        by_frame.setdefault(r["fi"], []).append(r)
-    seeds = sorted(trans, key=lambda r: r["fi"])
+        frame_arr.setdefault(r["fi"], [[], [], []])
+        frame_arr[r["fi"]][0].append(r["ra"])
+        frame_arr[r["fi"]][1].append(r["dec"])
+        frame_arr[r["fi"]][2].append(r)
+    for fi, a in frame_arr.items():
+        frame_arr[fi] = (np.asarray(a[0]), np.asarray(a[1]), a[2])
+    ftmin = [f["tmin"] for f in frames]
     used = set()
     tracks = []
-    for a in seeds:
+    for a in sorted(trans, key=lambda r: (r["fi"], -r["peak"])):
         if id(a) in used:
             continue
         for b in trans:
-            if b["fi"] <= a["fi"] or abs(b["tmin"] - a["tmin"]) < 1e-6:
+            if b["fi"] <= a["fi"]:
                 continue
             dt = b["tmin"] - a["tmin"]
+            if dt < 1e-6:
+                continue
             vra = (b["ra"] - a["ra"]) / dt          # deg/min
             vdec = (b["dec"] - a["dec"]) / dt
-            # predict in every frame; gather supporting detections
+            if not (0.05 / 3600 < np.hypot(vra * cosd, vdec) <= vmax_deg):
+                continue                            # ~static or too fast → prune
             members = []
-            for fi, f in enumerate(frames):
-                pra = a["ra"] + vra * (f["tmin"] - a["tmin"])
-                pdec = a["dec"] + vdec * (f["tmin"] - a["tmin"])
-                cand = by_frame.get(fi, [])
-                if not cand:
-                    continue
-                best, bestd = None, tol_deg
-                for c in cand:
-                    d = angsep(c["ra"], c["dec"], pra, pdec)
-                    if d < bestd:
-                        best, bestd = c, d
-                if best is not None:
-                    members.append(best)
-            # dedup members by frame (keep closest already ensured)
+            for fi, arr in frame_arr.items():
+                pra = a["ra"] + vra * (ftmin[fi] - a["tmin"])
+                pdec = a["dec"] + vdec * (ftmin[fi] - a["tmin"])
+                d = angsep(arr[0], arr[1], pra, pdec)
+                j = int(np.argmin(d))
+                if d[j] < tol_deg:
+                    members.append(arr[2][j])
             seen_fi = {}
             for m in members:
                 seen_fi[m["fi"]] = m
             members = list(seen_fi.values())
             if len(members) >= min_frames:
                 tr = _fit_track(members)
-                if tr and tr["rms_px"] * 1 <= max(1.5, 2.0):   # px residual gate
+                if tr and tr["rms_px"] <= 2.0:
                     tracks.append(tr)
                     for m in members:
                         used.add(id(m))
@@ -315,7 +359,7 @@ def shift_and_stack(frames, scale, bin_=4, vmax=5.0, vstep=0.5, k=5.0, log=print
     # bin + translation-align each frame to the reference grid
     aligned, tmins = [], []
     for f in frames:
-        g = _bin(f["green"], bin_)
+        g = _bin(_green(f), bin_)
         # pixel offset of the ref sky point between this frame and ref (full-res), /bin
         px_f = world2pix(refc[0], refc[1], f["kw"])
         px_r = world2pix(refc[0], refc[1], ref_kw)
@@ -487,7 +531,7 @@ def write_montage(path, frames, track, half=24):
         ax.axis("off")
     for j, r in enumerate(m):
         f = frames[r["fi"]]
-        g = f["green"]
+        g = _green(f)
         x, y = int(round(r["x"])), int(round(r["y"]))
         sub = g[max(0, y - half):y + half, max(0, x - half):x + half]
         ax = axes[j // cols][j % cols]
@@ -509,7 +553,7 @@ def write_annotated(path, frames, track):
     import matplotlib.pyplot as plt
     m = track["members"]
     f = frames[m[len(m) // 2]["fi"]]
-    g = f["green"]
+    g = _green(f)
     fig, ax = plt.subplots(figsize=(9, 6))
     v = np.percentile(g, [30, 99.6])
     ax.imshow(g, cmap="gray", vmin=v[0], vmax=v[1], origin="lower")
@@ -529,8 +573,10 @@ def write_annotated(path, frames, track):
 # --------------------------------------------------------------------------- #
 def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=True,
            vmax=5.0, vstep=0.5, bin_=4, max_per_frame=600, min_rate=0.5,
-           cfa_pattern="RGGB", recursive=False, make_png=True, log=print):
-    frames = load_frames(folder, cfa_pattern, k, max_per_frame, recursive, log)
+           cfa_pattern="RGGB", recursive=False, jobs=0, make_png=True, log=print):
+    frames = load_frames(folder, cfa_pattern=cfa_pattern, k=k,
+                         max_per_frame=max_per_frame, recursive=recursive,
+                         jobs=jobs, log=log)
     if len(frames) < min_frames:
         log(f"Only {len(frames)} usable frames (need >= {min_frames}). Stop.")
         return dict(frames=frames, tracks=[], shift_stack=[])
@@ -540,7 +586,7 @@ def detect(folder, out_dir=None, min_frames=4, k=6.0, shift_stack=True,
     ntrans = sum(1 for r in recs if not r["static"] and not r["hot"])
     log(f"{len(frames)} frames · scale {scale:.3f} \"/px · {len(recs)} detections · "
         f"{nstar} stars (fixed sky) · {nhot} hot pixels (fixed sensor) · {ntrans} transient")
-    tracks = link_tracks(recs, frames, scale, min_frames=min_frames)
+    tracks = link_tracks(recs, frames, scale, min_frames=min_frames, vmax=vmax)
     slow = [t for t in tracks if t["rate"] < min_rate]
     tracks = [t for t in tracks if t["rate"] >= min_rate]
     log(f"linked tracks (>= {min_frames} frames, linear): {len(tracks)} "
@@ -587,16 +633,18 @@ def main(argv=None):
     ap.add_argument("--bin", type=int, default=4, help="binning for the shift-stack search")
     ap.add_argument("--max-per-frame", type=int, default=600, help="cap on detections kept per frame (brightest)")
     ap.add_argument("--min-rate", type=float, default=0.5, help="min motion to count as a mover (arcsec/min); slower = stationary")
-    ap.add_argument("--no-shift-stack", action="store_true", help="skip the faint-mover synthetic-tracking pass")
+    ap.add_argument("--shift-stack", action="store_true", help="also run the (slow) faint-mover synthetic-tracking pass")
     ap.add_argument("--no-png", action="store_true", help="skip the montage/annotated PNGs")
+    ap.add_argument("--jobs", type=int, default=0, help="parallel workers for the per-frame pass (0 = all cores, 1 = serial)")
     ap.add_argument("--recursive", action="store_true")
     ap.add_argument("--cfa-pattern", default="RGGB", choices=["RGGB", "BGGR", "GRBG", "GBRG"])
     args = ap.parse_args(argv)
     out = args.out or os.path.join(args.folder.rstrip("/"), "moving-objects")
     detect(args.folder, out_dir=out, min_frames=args.min_frames, k=args.k,
-           shift_stack=not args.no_shift_stack, vmax=args.vmax, vstep=args.vstep,
+           shift_stack=args.shift_stack, vmax=args.vmax, vstep=args.vstep,
            bin_=args.bin, max_per_frame=args.max_per_frame, min_rate=args.min_rate,
-           cfa_pattern=args.cfa_pattern, recursive=args.recursive, make_png=not args.no_png)
+           cfa_pattern=args.cfa_pattern, recursive=args.recursive, jobs=args.jobs,
+           make_png=not args.no_png)
     return 0
 
 

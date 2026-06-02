@@ -132,14 +132,14 @@ Detects **moving objects** (asteroids, comets, NEOs) across a night's lights and
 Runs on **raw `.fit` lights** — each carries its own ASIAIR plate solution (CD matrix + CRVAL/CRPIX + DATE-OBS), so detections are mapped to **RA/Dec per frame** and movers are found in sky coordinates (pointing-independent; dithering is fine). Detection is on the de-mosaiced green channel (reuses `psf_image.py`).
 
 ```bash
-python3 scripts/moving_object.py <lights-folder>                 # full run
-python3 scripts/moving_object.py <folder> --no-shift-stack       # fast: per-frame linking only
+python3 scripts/moving_object.py <lights-folder>                 # fast: per-frame linking (default)
+python3 scripts/moving_object.py <folder> --shift-stack          # + faint-mover synthetic tracking (slow)
 python3 scripts/moving_object.py <folder> --vmax 8 --min-frames 5 --out DIR
 ```
 
 Two passes:
-- **Per-frame linking** — movers bright enough to clear the threshold in individual subs; linked into a constant-velocity sky track (≥ `--min-frames`, default 4).
-- **Shift-and-stack** — synthetic tracking that recovers **faint sub-threshold** movers: bins + translation-aligns the frames (the CEM26 is equatorial → no field rotation, only dither), then max-projects across a bounded velocity grid (`--vmax` ″/min). Skip with `--no-shift-stack` (it's the slow pass).
+- **Per-frame linking** (default) — movers bright enough to clear the threshold in individual subs; linked into a constant-velocity sky track (≥ `--min-frames`, default 4). Fast.
+- **Shift-and-stack** (`--shift-stack`, opt-in) — synthetic tracking that recovers **faint sub-threshold** movers: bins + translation-aligns the frames (the CEM26 is equatorial → no field rotation, only dither), then max-projects across a bounded velocity grid (`--vmax` ″/min). The slow pass (thousands of velocity stacks) — enable it only when you want the deep search.
 
 It rejects two things that would otherwise fake a mover: **stars** (fixed in sky) and **hot pixels** (fixed on the *sensor* — but they drift in sky coords under dithering, so they must be caught by *pixel*-position clustering, not sky). Tracks slower than `--min-rate` are dropped as effectively stationary (bright corner stars wobble at ~0.1–0.2 ″/min because SIP distortion is ignored).
 
@@ -152,7 +152,11 @@ It rejects two things that would otherwise fake a mover: **stars** (fixed in sky
 | `--max-per-frame N` | 600 | cap on detections kept per frame (brightest; bounds runtime on hot-pixel-heavy raw subs) |
 | `--vmax` / `--vstep` | 5.0 / 0.5 | searched motion range / step (″/min) |
 | `--bin` | 4 | binning for the shift-stack search |
-| `--no-shift-stack`, `--no-png` | off | skip the faint pass / the PNGs |
+| `--jobs N` | 0 (all cores) | parallel workers for the per-frame read+detect pass; `1` = serial |
+| `--shift-stack` | off | also run the slow faint-mover pass |
+| `--no-png` | off | skip the candidate PNGs |
+
+**Performance:** the per-frame pass (read → green → background → detect) is parallelised across cores (`--jobs`), and the clustering/linking are O(N) grid + vectorised + velocity-pruned — a 6-frame link run dropped from ~100 s to ~3 s. The optional `--shift-stack` pass is the slow one (thousands of velocity stacks). Working on **calibrated** subs (dark-subtracted) is also much faster than raw, since raw subs throw thousands of hot-pixel detections.
 
 **Outputs** (to `--out`): `report.txt` (per candidate: track table, motion rate ″/min + PA, RA/Dec, frames spanned, relative brightness), a crop-stack **montage** + **annotated** PNG per linked candidate, and a DS9/PixInsight `candidates.reg`.
 
