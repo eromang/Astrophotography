@@ -131,13 +131,15 @@ Flats remain valid as long as **nothing changes** in the optical train:
 
 | Filter | Flat available? | Notes |
 |---|---|---|
-| [[Optolong-LPro]] | ✅ 10 ms master (2026-05-31) | First genuine L-Pro flat — shot + built 2026-05-31 (the old "L-Pro master" was a mislabeled FQuad flat, deleted). `Masters/Flat/LPro/`. |
+| [[Optolong-LPro]] | ✅ 10 ms master (2026-05-31, **0° rotation**) | First genuine L-Pro flat — shot + built 2026-05-31 (the old "L-Pro master" was a mislabeled FQuad flat, deleted). `Masters/Flat/LPro/`. 0°-rotation flat → matches 0° captures only. |
 | [[Antlia-FQuad]] | 50ms master (2024-12) + 60ms master (2025-03) | Two sets available — verify still valid if train changed |
 
 > **Important:** Each filter requires its own flat set. The Quad Band and L-Pro filters have different thicknesses and coatings, producing different vignetting and dust shadow patterns.
 
-> [!success] L-Pro flat — done (2026-05-31)
-> All three filters now have flat masters. **Follow-up:** re-stack [[Mel111-Coma]] with the new L-Pro flat — candidate fix for the residual γ Com halo (the prior stack used FQuad flats). Note: a flat shot today matches the *current* train; dust-shadow correction for Mel 111 is only exact if the camera rotation is unchanged from May.
+> [!success] L-Pro flat — done (2026-05-31), Mel 111 re-stacked (2026-06-01)
+> All three filters now have flat masters. The L-Pro flat was shot at **0° camera rotation**; [[Mel111-Coma]] was also captured at **0°**, so the dust-shadow correction is an **exact match**. Mel 111 **re-stacked 2026-06-01** with it (drizzle 2×, 4/4 solved) → **γ Com halo resolved** (was an uncorrected L-Pro filter reflection). See [[2026-06-01-Processing]].
+>
+> ⚠️ **0°-rotation flat — validity is rotation-specific.** Dust shadows rotate with the camera, so this flat only cleanly corrects L-Pro lights also shot at 0°. Other L-Pro captures at different rotations need their own flat (or accept imperfect dust correction) — relevant to any L-Pro reprocessing candidate.
 
 ---
 

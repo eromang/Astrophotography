@@ -123,7 +123,7 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Filter | Exposure | Temp | Raws | Master | Raw folder |
 |--------|----------|------|------|--------|-----------|
-| [[Optolong-LPro]] | 10 ms | −10 °C | 50 | ✅ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-10ms.xisf` (2026-05-31) | `Flat/LPro/FLAT7-BIN1-10ms-10/` |
+| [[Optolong-LPro]] | 10 ms | −10 °C | 50 | ✅ `Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-10ms.xisf` (2026-05-31, **0° rotation**) | `Flat/LPro/FLAT7-BIN1-10ms-10/` |
 | [[Antlia-FQuad]] | 50 ms | −20 °C | 60 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-50ms.xisf` | `Flat/FQuad/FLAT5-BIN1-50ms-20/` |
 | [[Antlia-FQuad]] | 60 ms | −10 °C | 50 | ✅ `Flat/FQuad/masterFlat_…FILTER-FQuad_CFA_FLAT-60ms.xisf` | `Flat/FQuad/FLAT6-BIN1-60ms-10/` |
 | No filter | 10 ms | — | 150 | ✅ `Flat/NoFilter/masterFlat_…FILTER-NoFilter_CFA_FLAT-10ms.xisf` | `Flat/NoFilter/FLAT1-BIN1-10ms-10/` |
@@ -131,13 +131,17 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 > **Two distinct FQuad flat sets** (50 ms Dec 2024 −20 °C, 60 ms Mar 2025 −10 °C). The 60 ms master was formerly the misnamed `…CFA copy.xisf` — confirmed a separate flat, not a duplicate, and renamed in the reorg.
 >
-> ⚠️ **FQuad flat filenames still read `FILTER-NoFilter` *inside* the XISF** (manual-filter blank-keyword quirk — the file was renamed to `FILTER-FQuad`, but the internal keyword wasn't edited). WBPP matches by header, so it treats them as `NoFilter`; this is harmless because the FQuad lights also carry a blank keyword and match. The folder (`Flat/FQuad/`) is the authoritative filter marker.
+> ✅ **FQuad flat metadata fixed 2026-06-01** — both FQuad masters now carry the XISF `Instrument:Filter:Name` property **and** FITS `FILTER` keyword `FQuad` (set via `scripts/set_filter.py` XISF mode; data-preserving). Previously they read blank/`NoFilter` internally, so WBPP grouped them as `NoFilter`. **WBPP reads the XISF *property*, not the FITS keyword, for `.xisf` masters** — so for L-Pro/FQuad masters the property must be set (the filename and FITS keyword alone are ignored). See [[2026-06-01-Processing]].
 >
 > 🚩 **L-Pro flat provenance — RESOLVED 2026-05-31: there is no genuine L-Pro flat.** The "L-Pro 60 ms master" was built from the **`FLAT6` raws, which are FQuad flats** (shot 2025-03-08 through the Quad Band filter — the [[2025-03-08-Processing]] session was FQuad-only: *"Flat frames avec FQuad — 60 ms"*). Proof: the L-Pro master's internal `DATE-OBS` (`2025-03-08T19:02:36.688`) is **identical** to both the FQuad 60 ms master and the FLAT6 raw frames — same source data, just integrated twice and one copy **mislabeled `L-Pro`**. No L-Pro-tagged raw flat folder exists anywhere on T7.
 >
 > **Implication:** every L-Pro session calibrated with the old master ([[Mel111-Coma|Mel 111]], the 2026-04 galaxy/NGC 7000 L-Pro work) was flat-calibrated with **FQuad flats** — mis-correcting the L-Pro filter's own dust/reflections. The mislabeled relabel master was **deleted 2026-05-31**.
 >
-> ✅ **Genuine L-Pro flat now exists (2026-05-31).** 50 × **10 ms** raws (−10 °C, gain 100, flat panel) → `Flat/LPro/FLAT7-BIN1-10ms-10/`; master built (flats + 10 ms dark-flat), renamed to `…FILTER-LPro_CFA_FLAT-10ms.xisf`, in `Masters/Flat/LPro/`. (Internal XISF `FILTER` keyword **set to `LPro` 2026-06-01** via an in-place same-length swap — data-block MD5 unchanged — so it now auto-pairs with the `FILTER=LPro` Mel 111 lights in WBPP.) **Next:** re-stack [[Mel111-Coma|Mel 111]] with this flat — candidate fix for the residual γ Com halo.
+> ✅ **Genuine L-Pro flat now exists (2026-05-31).** 50 × **10 ms** raws (−10 °C, gain 100, flat panel, **0° camera rotation**) → `Flat/LPro/FLAT7-BIN1-10ms-10/`; master built (flats + 10 ms dark-flat) → `Masters/Flat/LPro/masterFlat_…FILTER-LPro_CFA_FLAT-10ms.xisf`. To pair in WBPP its XISF `Instrument:Filter:Name` **property** was set to `LPro` 2026-06-01 (setting only the FITS keyword was *not* enough — WBPP groups `.xisf` masters by the property; data-block MD5 unchanged).
+>
+> ⚠️ **Validity — 0° rotation only.** This is a **0°-rotation** flat: vignetting is ~centro-symmetric but **dust shadows rotate with the camera**, so it only cleanly corrects L-Pro lights also shot at **0°**. [[Mel111-Coma|Mel 111]] (2026-05-25) was captured at **0°** → exact match. Other L-Pro captures at different rotations **cannot** use it.
+>
+> ✅ **Re-stack done 2026-06-01** — [[Mel111-Coma|Mel 111]] re-stacked with this flat (drizzle 2×, 4/4 solved): **γ Com halo resolved** (it was an uncorrected L-Pro filter reflection the FQuad flat couldn't fix). Full run: [[2026-06-01-Processing]].
 
 **Can be shot outside a session: No** — must match the exact optical train.
 
