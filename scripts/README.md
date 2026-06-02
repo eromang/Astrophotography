@@ -125,6 +125,47 @@ python3 scripts/test_frame_info.py     # CD-scale/centre/rotation, XISF property
 
 ---
 
+## moving_object.py — find comets/asteroids in a light-frame sequence
+
+Detects **moving objects** (asteroids, comets, NEOs) across a night's lights and **excludes satellites**. The discriminator: a real solar-system mover drifts along a roughly linear track across **many** frames against the fixed stars; a satellite is a streak in **one** frame only.
+
+Runs on **raw `.fit` lights** — each carries its own ASIAIR plate solution (CD matrix + CRVAL/CRPIX + DATE-OBS), so detections are mapped to **RA/Dec per frame** and movers are found in sky coordinates (pointing-independent; dithering is fine). Detection is on the de-mosaiced green channel (reuses `psf_image.py`).
+
+```bash
+python3 scripts/moving_object.py <lights-folder>                 # full run
+python3 scripts/moving_object.py <folder> --no-shift-stack       # fast: per-frame linking only
+python3 scripts/moving_object.py <folder> --vmax 8 --min-frames 5 --out DIR
+```
+
+Two passes:
+- **Per-frame linking** — movers bright enough to clear the threshold in individual subs; linked into a constant-velocity sky track (≥ `--min-frames`, default 4).
+- **Shift-and-stack** — synthetic tracking that recovers **faint sub-threshold** movers: bins + translation-aligns the frames (the CEM26 is equatorial → no field rotation, only dither), then max-projects across a bounded velocity grid (`--vmax` ″/min). Skip with `--no-shift-stack` (it's the slow pass).
+
+It rejects two things that would otherwise fake a mover: **stars** (fixed in sky) and **hot pixels** (fixed on the *sensor* — but they drift in sky coords under dithering, so they must be caught by *pixel*-position clustering, not sky). Tracks slower than `--min-rate` are dropped as effectively stationary (bright corner stars wobble at ~0.1–0.2 ″/min because SIP distortion is ignored).
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--out DIR` | `<folder>/moving-objects` | output dir |
+| `--min-frames N` | 4 | min frames a track must span |
+| `--min-rate R` | 0.5 | min motion to count as a mover (″/min); slower = stationary |
+| `-k N` | 6.0 | per-frame detection threshold (σ) |
+| `--max-per-frame N` | 600 | cap on detections kept per frame (brightest; bounds runtime on hot-pixel-heavy raw subs) |
+| `--vmax` / `--vstep` | 5.0 / 0.5 | searched motion range / step (″/min) |
+| `--bin` | 4 | binning for the shift-stack search |
+| `--no-shift-stack`, `--no-png` | off | skip the faint pass / the PNGs |
+
+**Outputs** (to `--out`): `report.txt` (per candidate: track table, motion rate ″/min + PA, RA/Dec, frames spanned, relative brightness), a crop-stack **montage** + **annotated** PNG per linked candidate, and a DS9/PixInsight `candidates.reg`.
+
+> Caveats (also in the report): SIP ignored (linear CD — fine at mover scale); magnitudes are relative/instrumental; very slow movers (drift < match tolerance over the session) may be missed; the shift-stack velocity grid is **bounded** at `--vmax` and logs if it caps the grid (no silent truncation). Needs frames to share pointing (a large mid-session re-slew breaks linking).
+
+### Tests
+
+```bash
+python3 scripts/test_moving_object.py     # synthetic sequence: mover recovery, satellite exclusion, faint-only-via-shift-stack, WCS round-trip, star rejection
+```
+
+---
+
 ## mount.py — CEM26 read-only diagnostics + safe config helpers
 
 CLI for talking to the iOptron CEM26 over its WiFi-to-Serial bridge at `192.168.178.87:8899` (configured 2026-05-24 in APSTA mode — see [[../01_Equipment/Mount/iOptron-CEM26.md#WiFi Configuration]]). All subcommands are non-moving (except the slow sidereal tracking that `unpark` starts and `timesync` config writes which don't drive the motors). Useful for pre-session readiness checks, session-state logging, time sync, and quick diagnostics when ASIAIR isn't running.

@@ -47,3 +47,4 @@ tags:
 - No filter used — broadband capture to maximize signal on the comet's dust tail and ion tail
 - Comet stacking requires special registration mode in PixInsight (CometAlignment or WBPP comet mode) to produce both a sharp comet and sharp star field separately
 - One-time event — comet has a ~80,000 year orbital period
+- **Find movers in your own subs:** `python3 scripts/moving_object.py <lights-folder>` detects comets/asteroids (and excludes satellites) across a session's raw lights via per-frame astrometry + shift-and-stack — see `scripts/README.md`.
