@@ -234,7 +234,11 @@ def reject_fixed(recs, n_frames, scale, sky_tol_px=2.5, pix_tol_px=1.5, min_frac
     sky_xy = np.column_stack([ra * cosd, dec])              # planar deg (small field)
     stars = _cluster_grid(sky_xy, fid, sky_tol_px * scale / 3600.0, n_frames, min_frac)
     pix_xy = np.column_stack([[r["x"] for r in recs], [r["y"] for r in recs]])
-    hot = _cluster_grid(pix_xy, fid, pix_tol_px, n_frames, min_frac)
+    # hot pixels: ANY source pinned to the same sensor pixel in >= 4 frames is a
+    # defect — a real mover never sits on one pixel (it moves in pixel space too,
+    # and the night's pointing drift would otherwise sweep it into a fake track).
+    hot_frac = min(min_frac, 4.0 / max(n_frames, 1))
+    hot = _cluster_grid(pix_xy, fid, pix_tol_px, n_frames, hot_frac)
     for i, r in enumerate(recs):
         r["static"] = i in stars
         r["hot"] = i in hot
@@ -297,7 +301,11 @@ def link_tracks(recs, frames, scale, min_frames=4, tol_px=3.0, vmax=5.0):
             members = list(seen_fi.values())
             if len(members) >= min_frames:
                 tr = _fit_track(members)
-                if tr and tr["rms_px"] <= 2.0:
+                # a real mover travels in pixel space too; if the sky rate implies
+                # a big pixel motion (expected_px) but the source barely moved on the
+                # sensor, it's a fixed-pixel defect swept by pointing drift → reject.
+                drift_artifact = tr and tr["expected_px"] > 5 and tr["px_span"] < 0.5 * tr["expected_px"]
+                if tr and tr["rms_px"] <= 2.0 and not drift_artifact:
                     tracks.append(tr)
                     for m in members:
                         used.add(id(m))
@@ -332,9 +340,15 @@ def _fit_track(members):
         return None
     rate = float(np.hypot(vra * cosd, vdec) * 3600.0)         # arcsec/min
     pa = float((np.degrees(np.arctan2(vra * cosd, vdec))) % 360.0)
+    sc = _scale_hint(m)
+    xs = np.array([r["x"] for r in m])
+    ys = np.array([r["y"] for r in m])
+    px_span = float(np.hypot(np.ptp(xs), np.ptp(ys)))         # observed pixel travel
+    expected_px = rate * span / sc                            # pixel travel implied by the sky rate
     return dict(members=m, vra=vra, vdec=vdec, rate=rate, pa=pa,
                 span_min=float(span), n=len(m),
-                rms_px=rms_deg * 3600.0 / max(_scale_hint(m), 1e-6),
+                rms_px=rms_deg * 3600.0 / max(sc, 1e-6),
+                px_span=px_span, expected_px=expected_px,
                 method="link")
 
 

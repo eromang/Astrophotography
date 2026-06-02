@@ -74,8 +74,9 @@ def _render(img, x, y, amp, sigma=2.0):
 
 
 def _make_sequence(d, n=8, dt_min=2.0, mover_rate=3.0, mover_amp=400.0,
-                   with_sat=True, hot_pixels=(), seed=1):
-    """Write n FITS frames. hot_pixels = [(x,y,amp)] fixed on the sensor every frame."""
+                   with_sat=True, hot_pixels=(), drift_rate=0.0, seed=1):
+    """Write n FITS frames. hot_pixels = [(x,y,amp)] fixed on the sensor every
+    frame; drift_rate (arcsec/min) shifts the field centre linearly (mount drift)."""
     rng = np.random.default_rng(seed)
     ra0, dec0 = 180.0, 20.0
     half = SIZE * SCALE / 3600.0 * 0.4          # field half-extent in deg
@@ -89,7 +90,8 @@ def _make_sequence(d, n=8, dt_min=2.0, mover_rate=3.0, mover_amp=400.0,
     for i in range(n):
         # realistic dither: several px, well above the 1.5 px hot-pixel tolerance
         dith = ((i * 7 % 13 - 6) * 1.0, (i * 5 % 11 - 5) * 1.0)
-        kw = _wcs(crpix=(120.5 + dith[0], 120.5 + dith[1]))
+        drift_deg = drift_rate * (i * dt_min) / 3600.0 / np.cos(dec0 * np.pi / 180)
+        kw = _wcs(crpix=(120.5 + dith[0], 120.5 + dith[1]), ra0=ra0 + drift_deg)
         img = rng.normal(100.0, 5.0, (SIZE, SIZE))
         for j in range(nstar):
             x, y = M.world2pix(star_ra[j], star_dec[j], kw)
@@ -167,6 +169,23 @@ def test_shift_stack_finds_faint():
         assert near, f"no faint candidate near the mover; got {[(round(c['x']),round(c['y'])) for c in ss]}"
         print(f"  shift-stack: link found 0 (faint), shift-stack found {len(ss)} "
               f"incl. one near the mover ✓")
+
+
+def test_drift_artifact_rejected():
+    # a stuck bright pixel + linear pointing drift sweeps the pixel's sky position
+    # linearly → would fake a fast mover (the real Mel 111 false-positive mode).
+    with tempfile.TemporaryDirectory() as d:
+        _make_sequence(d, n=8, mover_rate=3.0, mover_amp=400.0, with_sat=False,
+                       hot_pixels=[(150, 150, 5000)], drift_rate=4.0, seed=1)
+        res = M.detect(d, out_dir=None, min_frames=4, k=6.0,
+                       shift_stack=False, make_png=False, log=QUIET)
+        for t in res["tracks"]:                       # no track on the stuck pixel
+            for mm in t["members"]:
+                assert not (abs(mm["x"] - 150) < 4 and abs(mm["y"] - 150) < 4), \
+                    "fixed-pixel defect became a track despite drift"
+        assert any(abs(t["rate"] - 3.0) < 1.5 for t in res["tracks"]), "real mover lost under drift"
+        print("  drift-artifact: stuck pixel + 4\"/min pointing drift not a track; "
+              "real mover intact ✓")
 
 
 def test_star_rejection():

@@ -141,7 +141,12 @@ Two passes:
 - **Per-frame linking** (default) — movers bright enough to clear the threshold in individual subs; linked into a constant-velocity sky track (≥ `--min-frames`, default 4). Fast.
 - **Shift-and-stack** (`--shift-stack`, opt-in) — synthetic tracking that recovers **faint sub-threshold** movers: bins + translation-aligns the frames (the CEM26 is equatorial → no field rotation, only dither), then max-projects across a bounded velocity grid (`--vmax` ″/min). The slow pass (thousands of velocity stacks) — enable it only when you want the deep search.
 
-It rejects two things that would otherwise fake a mover: **stars** (fixed in sky) and **hot pixels** (fixed on the *sensor* — but they drift in sky coords under dithering, so they must be caught by *pixel*-position clustering, not sky). Tracks slower than `--min-rate` are dropped as effectively stationary (bright corner stars wobble at ~0.1–0.2 ″/min because SIP distortion is ignored).
+It rejects three things that would otherwise fake a mover:
+- **stars** (fixed in sky);
+- **hot pixels / sensor defects** (fixed on the *sensor* — but they drift in sky coords under dithering, so they're caught by *pixel*-position clustering, flagged if pinned to one pixel in ≥ 4 frames);
+- **fixed-pixel + pointing-drift artifacts** — a stuck bright pixel whose sky coordinate is swept *linearly* by the night's cumulative mount drift looks exactly like a fast linear mover. A real mover must travel in **pixel** space too, so any track whose sky rate implies a large pixel motion but whose source barely moved on the sensor is rejected.
+
+Tracks slower than `--min-rate` are also dropped as effectively stationary (bright corner stars wobble at ~0.1–0.2 ″/min because SIP distortion is ignored).
 
 | Option | Default | Meaning |
 |---|---|---|
