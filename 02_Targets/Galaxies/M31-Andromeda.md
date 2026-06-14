@@ -19,6 +19,7 @@ tags:
 # M31 — Andromeda Galaxy
 
 ![[M31-Andromeda.jpg]]
+*2026-06-14 reprocess — [[RedCat-51]] + [[ASI2600MCPro]], 225 × 60s [[Optolong-LPro]] (3.75 h accepted), native scale. GraXpert (gradient) → BlurXTerminator → StarXTerminator → GHS. Workflow: [[2026-06-14-Processing]]. (Colour/saturation pass still pending.)*
 
 ## Capture History
 
