@@ -58,6 +58,97 @@ Synthetic recovery is exact (Moffat 3.20 → 3.200 px, Gaussian 2.80 → 2.800 p
 
 ---
 
+## guiding_impact.py — is guiding limiting my resolution?
+
+Offline rebuild of the web **"HLP Guiding RMS Translator"**. Turns a guiding RMS (arcsec) into real imaging impact: the error in **pixels**, the **total FWHM** once seeing is folded in **in quadrature**, and a verdict on whether guiding is actually limiting resolution or the atmosphere still dominates. Full physics + this rig's numbers in [[../03_Techniques/Guiding-RMS-Impact.md]].
+
+Two modes mirror the web tool's tabs:
+
+```bash
+python3 scripts/guiding_impact.py --focal 250 --pixel 3.76 --rms 0.8          # basic: total RMS
+python3 scripts/guiding_impact.py --focal 250 --pixel 3.76 --ra 0.8 --dec 0.4 # advanced: star shape
+python3 scripts/guiding_impact.py --focal 250 --pixel 3.76 --rms 0.8 --seeing 2.2 --json
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--focal` / `--pixel` | — | focal length (mm) / pixel size (µm) |
+| `--rms` | — | total guiding RMS (arcsec) → **basic mode** |
+| `--ra` / `--dec` | — | per-axis RMS (arcsec) → **advanced mode** (star shape) |
+| `--seeing` | — | explicit seeing FWHM (arcsec); overrides the band |
+| `--seeing-quality` | ok | `excellent` / `good` / `ok` (2–4″) / `poor` / `bad` |
+| `--reducer` / `--binning` | 1.0 / 1 | sampling-only modifiers (do **not** change arcsec RMS) |
+| `--json` | — | machine-readable result (for session notes) |
+
+Two things separate this from a naïve calculator, both done correctly here: guiding blur uses **FWHM = 2.355 × RMS** (the Gaussian σ→FWHM factor), and **seeing is added in quadrature to every axis before judging shape** — so a 2:1 RA/DEC imbalance reads as ~11% ellipticity (round stars), not the ~50% a raw ratio screams. Modifiers (reducer, binning) only change image scale, never the arcsec RMS.
+
+### Tests
+
+```bash
+python3 scripts/test_guiding_impact.py    # closed-form physics + seeing-quadrature properties (13 tests)
+```
+
+---
+
+## sampling.py — is my pixel scale matched to the sky?
+
+Offline rebuild of the web **"HLP Sampling Analyzer"**. Image scale, the disk it's sampling, the ideal pixel-scale band (2.0–3.3 px across the FWHM), and an **undersampled / balanced / oversampled** verdict. Shares the `image_scale()` engine with `guiding_impact.py`. Full physics + the two-FWHM distinction in [[../03_Techniques/Sampling-Analysis.md]].
+
+```bash
+python3 scripts/sampling.py --focal 250 --pixel 3.76                  # atmosphere band (planning)
+python3 scripts/sampling.py --focal 250 --pixel 3.76 --fwhm-px 2.3    # judge vs your REAL stars
+python3 scripts/sampling.py --focal 250 --pixel 3.76 --fwhm 7.1 --json
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--focal` / `--pixel` | — | focal length (mm) / pixel size (µm) |
+| `--fwhm-px` | — | **delivered** FWHM in pixels (from `psf_image.py`) — best input |
+| `--fwhm` | — | delivered FWHM in arcsec |
+| `--seeing` / `--seeing-quality` | ok | atmosphere-only fallback band |
+| `--reducer` / `--binning` | 1.0 / 1 | sampling-only modifiers (do **not** change the disk) |
+| `--json` | — | machine-readable result |
+
+**The distinction that matters:** judging against the **seeing band** (atmosphere only) the RedCat reads *undersampled* (0.97 px/FWHM) — potential headroom you can't reach at 250 mm. Judging against your **delivered** ~2.3 px stars it reads *balanced* — pixels aren't your bottleneck, the PSF is. The script feeds `psf_image.py`'s measured FWHM directly via `--fwhm-px` and labels which question it answered. Undersampling on a short widefield rig is the correct trade, not a defect; the lever is dither + 2× drizzle, never OSC binning.
+
+### Tests
+
+```bash
+python3 scripts/test_sampling.py    # closed-form sampling + input-priority + regime boundaries (12 tests)
+```
+
+---
+
+## guide_match.py — can the guider resolve the motion?
+
+Offline rebuild of the web **"HLP Guide System Match Analyzer"**. Guide scale vs imaging scale, and — crucially — the **minimum motion the guider can resolve** via sub-pixel centroiding. Kills the "guide scale must be ≤ imaging scale" myth. Shares `image_scale()` with `guiding_impact.py`. Full physics + the flexure caveat in [[../03_Techniques/Guide-System-Match.md]].
+
+```bash
+python3 scripts/guide_match.py --img-focal 250 --img-pixel 3.76 --guide-focal 120 --guide-pixel 3.75   # guide scope
+python3 scripts/guide_match.py --img-focal 800 --img-pixel 3.76 --guide-pixel 2.9 --oag                # OAG
+python3 scripts/guide_match.py --img-focal 250 --img-pixel 3.76 --guide-focal 120 --guide-pixel 3.75 --centroid 0.4 --json
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--img-focal` / `--img-pixel` | — | imaging focal (mm) / pixel (µm) |
+| `--guide-pixel` | — | guide camera pixel (µm) |
+| `--guide-focal` | — | guide scope focal (mm); omit in `--oag` |
+| `--oag` | off | off-axis guider — inherits imaging focal + reducer |
+| `--centroid` | 0.1 | guide centroid accuracy (guide px); ~0.25–0.5 for a dim star |
+| `--img-reducer` / `--img-binning` / `--guide-reducer` / `--guide-binning` | 1.0 / 1 | scale modifiers |
+| `--json` | — | machine-readable result |
+
+**Why it's right where calculators are wrong:** the verdict is anchored on `min motion = centroid × guide_scale` (≈ `centroid × ratio` imaging px), not the raw ratio — so this rig's 2.08× guide ratio reads **GOOD** (resolves ~0.21 imaging px), not "fail the 1:1 rule." **The blind spot it states explicitly:** it judges *resolution* only, never **differential flexure** — a guide scope can pass this and still trail stars when the tubes shift mid-sub. That's the real guide-scope failure mode; an OAG removes it.
+
+### Tests
+
+```bash
+python3 scripts/test_guide_match.py    # scale match + centroiding model + OAG inheritance (11 tests)
+```
+
+---
+
 ## set_filter.py — write the filter into frames/masters before WBPP
 
 Manual filters (no EFW) mean the ASIAIR never records the filter in frame metadata — it only puts it in the **filename** (`…-9.6C_LPro_0001.fit`). That's why WBPP can't auto-match filter-specific flats, can't tell L-Pro from FQuad (all read `NoFilter`), and names masters `FILTER-NoFilter`. This reads the filter **from the filename** (or `--filter`) and writes it where WBPP actually looks. See [[../04_Processing/Calibration/Calibration-Strategy.md]].
