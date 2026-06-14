@@ -208,10 +208,34 @@ python3 scripts/frame_info.py <file> --stats          # + channel median/max/cli
 - **Filter:** the XISF *property* wins over the FITS keyword (that's what WBPP groups by) — so this is the quick check for the "master flat reads NoFilter" trap that `set_filter.py` fixes.
 - Use it to confirm scale before BXT/ImageSolver (native 3.10 vs drizzle 1.548 ″/px), verify a master is solved before SPCC, or audit which filter a stack was really shot through.
 
+### `--match` — calibration frame matching
+
+Offline rebuild of the HLP **"Astro Frame Match Analysis"** script: compare two frame sets and confirm they match for calibration *before* WBPP, catching the under/over-correction caused by mismatched frames. Compares one set (`path`) against a second (`--against`):
+
+```bash
+# lights vs darks — gain, offset, exposure (exact) + temperature (±0.5°C)
+python3 scripts/frame_info.py <lights> --match lights-darks --against <darks>
+# flats vs flat-darks — same checks
+python3 scripts/frame_info.py <flats> --match flats-flatdarks --against <flatdarks>
+# darks vs flat-darks — gain/offset/temp + mean brightness (±1.5%), NOT exposure
+python3 scripts/frame_info.py <darks> --match darks-flatdarks --against <flatdarks> --bright-sample 5
+```
+
+| Pairing | Exact (no tol) | Temp ±0.5°C | Mean brightness ±1.5% |
+|---|---|---|---|
+| `lights-darks` | gain, offset, exposure | ✓ | — |
+| `flats-flatdarks` | gain, offset, exposure | ✓ | — |
+| `darks-flatdarks` | gain, offset | ✓ | ✓ (sampled) |
+
+- Prints `MATCH` / `MISMATCH (param…)` and **exits non-zero on a mismatch** (scriptable as a pre-WBPP gate).
+- Flags a set that isn't internally uniform (e.g. a wrong-gain frame dropped in the folder).
+- `--temp-tol` / `--bright-tol` / `--bright-sample` are tunable. Brightness reads pixel data (needs numpy); the rest is header-only/instant.
+- Darks↔flat-darks brightness matches despite huge exposure differences **because the cooled (−10 °C) sensor's dark current is negligible** — both sit on the OFFSET pedestal; a real mismatch means stray light or amp glow. Validated on T7: 300 s darks vs 60 ms flat-darks → Δ0.31%. See [[../04_Processing/Calibration/Calibration-Strategy.md]].
+
 ### Tests
 
 ```bash
-python3 scripts/test_frame_info.py     # CD-scale/centre/rotation, XISF property-vs-keyword, WCS flag, sexagesimal, folder iteration
+python3 scripts/test_frame_info.py     # CD-scale/centre/rotation, XISF property-vs-keyword, WCS flag, sexagesimal, folder iteration, --match matching/tolerances/exit-code
 ```
 
 ---

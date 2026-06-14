@@ -12,9 +12,15 @@ masters. `--stats` reads the data block (needs numpy) for median / max / clip.
     python3 scripts/frame_info.py <folder> [--recursive]  # one-row-per-file table (WCS triage)
     python3 scripts/frame_info.py <file> --stats          # + channel median/max/clip
 
+It also does calibration frame matching (--match, offline HLP "Astro Frame Match
+Analysis"): compare two sets and confirm they match before WBPP.
+
+    python3 scripts/frame_info.py <lights> --match lights-darks --against <darks>
+    python3 scripts/frame_info.py <darks>  --match darks-flatdarks --against <flatdarks>
+
 Folder mode is the reprocessing-triage view: the WCS column shows which masters
 lack an astrometric solution (the ones a re-solve unblocks). Stdlib only
-(numpy only for --stats).
+(numpy only for --stats and --match brightness).
 """
 from __future__ import annotations
 import argparse
@@ -29,6 +35,7 @@ XISF_SIG = b"XISF0100"
 
 # FITS keywords we surface (others ignored)
 _WANT = ("OBJECT", "FILTER", "EXPTIME", "EXPOSURE", "GAIN", "EGAIN",
+         "OFFSET", "IMAGETYP", "XBINNING",
          "CCD-TEMP", "SET-TEMP", "NAXIS1", "NAXIS2", "NAXIS3", "BITPIX",
          "XPIXSZ", "FOCALLEN", "RA", "DEC", "OBJCTRA", "OBJCTDEC",
          "CRVAL1", "CRVAL2", "CRPIX1", "CRPIX2",
@@ -164,7 +171,10 @@ def read_meta(path):
     m["filter_kw"] = kw.get("FILTER")
     m["exposure"] = kw.get("EXPTIME", kw.get("EXPOSURE"))
     m["gain"] = kw.get("GAIN", kw.get("EGAIN"))
+    m["offset"] = kw.get("OFFSET")
     m["temp"] = kw.get("CCD-TEMP", kw.get("SET-TEMP"))
+    m["imagetyp"] = kw.get("IMAGETYP")
+    m["binning"] = kw.get("XBINNING")
     m["object"] = kw.get("OBJECT")
     _wcs(m)
     return m
@@ -274,6 +284,125 @@ def _stats(m):
 
 
 # ---------------------------------------------------------------------------
+# Calibration frame matching  (--match)
+# ---------------------------------------------------------------------------
+# Mirrors the HLP "Astro Frame Match Analysis" script. Per pairing: params that
+# must match EXACTLY, whether to check temperature (within tolerance), and
+# whether to check mean brightness (within tolerance). Darks vs flat-darks have
+# different exposures by design, so they're compared on brightness instead.
+PAIRINGS = {
+    "lights-darks":    {"exact": ("gain", "offset", "exposure"), "temp": True, "bright": False},
+    "flats-flatdarks": {"exact": ("gain", "offset", "exposure"), "temp": True, "bright": False},
+    "darks-flatdarks": {"exact": ("gain", "offset"),             "temp": True, "bright": True},
+}
+
+
+def _frame_mean(m):
+    """Overall mean pixel level of a frame (mean of channel means). Needs numpy."""
+    chans = _stats(m)
+    return sum(c[1] for c in chans) / len(chans) if chans else None
+
+
+def _collect(paths, need_bright=False, bright_sample=5):
+    """Aggregate calibration parameters across a frame set. Header-only for
+    gain/offset/exposure/temp; reads a small sample for brightness if needed."""
+    metas = [read_meta(p) for p in paths]
+    out = {"count": len(metas), "imagetyp": next((m["imagetyp"] for m in metas if m.get("imagetyp")), None)}
+    for key in ("gain", "offset", "exposure"):
+        vals = [m[key] for m in metas if m[key] is not None]
+        out[key] = vals[0] if vals else None
+        out[key + "_uniform"] = len(set(vals)) <= 1
+        out[key + "_values"] = sorted(set(vals), key=lambda x: (str(type(x)), x))
+    temps = [m["temp"] for m in metas if m["temp"] is not None]
+    out["temp"] = sum(temps) / len(temps) if temps else None
+    out["temp_min"] = min(temps) if temps else None
+    out["temp_max"] = max(temps) if temps else None
+    if need_bright:
+        sample = metas[:bright_sample] if bright_sample else metas
+        bs = [v for v in (_frame_mean(m) for m in sample) if v is not None]
+        out["bright"] = sum(bs) / len(bs) if bs else None
+        out["bright_n"] = len(bs)
+    return out
+
+
+def _num_eq(a, b, eps=1e-6):
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return abs(a - b) <= eps
+    return a == b
+
+
+def match_sets(paths_a, paths_b, pairing, temp_tol=0.5, bright_tol=0.015, bright_sample=5):
+    """Compare two calibration frame sets. Returns a result dict; the verdict is
+    result['match'] (bool) with offending parameters in result['bad']."""
+    if pairing not in PAIRINGS:
+        raise ValueError(f"unknown pairing: {pairing}")
+    if not paths_a or not paths_b:
+        raise ValueError("both sets must contain at least one frame")
+    spec = PAIRINGS[pairing]
+    A = _collect(paths_a, spec["bright"], bright_sample)
+    B = _collect(paths_b, spec["bright"], bright_sample)
+    params, bad = [], []
+
+    for key in spec["exact"]:
+        av, bv = A[key], B[key]
+        uniform = A[key + "_uniform"] and B[key + "_uniform"]
+        ok = uniform and av is not None and bv is not None and _num_eq(av, bv)
+        detail = ""
+        if not A[key + "_uniform"]:
+            detail += f" A mixed:{A[key + '_values']}"
+        if not B[key + "_uniform"]:
+            detail += f" B mixed:{B[key + '_values']}"
+        params.append({"name": key, "a": av, "b": bv, "ok": ok, "detail": detail.strip()})
+        if not ok:
+            bad.append(key)
+
+    if spec["temp"]:
+        av, bv = A["temp"], B["temp"]
+        dt = abs(av - bv) if (av is not None and bv is not None) else None
+        ok = dt is not None and dt <= temp_tol
+        detail = (f"Δ{dt:.2f}°C (tol {temp_tol}; A[{A['temp_min']:.1f}..{A['temp_max']:.1f}] "
+                  f"B[{B['temp_min']:.1f}..{B['temp_max']:.1f}])") if dt is not None else "temp missing"
+        params.append({"name": "temp", "a": av, "b": bv, "ok": ok, "detail": detail})
+        if not ok:
+            bad.append("temp")
+
+    if spec["bright"]:
+        av, bv = A.get("bright"), B.get("bright")
+        if av and bv:
+            rel = abs(av - bv) / max(abs(av), abs(bv))
+            ok = rel <= bright_tol
+            detail = f"Δ{rel * 100:.2f}% (tol {bright_tol * 100:.1f}%; sampled A={A['bright_n']} B={B['bright_n']})"
+        else:
+            ok, detail = False, "brightness unavailable (needs numpy)"
+        params.append({"name": "brightness", "a": av, "b": bv, "ok": ok, "detail": detail})
+        if not ok:
+            bad.append("brightness")
+
+    return {"pairing": pairing, "temp_tol": temp_tol, "bright_tol": bright_tol,
+            "a": A, "b": B, "params": params, "bad": bad, "match": not bad}
+
+
+def print_match(r, path_a, path_b):
+    a, b = r["a"], r["b"]
+    la = f" ({a['imagetyp']})" if a["imagetyp"] else ""
+    lb = f" ({b['imagetyp']})" if b["imagetyp"] else ""
+    print(f"Match: {r['pairing']}")
+    print(f"  Set A{la}: {a['count']} frames  [{path_a}]")
+    print(f"  Set B{lb}: {b['count']} frames  [{path_b}]")
+    for p in r["params"]:
+        av, bv = p["a"], p["b"]
+        if isinstance(av, float):
+            av = f"{av:.4g}"
+        if isinstance(bv, float):
+            bv = f"{bv:.4g}"
+        tag = "MATCH   " if p["ok"] else "MISMATCH"
+        print(f"  {p['name']:10}: A {str(av if av is not None else '—'):<9} "
+              f"B {str(bv if bv is not None else '—'):<9} {tag}  {p['detail']}")
+    verdict = "MATCH" if r["match"] else "MISMATCH (" + ", ".join(r["bad"]) + ")"
+    print(f"==> {verdict}")
+
+
+# ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
 def print_detail(m, stats=False):
@@ -289,7 +418,8 @@ def print_detail(m, stats=False):
     else:
         print(f"Filter     : {m['filter']!r}")
     exp = f"{m['exposure']} s" if m["exposure"] is not None else "?"
-    print(f"Exposure   : {exp}   Gain {m['gain']}   Temp {m['temp']}")
+    off = f"   Offset {m['offset']}" if m.get("offset") is not None else ""
+    print(f"Exposure   : {exp}   Gain {m['gain']}{off}   Temp {m['temp']}")
     if m["scale"]:
         fov = f"   FOV {m['fov'][0]:.2f} x {m['fov'][1]:.2f} deg" if m["fov"] else ""
         rot = f"   rot {m['rotation']:.1f}°" if m["rotation"] is not None else ""
@@ -337,7 +467,27 @@ def main(argv=None):
     ap.add_argument("path", help="a .fit/.xisf file or a folder")
     ap.add_argument("--recursive", action="store_true", help="recurse into subfolders")
     ap.add_argument("--stats", action="store_true", help="also compute channel median/max/clip (reads data; needs numpy)")
+    ap.add_argument("--match", choices=list(PAIRINGS),
+                    help="compare this set against --against for calibration matching")
+    ap.add_argument("--against", help="second frame set (folder/file) for --match")
+    ap.add_argument("--temp-tol", type=float, default=0.5,
+                    help="temperature match tolerance °C (default 0.5)")
+    ap.add_argument("--bright-tol", type=float, default=0.015,
+                    help="mean-brightness tolerance fraction for darks-flatdarks (default 0.015 = 1.5%%)")
+    ap.add_argument("--bright-sample", type=int, default=5,
+                    help="frames per set to sample for brightness (default 5; 0 = all)")
     args = ap.parse_args(argv)
+
+    if args.match:
+        if not args.against:
+            ap.error("--match requires --against <second set>")
+        pa = list(iter_files(args.path, args.recursive))
+        pb = list(iter_files(args.against, args.recursive))
+        if not pa or not pb:
+            ap.error("both --match sets must contain at least one frame")
+        r = match_sets(pa, pb, args.match, args.temp_tol, args.bright_tol, args.bright_sample)
+        print_match(r, args.path, args.against)
+        return 0 if r["match"] else 1
 
     if os.path.isfile(args.path):
         print_detail(read_meta(args.path), stats=args.stats)
