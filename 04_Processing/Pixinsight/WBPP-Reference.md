@@ -77,12 +77,28 @@ Aligns all frames to a reference frame.
 | Enable | **Checked** | Checked | Enable image registration |
 | Reuse last reference frames | Unchecked | — | Reuse reference from a previous WBPP run |
 
-**Sub-settings** (accessible via the Image Registration expandable panel — see [[#Image Registration Panel]]):
+#### Image Registration Panel — full option set
+
+Complete panel as exposed by WBPP (captured from the dialog 2026-06-23). These are the StarAlignment detection/transform parameters. **Recommended = RedCat 51 / OSC defaults**; only **Distortion correction** + **Max spline points** differ from PixInsight defaults.
 
 | Setting | Default | Recommended | Description |
 |---------|---------|-------------|-------------|
-| Distortion Correction | Unchecked | **Enabled** | Corrects field distortion (important for [[RedCat-51]] edge stars) |
-| Max Spline Points | 2000 | **4000** | Higher = more accurate distortion model |
+| **Pixel interpolation** | Auto | **Auto** | Resampling kernel for the alignment transform (Auto → Lanczos/cubic per scale). Less critical with drizzle (drizzle resamples itself) |
+| **Clamping threshold** | 0.30 | **0.30** | Lanczos/cubic deringing — suppresses dark ringing around bright stars |
+| **Maximum stars** | Auto | **Auto** | Cap on stars used to compute the alignment (Auto = no fixed cap) |
+| **Distortion correction** | Unchecked | **✓ Enabled** | 🔴 Fits 2-D surface splines for field distortion (vs a single projective transform) — **essential for [[RedCat-51]] edge stars / field curvature** |
+| **Maximum spline points** | 2000 | **4000** | Control points for the distortion splines; higher = finer distortion model |
+| **Rigid transformations** | Unchecked | **Unchecked** | If on, restricts to translation+rotation only (no scale/distortion) — **leave OFF** (incompatible with distortion correction) |
+| **Detection scales** | 5 | **5** | Wavelet layers for star detection (≈ largest star scale detected) |
+| **Minimum structure size** | Auto | **Auto** | Smallest pixel area counted as a star |
+| **Hot pixel removal** | 1 | **1** | Median-filter radius before detection so hot pixels aren't matched as stars (1 = 3×3) |
+| **Noise reduction** | Disabled | **Disabled** | Optional pre-detection smoothing — **keep disabled**, never smooth registration data |
+| **Sensitivity** | 0.50 | **0.50** | Star-detection sensitivity (lower → detects fainter stars) |
+| **Peak response** | 0.50 | **0.50** | Selectivity for well-defined peaks vs flat-topped/saturated stars |
+| **Bright threshold** | 3.00 | **3.00** | Stars above this × the detection threshold are treated as "bright" (saturated-star handling) |
+| **Maximum distortion** | 0.60 | **0.60** | Max shape distortion for a structure to be accepted as a star (rejects elongated blobs). ⚠️ Our subs can be ecc ~0.64 — real stars still pass; only raise if too few stars match |
+| **Allow clustered sources** | Unchecked | **Unchecked** | Include closely-spaced/overlapping stars (on → for very dense fields; off → cleaner matches) |
+| **Use triangle similarity** | Unchecked | **Unchecked** | Alternate matching algorithm for hard cases (large rotation/scale between frames) — enable only if registration fails |
 
 ### Local Normalization
 
