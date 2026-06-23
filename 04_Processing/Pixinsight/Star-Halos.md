@@ -52,8 +52,11 @@ python3 scripts/star_halos.py before_BXT.xisf --against after_BXT.xisf
 | `--against PATH` | — | post-BXT image → halo-reduction % |
 | `--stars N` | 60 | brightest N stars measured |
 | `--rmax N` | 40 | radial-profile half-box (px) |
+| `--annulus-px LO,HI` | auto | force a fixed-pixel halo annulus |
 | `-k N` | 6.0 | detection σ threshold |
 | `--json` | — | machine-readable |
+
+> 🔴 **The annulus confound (and the fix).** Single-image mode measures the halo in **2.5–5× each star's core HWHM** — scale-invariant across different images/rigs. But BXT **shrinks the core**, so for a before/after comparison an HWHM-relative annulus would slide *inward* (toward more flux) and **understate** the reduction. So **`--against` automatically uses a fixed-pixel annulus** (derived from the reference's HWHM, applied to both images) → an honest, FWHM-independent number. Override with `--annulus-px LO,HI`. *(M42: the HWHM-relative read showed only −15%; the fixed annulus revealed the true **48.6%** reduction.)*
 
 > Measure the **Sharpen Stars** value on the **Correct-Only output** (the Sharpen input) — the same "measure on the CO output" rule as the BXT PSF diameter ([[QuadBand-OSC-Workflow#2.3 Star Correction]]). The CO pass tightens stars, so measuring the raw master over-states the needed sharpening.
 

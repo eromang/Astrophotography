@@ -72,6 +72,25 @@ def test_suggest_sharpen_monotonic():
     assert vals[0] == 0.10
 
 
+def test_fixed_annulus_fwhm_independent():
+    # the confound fix: same physical halo, two core FWHMs. A FIXED-pixel annulus
+    # (where the core is negligible) must give ~the same halo index regardless of
+    # FWHM — that's what makes before/after-BXT comparison honest.
+    import psf_image as pi
+
+    def fixed_idx(fwhm):
+        img = _field(True, fwhm=fwhm, halo_frac=0.15)
+        bg, sig = pi.estimate_background(img)
+        stars = pi.detect_stars(img, bg, sig, k=5.0, max_pix=2500)
+        idx, _ = sh.halo_indices(img, stars, bg, 20, 40, annulus_px=(6, 12))
+        return float(np.median(idx))
+
+    a, b = fixed_idx(2.0), fixed_idx(4.0)
+    assert a > 0 and b > 0, "no halo measured in fixed annulus"
+    assert abs(a - b) / max(a, b) < 0.25, \
+        "fixed annulus should be ~FWHM-independent (%.4f vs %.4f)" % (a, b)
+
+
 def test_reduction_direction():
     before, _ = _analyze_array(_field(True, halo_frac=0.40))
     after, _ = _analyze_array(_field(True, halo_frac=0.10))

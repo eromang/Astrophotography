@@ -71,8 +71,15 @@ def radial_profile(img, cx, cy, bg, rmax):
     return prof / np.maximum(cnt, 1)
 
 
-def halo_indices(img, stars, bg, n_use, rmax):
-    """Per-star halo index + FWHM (px) for up to n_use brightest stars."""
+def halo_indices(img, stars, bg, n_use, rmax, annulus_px=None):
+    """Per-star halo index + FWHM (px) for up to n_use brightest stars.
+
+    annulus_px=(lo,hi): measure the halo in a FIXED pixel annulus (same physical
+    region regardless of FWHM) — required for honest before/after-BXT comparison,
+    since BXT changes the core size. Default (None): per-star 2.5-5x the core HWHM
+    (scale-invariant across different images/rigs, but FWHM-confounded for a step
+    that *changes* FWHM).
+    """
     idx, fwhm = [], []
     for (cx, cy, peak, npix) in stars[:n_use]:
         amp = peak - bg
@@ -90,7 +97,10 @@ def halo_indices(img, stars, bg, n_use, rmax):
         p0, p1 = p[i - 1], p[i]
         frac = (p0 - 0.5) / (p0 - p1) if p0 > p1 else 0.0
         hwhm_f = (i - 1) + frac
-        r_lo, r_hi = int(2.5 * i), min(int(5 * i), rmax)
+        if annulus_px is not None:
+            r_lo, r_hi = int(annulus_px[0]), min(int(annulus_px[1]), rmax)
+        else:
+            r_lo, r_hi = int(2.5 * i), min(int(5 * i), rmax)
         if r_hi <= r_lo:
             continue
         idx.append(float(np.clip(p[r_lo:r_hi + 1], 0, None).mean()))
@@ -112,22 +122,26 @@ def suggest_sharpen(fwhm_px):
     return SHARPEN_FLOOR
 
 
-def analyze(path, n_use=60, rmax=40, k=6.0, max_pix=2500):
+def analyze(path, n_use=60, rmax=40, k=6.0, max_pix=2500, annulus_px=None, fwhm=None):
     img = pi.read_image(path)
     bg, sigma = pi.estimate_background(img)
     # max_pix raised from psf_image's default (400): bright HALOED stars have larger
     # above-threshold blobs and must not be size-excluded. The nebula core (far bigger)
     # is still rejected; extended nebula knots are filtered by the tight-core HWHM check.
     stars = pi.detect_stars(img, bg, sigma, k=k, max_pix=max_pix)
-    idx, fwhm_radial = halo_indices(img, stars, bg, n_use, rmax)
+    idx, fwhm_radial = halo_indices(img, stars, bg, n_use, rmax, annulus_px)
     if len(idx) == 0:
         raise SystemExit("No usable bright stars found in %s (try lowering -k)" % path)
     # FWHM from psf_image's Moffat fit (authoritative); the radial estimate runs ~15%
     # low and straddles the 0.10/0.15 Sharpen threshold. Fall back to radial if the fit fails.
-    try:
-        med_fwhm = float(pi.measure(path, k=k, verbose=False)["fwhm"])
-    except Exception:
-        med_fwhm = float(np.median(fwhm_radial))
+    # `fwhm` override lets a fixed-annulus re-analysis skip the (slow) Moffat re-fit.
+    if fwhm is not None:
+        med_fwhm = float(fwhm)
+    else:
+        try:
+            med_fwhm = float(pi.measure(path, k=k, verbose=False)["fwhm"])
+        except Exception:
+            med_fwhm = float(np.median(fwhm_radial))
     p90 = float(np.percentile(idx, 90))
     # Halos live on BRIGHT stars (and they cause the SXT residuals). The median is
     # dominated by faint clean stars and under-calls it, so drive the suggestion off
@@ -149,19 +163,42 @@ def main(argv=None):
     ap.add_argument("--against", help="second image (e.g. post-BXT) to measure halo reduction")
     ap.add_argument("--stars", type=int, default=60, help="brightest N stars to measure (default 60)")
     ap.add_argument("--rmax", type=int, default=40, help="profile half-box radius px (default 40)")
+    ap.add_argument("--annulus-px", help="fixed halo annulus LO,HI in px (overrides the per-star HWHM annulus)")
     ap.add_argument("-k", type=float, default=6.0, help="detection threshold sigma (default 6)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
 
+    fixed = None
+    if args.annulus_px:
+        try:
+            lo, hi = (float(v) for v in args.annulus_px.split(","))
+            fixed = (lo, hi)
+        except ValueError:
+            ap.error("--annulus-px must be LO,HI in px, got %r" % args.annulus_px)
+
     a = analyze(args.image, args.stars, args.rmax, args.k)
-    b = analyze(args.against, args.stars, args.rmax, args.k) if args.against else None
+
+    b = red = None
+    if args.against:
+        # Honest comparison needs a FIXED-pixel annulus: BXT changes the core size, and
+        # an HWHM-relative annulus would slide as FWHM changes, confounding the result.
+        # Default the annulus to the reference image's own scale (2.5-5x its HWHM).
+        if fixed is None:
+            ref_hwhm = a["median_fwhm_px"] / 2.0
+            fixed = (round(2.5 * ref_hwhm, 1), round(5.0 * ref_hwhm, 1))
+        a_fx = analyze(args.image, args.stars, args.rmax, args.k, annulus_px=fixed, fwhm=a["median_fwhm_px"])
+        b = analyze(args.against, args.stars, args.rmax, args.k)
+        b_fx = analyze(args.against, args.stars, args.rmax, args.k, annulus_px=fixed, fwhm=b["median_fwhm_px"])
+        red = 100 * (1 - b_fx["halo_index_p90"] / max(a_fx["halo_index_p90"], 1e-9))
+        a["_p90_fixed"], b["_p90_fixed"] = a_fx["halo_index_p90"], b_fx["halo_index_p90"]
 
     if args.json:
         out = {"image": a}
         if b:
             out["against"] = b
-            out["halo_reduction_pct"] = round(100 * (1 - b["halo_index"] / max(a["halo_index"], 1e-9)), 1)
-        print(json.dumps(out, indent=2))
+            out["fixed_annulus_px"] = fixed
+            out["halo_reduction_pct"] = round(red, 1)
+        print(json.dumps({k: v for k, v in out.items()}, indent=2, default=float))
         return
 
     def show(d):
@@ -178,8 +215,9 @@ def main(argv=None):
     if b:
         print()
         show(b)
-        red = 100 * (1 - b["halo_index"] / max(a["halo_index"], 1e-9))
-        print("\n  >>> halo reduction: %.1f%%  (index %.4f -> %.4f)" % (red, a["halo_index"], b["halo_index"]))
+        print("\n  Fixed annulus %s px (FWHM-independent -> honest before/after comparison):" % (fixed,))
+        print("    bright-star p90:  %.4f -> %.4f" % (a["_p90_fixed"], b["_p90_fixed"]))
+        print("  >>> halo reduction: %.1f%%" % red)
         if red < 15:
             print("      weak — push Adjust Star Halos more negative or check BXT actually ran")
         elif red > 70:

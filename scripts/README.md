@@ -138,8 +138,11 @@ python3 scripts/star_halos.py before.xisf --against after.xisf   # measure the a
 | `--against PATH` | — | second image (post-BXT) → halo-reduction % — the strongest use |
 | `--stars N` | 60 | brightest N stars to measure |
 | `--rmax N` | 40 | radial-profile half-box (px) |
+| `--annulus-px LO,HI` | auto | force a fixed-pixel halo annulus (see below) |
 | `-k N` | 6.0 | detection threshold (σ) |
 | `--json` | — | machine-readable |
+
+The halo annulus is normally **2.5–5× each star's core HWHM** (scale-invariant across images). But BXT *changes* the core size, so for `--against` that annulus would slide as FWHM changes and **confound** the reduction. So `--against` automatically switches to a **fixed-pixel annulus** (derived from the reference image's HWHM, applied identically to both) — an honest, FWHM-independent before/after. Override with `--annulus-px LO,HI`.
 
 ⚠️ The index→slider mapping is an **empirical heuristic** (M42-calibrated), a data-driven *starting* value — confirm visually, and use `--against` to verify the reduction. Measure the **Sharpen Stars** value on the **Correct-Only output** (the Sharpen input), same rule as the BXT PSF diameter.
 
