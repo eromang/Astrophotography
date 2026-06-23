@@ -149,7 +149,30 @@ The halo annulus is normally **2.5–5× each star's core HWHM** (scale-invarian
 ### Tests
 
 ```bash
-python3 scripts/test_star_halos.py   # haloed>clean, clean-low, FWHM recovery, monotonic suggestions, reduction direction (6 tests)
+python3 scripts/test_star_halos.py   # haloed>clean, clean-low, FWHM recovery, monotonic suggestions, reduction direction, fixed-annulus (7 tests)
+```
+
+---
+
+## nxt_advisor.py — NoiseXTerminator settings from noise structure
+
+Measures the **structure** of an image's noise (in a signal-free patch via `find_background`) and suggests **NXT separation-mode** settings. The *Denoise amount* (~0.85) is taste; what it measures is the **colour-vs-intensity ratio** (how hard to push colour), the **noise correlation scale** → **HF/LF Scale**, and the noise level → **iterations**. Reuses `find_background`. Full guide: [[../04_Processing/Pixinsight/NXT-Advisor.md]].
+
+```bash
+python3 scripts/nxt_advisor.py img.xisf            # measured noise + suggested HF/LF int+colour, scale, iterations
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--size N` | 200 | background ROI side for noise measurement |
+| `--json` | — | machine-readable |
+
+⚠️ Measures **linear** noise → recommends a *moderate* linear pass (don't over-denoise linear). Re-run on the stretched image for the final post-stretch pass. A colour/intensity ratio ≫ 1.4 means true **chrominance** noise (e.g. an HOO G=B remap) → push colour to 1.0.
+
+### Tests
+
+```bash
+python3 scripts/test_nxt_advisor.py   # chroma-ratio, intensity-dominant, scale, scale->suggestion, iterations, mono (6 tests)
 ```
 
 ---
