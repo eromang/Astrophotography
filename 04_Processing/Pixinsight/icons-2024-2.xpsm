@@ -3,8 +3,8 @@
 ********************************************************************
 PixInsight XML Process Serialization Module - XPSM 1.0
 ********************************************************************
-Generated on 2026-05-30T13:48:15.694Z
-PixInsight Core 1.9.4 (arm64)
+Generated on 2026-06-23T08:34:55.168Z
+PixInsight Core 1.9.4 (x64)
 Copyright (c) 2003-2026 Pleiades Astrophoto
 ********************************************************************
 -->
@@ -473,7 +473,7 @@ Copyright (c) 2003-2026 Pleiades Astrophoto
       <table id="marsDatabaseFiles" rows="2">
          <tr>
             <td id="enabled" value="true"/>
-            <td id="path">/Volumes/T7/Astrophotography/XMARS/MARS-DR1-1.1.1.xmars</td>
+            <td id="path">/Volumes/T7/Astrophotography/XMARS/MARS-DR2-1.0.3-s08.xmars</td>
          </tr>
          <tr>
             <td id="enabled" value="true"/>
