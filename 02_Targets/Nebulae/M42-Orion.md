@@ -89,7 +89,7 @@ tags:
 
 #### 2026-06 HDR reprocess (in progress)
 
-- **Restacked** all 100 × 160 s FQuad subs (5 nights, −10 °C) in WBPP 3.0.1 → drizzle-2× master, solved, 1.552 ″/px. All frames passed `psf_image.py` QA (FWHM 6.1–9.0″, ecc ≤0.68, no rejects). **BXT PSF Diameter 4.54.**
+- **Restacked** all 100 × 160 s FQuad subs (5 nights, −10 °C) in WBPP 3.0.1 → drizzle-2× master, solved, 1.552 ″/px. All frames passed `psf_image.py` QA (FWHM 6.1–9.0″, ecc ≤0.68, no rejects). Raw-master PSF 4.54 px → **after BXT Correct Only: 2.5 px / ecc 0.27** (CO tightens stars; use **2.5** for the Sharpen pass — measure post-CO, not on the raw master).
 - **Gradient: GraXpert @ Smoothing 0.8** (Subtraction). **MGC+DR2 was tested and lost** — even though DR2 *covers* this Dec −5° field, MGC stayed ~2× less flat than GraXpert across its entire parameter space (gradient scale 1024–4096, structure sep 1–2, scale factors). Full study + numbers: [[../../04_Processing/Pixinsight/Gradient-MGC-vs-GraXpert-M42]].
 - Pipeline from here: BXT (Correct Only → Sharpen 4.54) → SXT → NXT → HOO → [[../../04_Processing/Pixinsight/HDR-Workflow|HDR (MAS + HDRMT)]]. Working set staged at `~/Desktop/Astro/M42_HDR_Reprocess/`.
 

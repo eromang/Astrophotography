@@ -174,13 +174,15 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 2.4 Star Correction
 
-**BlurXTerminator** — Correct Only
+**BlurXTerminator** — Correct Only. ⚠️ **Linear data only** (AI4 deconvolves linear directly; don't run it on stretched data). See [[BlurXTerminator 2.0_AI4 Release]].
+- ⚠️ Correct Only also **tightens** stars (reduces FWHM), not just shape — so re-measure the PSF on this output for the Sharpen pass; don't reuse a pre-BXT value.
+- 🟢 **Best colour order (RC-Astro): Correct Only → SPCC → Sharpen.** Running Correct Only *before* SPCC gives more consistent colour calibration (better R/G, B/G dispersion); do the **Sharpen** pass *after* SPCC. I.e. split the two BXT passes around the colour-calibration step rather than running both back-to-back.
 
 ### 2.5 Star Sharpening
 
 **BlurXTerminator**
 - Model: `BlurXTerminator.4.mlpackage`
-- Evaluate PSF Diameter with **PSFImage** render script — or, offline, `python3 scripts/psf_image.py <image>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]])
+- 🔴 **Measure PSF Diameter on the Correct-Only output (step 2.4 result), NOT the raw/drizzle master** — Correct Only roughly halves the FWHM, so the pre-correction value over-sharpens. Use **PSFImage** in PI or offline `python3 scripts/psf_image.py <correct-only.xisf>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]]).
   - Or use Automatic PSF to skip the long evaluation
 - Configuration:
   - Sharpen Stars: 0.20
@@ -216,19 +218,20 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 2.9 Star Removal
 
-**StarXTerminator**
-- Model: `StarXTerminator.lite.nonoise.11.mlpackage`
+**StarXTerminator** — run on **linear** data, before any stretch. ⚠️ Never after arcsinh/GHS/HDR (alters star profiles → stars not recognised). See [[StarXTerminator Usage Notes]].
+- Model: `StarXTerminator.lite.nonoise.11.mlpackage` (AI 11)
 - Generate Star image: selected
-- Unscreen stars: enabled (produces a better star layer for screen-mode blending in step 4.2)
-- Overlap: 0.20
+- 🔴 **Unscreen stars: OFF** — Unscreen is for nonlinear images; on linear data use **subtraction** (best star colour). Pairs with screen-blend recombine (step 4.3).
+- **Large Overlap: ON for bright-core / frame-filling objects** and wide/busy fields (tile overlap 20→50 %; clears bright-core remnants); off for ordinary fields (≈2× faster).
+- ⚠️ **Don't STF-AutoStretch the star image** (destroys the STF SXT carried over).
 - Save the star image for reintegration in Phase 4
 
 ### 2.10 Noise Reduction (Linear, on starless)
 
-**NoiseXTerminator**
-- Model: `NoiseXTerminator.3.mlpackage` (AI v3 — no Detail parameter; v2 had Detail: 0.15)
-- Denoise: 0.9
-- Iterations: **2**
+**NoiseXTerminator** — never before BXT (it's after ✓); run on the **combined colour image**, tune with **real-time preview**. See [[NoiseXTerminator 2_AI3 User Manual (PixInsight)]].
+- Model: `NoiseXTerminator.3.mlpackage` (AI v3 — `iterations` v3-only; `detail` was v2-only)
+- **Simple mode:** Denoise **0.85–0.9** (avoid 1.0), Iterations **2**
+- 🟢 **Separation modes (NXT2/AI3):** reduce **color > intensity**; keep **LF low** to preserve dust. RC-Astro combined defaults: HF intensity **80–90 %**, HF color **90–100 %**, LF intensity **50–70 %**, LF color **100 %**; tune **HF/LF Scale** per object.
 - Test on preview first
 
 ---
@@ -281,10 +284,12 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 4.3 Star Reintegration
 
-**PixelMath:**
+**PixelMath** (screen blend):
 ```
 ~(~starless * ~stars)
 ```
+
+Screen blend is the correct partner for **subtraction**-extracted (Unscreen-off, linear) stars — recombine *after* stretching both starless and stars separately. See [[StarXTerminator Usage Notes]].
 
 ### 4.4 Final Adjustments
 

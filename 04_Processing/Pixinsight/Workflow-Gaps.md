@@ -34,23 +34,17 @@ Topics to clarify via PixInsight YouTube channel videos or empirical testing. Wh
 
 Alternative to the PixelMath approach in step 2.7 of [[QuadBand-OSC-Workflow]]. May provide ready-made scale factors for common camera+filter combinations, avoiding the manual calibration step.
 
-### NoiseXTerminator OSC-Specific Settings
+### ~~NoiseXTerminator OSC-Specific Settings~~ — Resolved (2026-06-23)
 
-**Search:** `NoiseXTerminator OSC`, `NoiseXTerminator color camera`
+Resolved against the [[NoiseXTerminator 2_AI3 User Manual (PixInsight)]]. Both workflows now document: never before BXT, run on the **combined colour image**, simple Denoise 0.85–0.9 / Iter 2, **plus the NXT2/AI3 separation modes** (color > intensity, low LF for dust; HF int 80–90, HF color 90–100, LF int 50–70, LF color 100). See QuadBand-OSC §2.6 / RGB §2.10.
 
-Both workflows use generic NXT parameters (0.9/0.15 linear, 0.7–0.8/0.20–0.25 non-linear). Official OSC-specific guidance may differ.
+### ~~BlurXTerminator OSC-Specific Settings~~ — Resolved (2026-06-23)
 
-### BlurXTerminator OSC-Specific Settings
+Resolved against the [[BlurXTerminator 2.0_AI4 Release]]. Documented: **linear-only**; **Correct Only → SPCC → Sharpen** colour order (broadband); narrowband = deconvolve **before** channel mixing; AI4 handles M42 DR + drizzle-2×; and the **measure-PSF-on-Correct-Only-output** gotcha (CO tightens stars ~½). See QuadBand-OSC §2.3–2.4 / RGB §2.4–2.5.
 
-**Search:** `BlurXTerminator OSC`, `BlurXTerminator color camera`
+### ~~StarXTerminator on Narrowband OSC~~ — Resolved (2026-06-23)
 
-BXT settings (Sharpen Stars 0.20, Halos -0.10, Nonstellar 0.90) are reasonable but not validated against official guidance for color cameras.
-
-### StarXTerminator on Narrowband OSC
-
-**Search:** `StarXTerminator narrowband`, `StarXTerminator OSC`
-
-Star removal behavior may differ on narrowband OSC data vs broadband. Confirm whether the same settings (Large overlap for dense fields) apply.
+Resolved against the [[StarXTerminator Usage Notes]]. Documented: SXT on **linear** (before any stretch — never after HDR/arcsinh/GHS), **Unscreen OFF on linear → subtraction** (pairs with screen-blend recombine), **Large Overlap ON for bright-core/frame-filling nebulae** (M42 = the named case), don't STF the star image. See QuadBand-OSC §2.5 / §6.1.
 
 ---
 

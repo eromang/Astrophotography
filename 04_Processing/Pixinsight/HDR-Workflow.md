@@ -12,7 +12,7 @@ Workflow for high dynamic range targets — objects with a **bright core surroun
 
 > **Not a standalone workflow.** Finish the *linear* phase of your parent workflow first ([[RGB-Workflow]] for galaxies/L-Pro, [[QuadBand-OSC-Workflow]] for emission nebulae/FQuad), do this for the stretch + HDR recovery, then return to the parent for star reintegration and export.
 
-> **Updated 2026-06 to MAS-first**, corrected against [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]] (M. Käßler, 2026-01) + Light Vortex / ChaoticNebula. Key corrections: **DRC is *low* for bright nebulae** (the core is HDRMT's job, not DRC's), and **HDRMT "Number of layers" is the critical control** (there is no HDRMT "intensity").
+> **Updated 2026-06 to MAS-first**, corrected against [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]] (M. Käßler, 2026-01) + Light Vortex / ChaoticNebula. Key corrections: **DRC is *low* for bright nebulae** (the core is HDRMT's job, not DRC's), and **HDRMT "Number of layers" is the critical control** (but HDRMT *does* have an **Intensity** slider — default 1.0/max; lower it to ~0.5, and keep **Deringing low ~0.05** or you get grey mush).
 
 ---
 
@@ -32,12 +32,14 @@ A standard stretch either clips the bright core or leaves the faint periphery in
 
 ## Entry Point
 
-Enter with a **linear, color-calibrated, starless, noise-reduced** image. ⚠️ **SPCC is mandatory *before* MAS** — MAS intensifies colour, so an un-calibrated image produces the classic green cast / washed-out reds (see [Troubleshooting](#troubleshooting)).
+Enter with a **linear, color-calibrated, starless, noise-reduced** image. ⚠️ **Colour must be calibrated before MAS** — MAS intensifies colour, so an un-calibrated image produces the classic green cast / washed-out reds (see [Troubleshooting](#troubleshooting)).
 
-| Coming from | Enter after | (Must already be done) |
+> ⚠️ **Order matters — SPCC before star removal, star removal before HDR.** SPCC photometers **stars**, so it must run *while the image still has them* (RGB §2.7 / QuadBand §2.4) — **not** on the starless image. Then stars are removed (Unscreen off → subtraction), and **only then** this HDR step runs. HDR/MAS also alters star profiles, so [[StarXTerminator Usage Notes|StarXTerminator]] can't run *after* HDR either. Stars are recombined via screen blend *after* the stretch. *(Narrowband already starless without SPCC → balance manually: BN + curves.)*
+
+| Coming from | Enter after | (Must already be done, in order) |
 |---|---|---|
-| [[RGB-Workflow]] | Step 2.10 — NXT on starless | gradient removed, **SPCC**, BXT, stars removed |
-| [[QuadBand-OSC-Workflow]] | Phase 3.4 → **3.5 SPCC** (color-balanced HOO) | gradient removed, **SPCC**, BXT, stars removed, HOO reassembled |
+| [[RGB-Workflow]] | Step 2.10 — NXT on starless | gradient → BXT-CO → **SPCC** → BXT-Sharpen → stars removed |
+| [[QuadBand-OSC-Workflow]] | Phase 3.4 — HOO reassembled on starless | gradient → BXT-CO → **SPCC (2.4)** → Sharpen → stars removed → NXT → HOO |
 
 MAS lives under **Process → Intensity Transformations → MultiscaleAdaptiveStretch** (added PI 1.9.3 build 1646, Dec 2025; if missing after an update: Process → Modules → Install Modules → **Search**).
 
@@ -92,9 +94,11 @@ On the **non-linear** image, open **HDRMultiscaleTransform**:
 | Parameter | Value | Notes |
 |---|---|---|
 | **Number of layers** | **6–7** (try both) | **THE critical control** — ±1 layer changes the result dramatically. 7 keeps the Trapezium stars visible without a flat core |
+| **Intensity** | **~0.5** (start) | yes, HDRMT *has* an Intensity slider (default **1.0 = max**). 1.0 + high deringing = grey mush. Lower it |
 | **Lightness mask** | **Enabled** | restricts the effect to the bright core; shadows untouched |
-| **Deringing** | enable **small** values *if* dark rings appear around stars; or switch **Median transform** on (avoids ringing, slower) | |
-| Iterations / To lightness | default | |
+| **To lightness + Preserve hue** | **on** | work on luminance, hold colour — prevents the grey desaturation |
+| 🔴 **Deringing** | **Small-scale ~0.05, Large-scale 0.0** *only if* dark rings appear; or use **Median transform** | ⚠️ **0.05 is "small" — the dialog defaults near 0.5, which washes the core to grey mush.** Leave OFF unless you see rings |
+| Iterations | default (1) | |
 
 **Procedure:** create a preview over the core → apply at 6 and 7 layers on separate previews → pick the one that reveals core structure without flattening contrast → apply to the main view. *(Advanced: blend several runs at layers 5–9 for the best core.)*
 
@@ -150,7 +154,7 @@ Starting points by target class. The **bright-emission-nebula** and **galaxy** r
 | Galaxy nucleus (M31) *(extrapolated)* | 5–6 (nucleus is small) | enabled | as needed |
 | Supernova remnant *(extrapolated)* | 6 | enabled | as needed |
 
-> HDRMT's effect is governed by **Number of layers + Iterations + (Median/Deringing)** — there is **no "intensity" slider**. More layers = stronger core compression over a larger scale.
+> HDRMT's effect is governed primarily by **Number of layers** (more = stronger core compression over a larger scale), then **Intensity** (0–1, default 1.0 — lower to ~0.5 to soften), **Iterations**, and **Deringing** (keep ~0.05; high values flatten the core to grey). Worked example bitten by this: layers 7 + Intensity 1.0 + Deringing 0.5/0.25 → flat grey core (M42, 2026-06-23).
 
 ---
 

@@ -10,7 +10,7 @@ tags:
 
 Processing workflow for narrowband data captured with the [[Antlia-FQuad]] filter on the [[ASI2600MCPro]] (color/OSC camera).
 
-> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. SPCC can be used with combined filter curves (Sony CMOS + Antlia Quadband per Bayer channel) — see step 3.5. Channel manipulation is required to separate and balance the narrowband signal.
+> **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. SPCC can be used with combined filter curves (Sony CMOS + Antlia Quadband per Bayer channel) — see step 2.4 (run on the star-full image, before star removal). Channel manipulation is required to separate and balance the narrowband signal.
 
 ---
 
@@ -113,7 +113,7 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
 
 ### 2.0 ImageSolver (if needed)
 
-Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Option B (SPFC + MGC)** for gradient removal or **step 3.5 (SPCC)** for color calibration.
+Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Option B (SPFC + MGC)** for gradient removal or **step 2.4 (SPCC)** for color calibration (star-full, before star removal).
 
 - Provide approximate center coordinates, focal length (250mm), pixel size:
   - **3.76 µm** for standard stack (no drizzle or Drizzle 1x)
@@ -179,41 +179,65 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
 
 ### 2.3 Star Correction
 
-**BlurXTerminator** — Correct Only
-- Fixes optical aberrations without changing star size
+**BlurXTerminator** — Correct Only. ⚠️ **Linear data only** (AI4 processes linear directly — *"processing a stretched image is not recommended; results cannot be considered deconvolution"*). AI4 also handles **M42's extreme dynamic range and drizzle-2× upsampling artifacts**. See [[BlurXTerminator 2.0_AI4 Release]].
+- Corrects optical aberrations (coma, elongation, field curvature) — stars come out rounder.
+- ⚠️ **Correct Only also *tightens* stars** — it noticeably reduces FWHM, not just shape (M42 drizzle-2× example: **4.54 → 2.50 px**, ecc 0.42 → 0.27). So **do not reuse a pre-BXT PSF measurement for the Sharpen pass** — re-measure on this corrected output (step 2.5).
+- 🟡 **Narrowband order (RC-Astro):** deconvolve in **distinct-channel form (the debayered OSC RGB) BEFORE any HOO channel mixing** (Phase 3) — mixing/boosting channels before BXT alters the PSF and gives inconsistent results on bright stars. Our order (BXT here, HOO in Phase 3) already does this. ✓
+- 🟢 **Order:** Correct Only (here) → **SPCC (2.4)** → Sharpen (2.5) → star removal (2.6). Splitting the BXT passes around SPCC gives more consistent colour calibration (RC-Astro).
 
-### 2.4 Star Sharpening
+### 2.4 Color Calibration (SPCC) — star-full, BEFORE star removal
+
+🔴 **SPCC must run here, while the image still has stars.** SPCC computes colour from **stellar photometry** vs the Gaia spectrophotometric catalog — **it cannot run on a starless image** (the old "SPCC at 3.5, after star removal" order was a bug). Run it on the **star-full debayered OSC RGB**, *before* the HOO channel remap; the HOO remap (Phase 3) is an artistic step on the already-calibrated data.
+
+**SPCC** (SpectrophotometricColorCalibration):
+- Filters: **Sony CMOS R/G/B + Antlia Quadband** (combined per-Bayer-channel curves, **not** narrowband mode)
+- QE Curve: **Sony IMX411/455/461/533/571**
+- White reference: **G2V Star** · Bandwidth **3 nm** all filters
+- Clustered sources: enabled · PSF growth 1.25 · Target sources 8000
+- Neutralize background: enabled (ROI on empty dark sky)
+- Catalog: **Gaia DR3/SP** · image must be **plate-solved** (2.0)
+
+> Combined filter curves (sensor QE × filter transmission per Bayer channel), not narrowband mode — the Bayer matrix mixes the narrowband signals across channels, so combined curves model the real OSC response.
+> **If you only realise stars are gone *after* removal** (starless HOO already built): SPCC is no longer possible — **balance manually** instead (BackgroundNeutralization + CurvesTransformation in the colour phase). Acceptable for an artificial HOO palette; just not as repeatable.
+
+### 2.5 Star Sharpening
 
 **BlurXTerminator**
 - Model: `BlurXTerminator.4.mlpackage`
-- Evaluate PSF Diameter with **PSFImage** render script — or, offline, `python3 scripts/psf_image.py <image>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]])
+- 🔴 **Measure PSF Diameter on the *Correct-Only output* (step 2.3 result), NOT the raw/drizzle master.** Correct Only roughly halves the FWHM, so the pre-correction value over-sharpens. Use **PSFImage** in PI, or offline `python3 scripts/psf_image.py <correct-only.xisf>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]]) → use the reported `BXT PSF Diameter`.
   - Or use Automatic PSF
 - Configuration:
   - Sharpen Stars: 0.20
   - Adjust Star Halos: -0.10
-  - PSF Diameter: **2.30** (or (FWHMx + FWHMy) / 2 from evaluation)
+  - PSF Diameter: **measured value** (post-correction; ~2.3–2.6 px typical for this rig at drizzle-2× — e.g. 2.5 on the M42 reprocess)
   - Sharpen Nonstellar: 0.90
 
-### 2.5 Star Removal
+### 2.6 Star Removal
 
-**StarXTerminator**
-- Model: `StarXTerminator.lite.nonoise.11.mlpackage`
+⚠️ **SPCC (2.4) must already be done before this** — it needs stars. Once removed here, colour calibration is no longer possible (fall back to manual balancing).
+
+**StarXTerminator** (v2.4.12 / AI 11 as of 2026-06). Run on **linear** data (where we are) — RC-Astro recommends SXT as early as possible, before any stretch. ⚠️ **Never run SXT after the HDR stretch / arcsinh / GHS** — those alter star profiles so the AI no longer recognises stars. See [[StarXTerminator Usage Notes]] (`rc-astro.com/starxterminator-usage-notes`).
+- Select AI: AI version **11**
 - Generate Star image: selected
-- Unscreen stars: enabled (produces a better star layer for screen-mode blending in step 6.1)
-- Overlap: 0.20
+- 🔴 **Unscreen stars: OFF** — Unscreen is for *nonlinear (stretched)* images. On **linear** data use **simple subtraction** (Unscreen off) → best star colour. (Pairs with screen-blend recombine in step 6.1.)
+- **Large Overlap: ON for bright-core / frame-filling nebulae** (M42, M16, M17) and wide/busy star fields — raises tile overlap 20 %→50 %, which is what removes the bright-core nebula remnant (the M42 "Trapezium blob"). Leave **off** for ordinary fields (≈2× faster). *RC-Astro names M42 as the textbook Large-Overlap case.*
+- ⚠️ **Don't STF-AutoStretch the resulting star image** — SXT carries the original's STF to the star image; auto-stretch destroys it and fakes faint residuals.
 - Keep the star image for later reintegration
 
 > From this point, work on the **starless** image. Stars are processed separately.
 
-### 2.6 Noise Reduction (Linear)
+### 2.7 Noise Reduction (Linear)
 
-**NoiseXTerminator** on starless image
-- Model: `NoiseXTerminator.3.mlpackage` (AI v3 — no Detail parameter; v2 had Detail: 0.15)
-- Denoise: 0.9
-- Iterations: **2**
-- Test on preview first
+**NoiseXTerminator** on starless image. ⚠️ **Never denoise before deconvolution** — NXT comes *after* BXT (it does ✓). NXT handles per-channel noise differences, so run it on the **combined color image**, not per-channel. Use the **real-time preview** to tune. See [[NoiseXTerminator 2_AI3 User Manual (PixInsight)]].
+- Model: `NoiseXTerminator.3.mlpackage` (AI v3 — `iterations` is v3-only; `detail` was v2-only, removed)
+- **Simple mode:** Denoise **0.85–0.9** (don't go to 1.0 — over-smooths), Iterations **2** (more iterations retain detail in noisy areas but can add artifacts)
+- 🟢 **Better — separation modes (NXT2/AI3):** color noise is the objectionable part, so **reduce color > intensity**, and **less LF reduction** to preserve dust/nebula structure. RC-Astro's recommended combined settings:
+  - HF intensity **80–90 %** · HF color **90–100 %**
+  - LF intensity **50–70 %** · LF color **100 %**
+  - tune **HF/LF Scale** per object (set Denoise-LF = 0 temporarily in real-time preview to find it)
+- Test on a preview first. *(A final, lighter NXT pass on the stretched image — Phase 4.4 — sees the final HOO colour and is the one the "after channel combination" guidance most favours.)*
 
-### 2.7 Ha Emission Line Separation (Optional)
+### 2.8 Ha Emission Line Separation (Optional)
 
 Remove Ha crosstalk from the green and blue Bayer channels. On the [[ASI2600MCPro]], green and blue pixels are partially sensitive to Ha (656nm), contaminating the OIII signal. This step subtracts the scaled Ha contribution, producing cleaner OIII for channel extraction in Phase 3.
 
@@ -251,6 +275,8 @@ Once determined, save the PixelMath process icon. These factors are reusable for
 ## Phase 3: Narrowband Color Balancing
 
 This is the critical step unique to Quad Band + OSC processing.
+
+> 🟡 **HOO is optional — and often wrong for *broadband-rich* emission nebulae (M42, M8).** Targets with strong Ha **and** OIII already show rich, balanced colour straight from the SPCC'd natural-colour image (red Ha, teal OIII, blue reflection). Forcing HOO (R=Ha, G=B=OIII) there gains little and **introduces chromatic G=B colour noise**. Reserve HOO/Foraxx for **faint dual-narrowband** targets that need the separation. For M42-class objects, consider **keeping the natural SPCC colour** and getting the Ha/OIII pop from a **saturation curve + SCNR** instead. (M42 reprocess, 2026-06-23 — HOO added noise for no benefit; natural colour was better.)
 
 ### 3.1 Channel Extraction
 
@@ -321,24 +347,12 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 1. **Link** channels, AutoStretch — should show the HOO color palette (red Ha, teal OIII)
 2. **Unlink**, AutoStretch — check channel balance
 
-### 3.5 Color Calibration (required before an HDR/MAS stretch)
+### 3.5 Color — already calibrated at 2.4 (SPCC), or balance manually
 
-After reassembling channels into an HOO composite, SPCC calibrates the color balance using combined filter curves. **Optional for a plain stretch, but required if you proceed to [[HDR-Workflow]] (MAS):** MAS amplifies colour, so an un-calibrated image yields the green-cast / washed-out-red failure — calibrate *before* the stretch, not after.
+🔴 **SPCC was moved to step 2.4** (the linear, *star-full* phase) — it photometers stars and **cannot run here on the starless HOO composite**. Don't try to run SPCC at this point.
 
-**SPCC** (SpectrophotometricColorCalibration):
-- Filters: **Sony CMOS R/G/B + Antlia Quadband** (combined per-Bayer-channel curves, not narrowband mode)
-- QE Curve: **Sony IMX411/455/461/533/571**
-- White reference: **G2V Star**
-- Bandwidth: **3nm** for all filters
-- Clustered sources: enabled
-- PSF growth: 1.25
-- Target source count: 8000
-- Neutralize background: enabled (select background ROI free of nebulosity)
-- Catalog: **Gaia DR3/SP**
-
-> This uses combined filter curves (sensor QE × filter transmission per Bayer channel) rather than pure narrowband mode. This is the correct approach for OSC + quad-band filters — the Bayer matrix mixes the narrowband signals across channels, so combined curves model the actual sensor response more accurately.
-
-> Optional — manual color balancing via CurvesTransformation (Phase 4.2) remains the alternative.
+- **If you ran SPCC at 2.4:** the OSC RGB is already colour-calibrated; the HOO remap inherited that. Proceed to the stretch — just verify the background is neutral (BackgroundNeutralization if needed).
+- **If stars were already removed without SPCC:** balance the HOO manually — **BackgroundNeutralization** (neutral sky) + **CurvesTransformation** (Ha/OIII balance to taste), done in the colour phase. Fine for an artificial HOO palette.
 
 ---
 
@@ -418,7 +432,7 @@ Work on the star image saved from step 2.5.
 ~(~starless * ~stars)
 ```
 
-This is a screen blend — combines starless nebula with the star field.
+This is a **screen blend** — combines the starless nebula with the star field. Per [[StarXTerminator Usage Notes]], this is the correct partner for **subtraction**-extracted (Unscreen-off, linear) stars: *recombine after stretching both, using screen blending.* So the linear flow is **subtraction-extract → stretch starless & stars separately → screen-blend here** (do **not** switch to additive — RC-Astro pairs subtraction with screen blend).
 
 ### 6.2 Final Adjustments
 
@@ -442,7 +456,7 @@ This is a screen blend — combines starless nebula with the star field.
 
 | Step | Broadband (L-Pro) | Quad Band |
 |------|-------------------|-----------|
-| Color calibration | SPCC with G2V reference | SPCC with combined filter curves (optional) — see step 3.5 |
+| Color calibration | SPCC with G2V reference | SPCC with combined filter curves — see step 2.4 (before star removal) |
 | Gradient removal | SPFC/MGC (PI 1.9) or DBE | GraXpert or SPFC/MGC — see step 2.2 |
 | Channel work | None (natural RGB) | Extract, remap Ha/OIII channels |
 | Color palette | Natural | HOO / Foraxx / manual |
