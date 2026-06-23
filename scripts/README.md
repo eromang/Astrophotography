@@ -58,6 +58,41 @@ Synthetic recovery is exact (Moffat 3.20 → 3.200 px, Gaussian 2.80 → 2.800 p
 
 ---
 
+## gradient_check.py — did gradient removal flatten the sky without eating the object?
+
+QA for a gradient-correction step (**GraXpert / MGC / DBE**). Quantifies the two things that matter on a frame-filling nebula like M42: did it **flatten the background**, and did it **avoid eating the faint outer wings** (the over-subtraction failure). Reads the corrected image (and optionally the background model), or A/B-compares two corrected images of the same field to pick a winner. Reuses `psf_image.py`'s XISF/FITS readers. Full guide + interpretation in [[../04_Processing/Pixinsight/Gradient-Check.md]].
+
+```bash
+python3 scripts/gradient_check.py corrected.xisf --model bg.xisf --png /tmp/gc   # single + model
+python3 scripts/gradient_check.py M42_MGC.xisf --against M42_GraXpert.xisf        # A/B verdict
+python3 scripts/gradient_check.py corrected.xisf --json                           # machine-readable
+```
+
+| Metric | Meaning |
+|---|---|
+| **rel_spread** (flatness) | percentile spread of local sky across an N×N grid, normalised to the median — **lower = flatter**; directly comparable between methods |
+| **negatives / dark-tile deficit** | over-subtraction: % negative pixels + how far the darkest region fell below the median region (in MAD) |
+| **wing mean-above-bg** | retained flux in an annulus around the object — the faint outer nebulosity; **higher = more wings preserved** |
+| **model imprint_corr** | correlation of the background MODEL with the object; **> 0.30 ⇒ the model contains the nebula** (it's about to subtract real signal) |
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--model PATH` | — | also analyse the background model (contrast + imprint) |
+| `--against PATH` | — | A/B compare vs a second corrected image (same registered field) → winner + reason |
+| `--png PREFIX` | — | write asinh previews (`_corrected.png`, `_model.png`, `_B_*`) |
+| `--grid` / `--pct` | 4 / 10 | flatness grid size / per-tile sky percentile |
+| `--json` | — | machine-readable output |
+
+**Worked example (M42 reprocess, 2026-06-22):** GraXpert @ 0.8 → rel_spread **0.018**, **0%** negatives, model **imprint_corr 0.003** (no nebula in the model) — a clean baseline. Compare against MGC+DR2 with `--against` and let the wing-signal delta decide. The `--against` verdict prefers **more wing signal as long as flatness is within 2× of the flatter method** — so it won't reward a method that "wins" flatness by over-flattening the nebula away.
+
+### Tests
+
+```bash
+python3 scripts/test_gradient_check.py   # synthetic gradient+nebula: flatness, wing-eating, imprint, center, A/B (5 tests)
+```
+
+---
+
 ## guiding_impact.py — is guiding limiting my resolution?
 
 Offline rebuild of the web **"HLP Guiding RMS Translator"**. Turns a guiding RMS (arcsec) into real imaging impact: the error in **pixels**, the **total FWHM** once seeing is folded in **in quadrature**, and a verdict on whether guiding is actually limiting resolution or the atmosphere still dominates. Full physics + this rig's numbers in [[../03_Techniques/Guiding-RMS-Impact.md]].
