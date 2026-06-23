@@ -93,6 +93,64 @@ python3 scripts/test_gradient_check.py   # synthetic gradient+nebula: flatness, 
 
 ---
 
+## find_background.py — find the optimal background ROI (fast)
+
+A numpy / integral-image reimplementation of the SetiAstro **FindBackground.js** PixInsight script. Finds the **darkest, flattest `size`×`size` window** — the background region to feed an SPCC neutralization ROI, a MultiscaleAdaptiveStretch background reference, BackgroundNeutralization, or DBE sampling. Reuses `psf_image.py`-style XISF/FITS reading. Full guide in [[../04_Processing/Pixinsight/Find-Background.md]].
+
+**Faster than the JS:** FindBackground.js samples pixels one-by-one in PixInsight's JS engine (O(N·window²)) then *approximates* with gradient descent. This computes per-window mean+stddev for **every** position in one O(N) pass via **integral images**, then takes the **exact** global minimum — **~2 s on a 96 MP drizzled master vs minutes**.
+
+```bash
+python3 scripts/find_background.py <image.xisf>                 # ROI coords + per-channel bg + colour-correction
+python3 scripts/find_background.py img.xisf --size 100 --top 5  # 5 best non-overlapping spots
+python3 scripts/find_background.py img.xisf --exclude 5000,3000,2000,2000 --png roi.png
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--size N` | 50 | ROI side length (px) |
+| `--exclude X,Y,W,H` | — | exclude a rectangle (repeatable) — e.g. the nebula core |
+| `--scale N` | 1 (exact) | downsample before searching; coords still reported full-res. Use 2–4 to cut memory on huge masters |
+| `--top N` | 1 | also print N best non-overlapping candidates |
+| `--png PATH` | — | stretched preview with the ROI box drawn (verify it's not on nebula) |
+| `--json` | — | machine-readable output |
+
+Scoring is faithful to FindBackground's default (average + standard deviation, image-normalised), with one fix: brightness is a consistent per-pixel channel mean throughout (the JS mixes a channel-sum into the stddev term).
+
+### Tests
+
+```bash
+python3 scripts/test_find_background.py   # integral vs brute-force, blob/gradient/noise avoidance, exclude, scale, colour (7 tests)
+```
+
+---
+
+## star_halos.py — measure star halos; suggest BXT Sharpen values
+
+Turns "the halos look less visible" into a **number**, and suggests BlurXTerminator **Adjust Star Halos** + **Sharpen Stars** starting values. For the brightest unsaturated stars it builds a background-subtracted radial profile, measures the **halo index** (mean normalised flux at 2.5–5× the core HWHM, where a clean PSF ≈ 0), and takes the **bright-star p90** (halos are a bright-star phenomenon — the median is dominated by faint clean stars). FWHM comes from `psf_image.py`'s Moffat fit; both readers/detection are reused from `psf_image`. Full guide: [[../04_Processing/Pixinsight/Star-Halos.md]].
+
+```bash
+python3 scripts/star_halos.py img.xisf                       # halo index + suggested Adjust Star Halos / Sharpen Stars
+python3 scripts/star_halos.py before.xisf --against after.xisf   # measure the actual halo REDUCTION (%)
+```
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--against PATH` | — | second image (post-BXT) → halo-reduction % — the strongest use |
+| `--stars N` | 60 | brightest N stars to measure |
+| `--rmax N` | 40 | radial-profile half-box (px) |
+| `-k N` | 6.0 | detection threshold (σ) |
+| `--json` | — | machine-readable |
+
+⚠️ The index→slider mapping is an **empirical heuristic** (M42-calibrated), a data-driven *starting* value — confirm visually, and use `--against` to verify the reduction. Measure the **Sharpen Stars** value on the **Correct-Only output** (the Sharpen input), same rule as the BXT PSF diameter.
+
+### Tests
+
+```bash
+python3 scripts/test_star_halos.py   # haloed>clean, clean-low, FWHM recovery, monotonic suggestions, reduction direction (6 tests)
+```
+
+---
+
 ## guiding_impact.py — is guiding limiting my resolution?
 
 Offline rebuild of the web **"HLP Guiding RMS Translator"**. Turns a guiding RMS (arcsec) into real imaging impact: the error in **pixels**, the **total FWHM** once seeing is folded in **in quadrature**, and a verdict on whether guiding is actually limiting resolution or the atmosphere still dominates. Full physics + this rig's numbers in [[../03_Techniques/Guiding-RMS-Impact.md]].
