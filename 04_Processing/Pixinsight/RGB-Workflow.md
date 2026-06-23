@@ -61,6 +61,9 @@ Prioritizes tight stars (FWHM²), good signal, and round stars. FWHM squared bec
   - **Bias tab:** bias master + dark flat master (WBPP matches by exposure)
   - **Darks tab:** dark master matching light exposure and temperature
   - **Flats tab:** flat frames matching filter and optical train
+
+> ⚠️ **NoFilter lights won't match a filter-labelled flat (e.g. L-Pro) → flat silently skipped.** Stamp the lights' filter before WBPP and **Clear + re-add** them if already loaded (WBPP caches metadata on add). Full procedure + verification in [[../Calibration/Calibration-Strategy#FITS FILTER keyword fix]].
+
 - Calibration Settings (Light row): Dark Auto, Flat Auto
 - Cosmetic Correction: **Automatic**, High sigma 10
 - CFA Settings: CFA Images checked, Mosaic pattern Auto, DeBayer method **VNG**
@@ -152,7 +155,7 @@ Plate-solve the image for SPFC/SPCC to work correctly.
    - PSF growth: 1.75
 
 2. **MGC** (MultiscaleGradientCorrection)
-   - Load MARS DR1 + MARS-U databases (Preferences → set default files)
+   - Load **MARS DR2 + u01** databases (Preferences → set default files) — DR2 doubles DR1 coverage (since 2026-06); see [[MGC-Reference#MARS Database]]
    - MARS bands: R, G, B (broadband)
    - Enable "Show gradient model" to verify (set STF precision to **24 bits** to see posterized model)
    - **Gradient scale** (most important parameter):

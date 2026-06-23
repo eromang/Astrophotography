@@ -112,6 +112,16 @@ Listed in both workflows but no guidance on when/how to use.
 
 WBPP settings present (Winsorized Sigma Clipping, Sigma High ~1.9) but could be refined.
 
+### MLDenoise — evaluate vs NoiseXTerminator
+
+**Search:** `MLDenoise`, `Core ML denoise`
+
+PixInsight's **first-party ML denoiser** (Technology Preview, announced 2026-06). A native alternative to [[NoiseXTerminator]]. **Runnable now:** requires **1.9.4 Lockhart build 1693+** (have **1695** ✓) and **macOS ARM64** (Apple Silicon ✓); GPU-accelerated via Apple Core ML. Install via regular update channel, then download the `.xmlm` model from `pixinsight.com/dist/` → set in MLDenoise Preferences. Best on **color-calibrated, linear** images; refine on reduced previews; linear masks as local support.
+
+**Status:** Technology Preview — no real-time preview yet, caching "not ideal." **Full Linux/macOS/Windows release ~July 2026.**
+
+**Evaluation plan (revisit after July release):** A/B against NXT at the linear denoise step ([[QuadBand-OSC-Workflow#2.6 Noise Reduction]] / [[RGB-Workflow]]) on the same preview — compare faint-nebula detail vs background-noise floor. ⚠️ It wants **color-calibrated** input, so for a fair narrowband test run it *after* the HOO/SPCC color step, not on the raw linear master. Don't switch the production workflow off NXT until the full release is out and the A/B is done.
+
 ---
 
 ## Resolved

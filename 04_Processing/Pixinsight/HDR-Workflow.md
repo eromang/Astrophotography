@@ -6,100 +6,105 @@ tags:
   - processing/pixinsight
 ---
 
-# HDR Processing
+# HDR Processing (MAS + HDRMT)
 
-Workflow for high dynamic range targets — objects with a bright core surrounded by faint extended structure. This workflow replaces the stretch phase of either parent workflow.
+Workflow for high dynamic range targets — objects with a **bright core surrounded by faint extended structure**. This replaces the **stretch phase** of either parent workflow; it is **generic** — the *method* is identical for nebulae and galaxies, only the **parameters differ by target class** (see [Parameter Reference](#parameter-reference)).
 
-> **This is not a standalone workflow.** Complete the linear processing phase of your parent workflow first, then use this for the stretch + HDR recovery steps, then return to the parent workflow for star reintegration and export.
+> **Not a standalone workflow.** Finish the *linear* phase of your parent workflow first ([[RGB-Workflow]] for galaxies/L-Pro, [[QuadBand-OSC-Workflow]] for emission nebulae/FQuad), do this for the stretch + HDR recovery, then return to the parent for star reintegration and export.
+
+> **Updated 2026-06 to MAS-first**, corrected against [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]] (M. Käßler, 2026-01) + Light Vortex / ChaoticNebula. Key corrections: **DRC is *low* for bright nebulae** (the core is HDRMT's job, not DRC's), and **HDRMT "Number of layers" is the critical control** (there is no HDRMT "intensity").
 
 ---
 
 ## When to Use
 
-Use this workflow when a standard stretch either clips the bright core or leaves faint outer regions invisible. Typical HDR targets have a brightness ratio of 100:1 or more between core and periphery.
+A standard stretch either clips the bright core or leaves the faint periphery invisible (brightness ratio ≥ 100:1 core-to-edge).
 
-| Target Type | Example | HDR Challenge |
+| Target class | Examples | Parent workflow |
 |---|---|---|
-| Bright core emission nebula | [[M42-Orion]], M16, M17 | Bright ionized core vs faint outer Ha |
-| Galaxy with bright nucleus | [[M31-Andromeda]], M64 | Nucleus saturates before spiral arms appear |
-| Supernova remnant | NGC 6960/6992 (Veil) | Bright filaments vs faint diffuse emission |
+| Bright-core **emission nebula** | [[M42-Orion]], M16, M17 | [[QuadBand-OSC-Workflow]] (FQuad, HOO) |
+| **Galaxy** with bright nucleus | [[M31-Andromeda]], M81, M101, M64 | [[RGB-Workflow]] (L-Pro, RGB) |
+| **Supernova remnant** | Veil (NGC 6960/6992) | [[QuadBand-OSC-Workflow]] |
+
+> M42 ≠ M31. They differ at **two** levels: the **parent** (emission-nebula narrowband vs galaxy broadband — filter, channel work, SPCC reference) *and* the **HDR parameters** (Szenario B nebula vs A galaxy). This note owns only the second; the parent owns the first.
 
 ---
 
 ## Entry Point
 
-Start with a **linear, starless, noise-reduced RGB image** (stars already removed and saved separately).
+Enter with a **linear, color-calibrated, starless, noise-reduced** image. ⚠️ **SPCC is mandatory *before* MAS** — MAS intensifies colour, so an un-calibrated image produces the classic green cast / washed-out reds (see [Troubleshooting](#troubleshooting)).
 
-| Coming from | Enter after |
-|---|---|
-| [[RGB-Workflow]] | Step 2.10 — NoiseXTerminator on starless |
-| [[QuadBand-OSC-Workflow]] | Phase 3.4 — Channel reassembly (ChannelCombination) |
+| Coming from | Enter after | (Must already be done) |
+|---|---|---|
+| [[RGB-Workflow]] | Step 2.10 — NXT on starless | gradient removed, **SPCC**, BXT, stars removed |
+| [[QuadBand-OSC-Workflow]] | Phase 3.4 → **3.5 SPCC** (color-balanced HOO) | gradient removed, **SPCC**, BXT, stars removed, HOO reassembled |
+
+MAS lives under **Process → Intensity Transformations → MultiscaleAdaptiveStretch** (added PI 1.9.3 build 1646, Dec 2025; if missing after an update: Process → Modules → Install Modules → **Search**).
 
 ---
 
 ## Method A: MAS + HDRMT (Recommended)
 
-MAS (MultiscaleAdaptiveStretch) compresses dynamic range *during* the stretch, preserving highlight detail that HDRMT can then recover. This produces cleaner results than stretching first and recovering after.
+MAS delinearises with statistical, multiscale analysis — replacing the old 20–30 min GHS+masks+curves grind with a few minutes at ~90–95 % of the quality. HDRMT then physically compresses the bright **nebula/nucleus core** that MAS deliberately leaves bright.
 
-### A.1 Background Reference
+### A.1 — STF: assess the linear image *(display only)*
 
-Select a preview on a dark sky area free of nebulosity. MAS uses this region to compute the median for delinearization. Without a reference, the median includes nebula pixels, producing a darker result.
+1. Open **ScreenTransferFunction (STF)**.
+2. Click the **nuclear/radioactive icon** (bottom-left) to **AutoStretch in linked mode** (chain-link icon engaged). This is **display-only — the data stays linear.**
+3. Confirm: background is clean (no residual gradient), the faint outer structure *and* the bright core are both present. HOO data will look tinted — normal.
+4. *(Optional)* click the chain-link to **unlink**, AutoStretch again → reveals per-channel imbalance. Re-**link** before continuing.
 
-### A.2 MAS Delinearization
+> STF only changes the *screen*, never the pixels. It's how you see linear data; MAS reads the real linear values underneath.
 
-**MultiscaleAdaptiveStretch**
+### A.2 — Background reference
+
+With the STF stretch applied (so dark sky is visible), drag a small **preview onto an empty dark-sky region** free of nebulosity. MAS uses this region's median to anchor the delinearisation. Without it, the median includes nebula and the result comes out too dark.
+
+### A.3 — MAS delinearisation
+
+Open **MultiscaleAdaptiveStretch** and enable **Real-Time Preview** (drag the preview triangle onto the image, or preview the main view).
+
+Set parameters **by target class** ([Parameter Reference](#parameter-reference)). For a **bright emission nebula (M42)**:
+
+| Parameter | Value | Why |
+|---|---|---|
+| **Target Background** | **0.15 – 0.20** | higher than a galaxy — lifts the faint outer dust/IFN |
+| **Aggressiveness** | **medium-low** | high aggressiveness clips the faint outer nebula and triggers ringing |
+| **Dynamic Range Compression (DRC)** | **~0.20 (low)** | DRC protects *stars*; **too-high DRC flattens the nebula core** — leave the core for HDRMT |
+| **Contrast Recovery** | **enabled, but watch** | at the Trapezium's hard edges it can cause **dark rings** → if so, **disable** |
+| **Color Saturation** | **disabled** | add saturation later; aggressive stretch on bright areas makes colour artifacts |
+
+Tune on the real-time preview, then **Apply to the main view.**
+
+### A.4 — STF: **RESET after the stretch** ⚠️ *(don't skip)*
+
+MAS just applied a **real, permanent stretch** — the data is now **non-linear**. The old linear-era STF would now **double-stretch** the screen (blown-out, panicky-looking).
+
+1. In **ScreenTransferFunction**, click **Reset** (the ⟳ / reset button) to return STF to identity.
+2. The screen now shows the **true** stretched data. Re-AutoStretch *only* if you want a gentle display tweak — but never assess the stretch through a stale linear STF.
+
+> This is the single most common STF mistake: judging a just-stretched image through the old auto-stretch and thinking the tool blew it out.
+
+### A.5 — HDRMT (the core compression)
+
+On the **non-linear** image, open **HDRMultiscaleTransform**:
 
 | Parameter | Value | Notes |
 |---|---|---|
-| Color saturation | **Disabled** | Mandatory — prevents out-of-gamut artifacts that HDRMT amplifies |
-| Target background | 0.15 | Default, works for most images |
-| Contrast recovery | Enabled | Compensates for DR compression flattening faint regions |
+| **Number of layers** | **6–7** (try both) | **THE critical control** — ±1 layer changes the result dramatically. 7 keeps the Trapezium stars visible without a flat core |
+| **Lightness mask** | **Enabled** | restricts the effect to the bright core; shadows untouched |
+| **Deringing** | enable **small** values *if* dark rings appear around stars; or switch **Median transform** on (avoids ringing, slower) | |
+| Iterations / To lightness | default | |
 
-**Tuning intensity + aggressiveness:**
+**Procedure:** create a preview over the core → apply at 6 and 7 layers on separate previews → pick the one that reveals core structure without flattening contrast → apply to the main view. *(Advanced: blend several runs at layers 5–9 for the best core.)*
 
-These two parameters work as a pair:
+### A.6 — Colour enhancement
 
-1. Increase **dynamic range compression** until bright core structures are visible
-2. Set contrast recovery **intensity** to 0.5 as starting point
-3. Increase **aggressiveness** for more shadow contrast
-4. Decrease **intensity** to compensate (aggressiveness and intensity are inversely related)
-5. Watch for shadow clipping — if the faintest structures disappear, aggressiveness is too high
+- **CurvesTransformation (Saturation)** — steep rise on the left (boost the low-saturation highlights HDRMT just revealed), flat on the right (preserve already-saturated nebula).
+- **BackgroundNeutralization** if a cast remains.
+- **STF check (data is non-linear → STF at identity):** link + AutoStretch only to *verify* neutrality, then reset.
 
-> **Test on previews.** Create 4–5 previews with different intensity/aggressiveness pairs before applying to the main view.
-
-Apply to main view when satisfied.
-
-### A.3 HDRMT (HDR Multiscale Transform)
-
-**HDRMultiscaleTransform**
-
-| Parameter | Value | Notes |
-|---|---|---|
-| Lightness mask | **Enabled** | Restricts effect to highlights — no processing in shadows |
-| Deringing | **Enabled, 0.05** | Controls ringing artifacts from multiscale algorithm |
-| Intensity | 0.5–0.75 | Start at 0.5, increase if core detail is still clipped |
-
-**Workflow:**
-1. Create previews of the bright core region
-2. Apply HDRMT at intensity 0.25, 0.5, 0.75, and 1.0 on separate previews
-3. Compare — choose the value that reveals core structure without flattening contrast
-4. Apply to main view
-
-> **Deringing caution:** Values above 0.05 can cause artifacts. These are easy to spot — if you see dark halos around bright structures, reduce deringing. For most images 0.03–0.05 is sufficient.
-
-### A.4 Color Enhancement
-
-**CurvesTransformation** — Saturation channel
-
-Draw a curve that:
-- **Boosts** low-saturation colors (highlight regions where HDRMT revealed detail)
-- **Preserves** already-saturated regions (nebulosity that didn't need recovery)
-
-This means a steep rise on the left side of the saturation curve, flattening toward the right.
-
-**BackgroundNeutralization** if a color cast remains after the stretch.
-
-### A.5 Return to Parent Workflow
+### A.7 — Return to parent
 
 | Return to | Resume at |
 |---|---|
@@ -110,69 +115,60 @@ This means a steep rise on the left side of the saturation curve, flattening tow
 
 ## Method B: GHS + HDRMT (Alternative)
 
-Use when GHS is preferred for finer midtone control, or when the target has moderate (not extreme) dynamic range.
+Use when you want manual midtone control, or MAS misbehaves on an unusual histogram.
 
-> **Why MAS is preferred:** MAS compresses dynamic range *during* the stretch, so HDRMT has more data to work with. GHS stretches first, potentially clipping highlights before HDRMT can recover them. GHS + HDRMT is a fallback.
+1. **STF AutoStretch (linked)** to view the linear image (A.1).
+2. **GeneralizedHyperbolicStretch** — Symmetry Point near the histogram peak; apply **several small** stretches, not one aggressive pass. No built-in DR compression, so the core *will* clip more than MAS.
+3. **STF Reset** after stretching (A.4).
+4. **HDRMT** as A.5 — but because GHS pre-compressed less, you may need **+1 layer** or a second pass.
+5. Colour (A.6) → return to parent (A.7).
 
-### B.1 Background Reference
-
-Same as A.1.
-
-### B.2 GHS Stretch
-
-**GeneralizedHyperbolicStretch**
-
-- Set Symmetry Point (SP) near the histogram peak
-- Apply multiple small stretches rather than one aggressive pass
-- No built-in dynamic range compression — the bright core will clip more than with MAS
-
-### B.3 HDRMT
-
-Same process as A.3, but with higher intensity:
-
-| Parameter | Value | Notes |
-|---|---|---|
-| Lightness mask | **Enabled** | Same as Method A |
-| Deringing | **Enabled, 0.05** | Same as Method A |
-| Intensity | **0.75–1.0** | Higher than Method A — compensates for GHS not pre-compressing DR |
-
-### B.4 Color Enhancement
-
-Same as A.4.
-
-### B.5 Return to Parent Workflow
-
-Same as A.5.
+> **Why MAS is preferred:** MAS compresses dynamic range *during* the stretch, so HDRMT has more highlight data to work with. GHS stretches first and can clip the core before HDRMT sees it.
 
 ---
 
 ## Parameter Reference
 
-Starting points by target class. Adjust per image based on preview comparisons.
+Starting points by target class. The **bright-emission-nebula** and **galaxy** rows are sourced; SNR / star-field are extrapolated — refine and update.
 
-### MAS Parameters
+### MAS (by class)
 
-| Target Class | Example | Aggressiveness | Intensity | DR Compression |
-|---|---|---|---|---|
-| Bright core nebula | M42, M16, M17 | 0.85 | 0.35 | High |
-| Supernova remnant | Veil Nebula | 0.70 | 0.50 | Moderate |
-| Galaxy with bright nucleus | M31, M64 | 0.60 | 0.50 | Low–Moderate |
+| Target class | Examples | Target Background | Aggressiveness | **DRC** | Contrast Recovery | Saturation |
+|---|---|---|---|---|---|---|
+| **Bright emission nebula** | M42, M16, M17 | **0.15–0.20** | medium-low | **0.20** (core → HDRMT) | check rings → disable if artifacts | **disabled** |
+| **Galaxy (bright nucleus)** | M31, M81, M101, M64 | **0.12–0.14** | standard | **0.5–1.0** | enabled | enabled |
+| Supernova remnant *(extrapolated)* | Veil | ~0.13–0.15 | standard | ~0.5 (moderate) | enabled | enabled |
+| Dense star field *(extrapolated)* | Milky Way | 0.14–0.16 | high | **2.0+** (max — shrinks stars) | enabled | enabled |
 
-### HDRMT Parameters
+> Default starting point (any object): Target Background **0.12**, DRC **0.5**, Contrast Recovery on, Saturation on. Then shift per the row above.
 
-| Target Class | HDRMT Intensity (after MAS) | HDRMT Intensity (after GHS) | Deringing |
+### HDRMT (by class)
+
+| Target class | **Number of layers** | Lightness mask | Deringing |
 |---|---|---|---|
-| Bright core nebula | 0.50–0.75 | 0.75–1.00 | 0.05 |
-| Supernova remnant | 0.25–0.50 | 0.50–0.75 | 0.03 |
-| Galaxy with bright nucleus | 0.25–0.50 | 0.50–0.75 | 0.03 |
+| Bright emission nebula (M42) | **6–7** | enabled | small-scale, or Median transform, *if* star rings |
+| Galaxy nucleus (M31) *(extrapolated)* | 5–6 (nucleus is small) | enabled | as needed |
+| Supernova remnant *(extrapolated)* | 6 | enabled | as needed |
 
-> Bright core nebula values sourced from PixInsight official MAS video (M42 example). Other target classes are extrapolated starting points — update these as you process more targets.
+> HDRMT's effect is governed by **Number of layers + Iterations + (Median/Deringing)** — there is **no "intensity" slider**. More layers = stronger core compression over a larger scale.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| **Green cast** after MAS | colour not calibrated before the stretch (OSC RGGB green dominance) — MAS amplifies it | **SPCC *before* MAS**; if it persists, **SCNR** *after* the stretch |
+| **Channel clipping** (red lost, OIII-dominant data) | Target Background too low (< 0.10) | raise Target Background to **≥ 0.12** |
+| **Dark rings around stars** | Contrast Recovery / over-aggressive multiscale (Gibbs-like overshoot) | lower **Aggressiveness**, raise **DRC**, or **disable Contrast Recovery** |
+| **Flat / grey core** | DRC too high (flattened the core) **or** wrong HDRMT layer count | lower DRC; re-do HDRMT at a different layer count |
+| **Screen looks blown out right after MAS** | stale linear STF double-stretching | **Reset STF** (A.4) — the data is fine |
 
 ---
 
 ## Exit Point
 
-After completing the HDR stretch + recovery + color enhancement, return to the parent workflow:
+After stretch + core recovery + colour, return to the parent workflow:
 
 | Return to | Resume at |
 |---|---|
@@ -183,4 +179,9 @@ After completing the HDR stretch + recovery + color enhancement, return to the p
 
 ## Future Addition
 
-**Multi-exposure HDR composition** — combining short exposures (e.g., 30s for M42 trapezium) with long exposures (e.g., 300s for outer nebulosity) using HDRComposition or EZ_HDR *before* entering this workflow. This produces a wider dynamic range master stack as input.
+**Multi-exposure HDR composition** — combine short exposures (e.g. 30 s for the M42 Trapezium) with long exposures (300 s for outer nebulosity) via **HDRComposition** / EZ_HDR *before* entering this workflow, for a wider-DR master stack as input.
+
+## Sources
+- [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]] (M. Käßler, 2026-01-04) — MAS architecture, Szenario A/B/C parameters, troubleshooting
+- Light Vortex Astronomy (HDRMT Number-of-layers = critical, layers 5–9 blending), ChaoticNebula (HDRMT)
+- PixInsight Dev — MultiscaleAdaptiveStretch tool thread

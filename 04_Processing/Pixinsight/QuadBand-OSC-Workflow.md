@@ -69,6 +69,9 @@ Prioritizes tight stars (FWHM²), good signal, and round stars.
   - **Bias tab:** bias master + dark flat master (WBPP matches by exposure)
   - **Darks tab:** dark master matching light exposure and temperature
   - **Flats tab:** flat frames matching **[[Antlia-FQuad]]** filter and optical train
+
+> ⚠️ **NoFilter lights won't match a FQuad flat → flat silently skipped.** Manual filters (no EFW) mean lights group as `NoFilter` while the FQuad flat groups as `FQuad`, so WBPP applies **no flat**. Before WBPP, stamp the lights: `python3 scripts/set_filter.py <Lights> --filter FQuad --recursive --apply` (use `--filter` because reprocess/SFS `.xisf` filenames have no filter token; it writes the XISF filter *property* WBPP reads). **WBPP caches metadata on add — if lights were already loaded, Clear the Lights tab and re-add them** so they regroup under `FQuad`. Verify before Run: every light group shows **`Flat ✓`** on the Calibration tab, or the **Calibration Diagram** shows a `÷ MASTER Flat` node. See [[../Calibration/Calibration-Strategy#FITS FILTER keyword fix]]. (Learned 2026-06-22, M42 reprocess.)
+
 - Calibration Settings (Light row): Dark Auto, Flat Auto
 - Cosmetic Correction: **Automatic**, High sigma 10
 - CFA Settings: CFA Images checked, Mosaic pattern Auto, DeBayer method **VNG**
@@ -157,11 +160,12 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
    - PSF growth: 1.75
 
 2. **MGC** (MultiscaleGradientCorrection)
-   - Use MARS DR1 database (v1.1+ includes both Ha and **O-III band** data)
+   - Use **MARS DR2** database (`MARS-DR2-1.0.3-s08.xmars`, + `u01`) — includes Ha and **O-III band** data; doubles DR1 coverage (since 2026-06). See [[MGC-Reference#MARS Database]]
    - Assign MARS bands: **Ha** to red channel, **O-III** to green and blue channels
    - Enable "Show gradient model" to verify (set STF precision to **24 bits**)
-   - **Gradient scale**: 512–1024 (lower = finer correction, higher = safer)
+   - **Gradient scale**: **2048** for bright frame-filling nebulae (M42/M16/M17) — lower values (≤1024) let structure-separation carve a *dark hole* at the object core; 512–1024 only for small objects on open sky. See [[Gradient-MGC-vs-GraXpert-M42]].
    - **Structure separation**: **1** for narrowband images (more cohesion, less overcorrection of bright nebulae)
+   - ⚠️ **On near-equatorial fields (Dec ≲ 0°), GraXpert usually beats MGC even with DR2 coverage** — MGC's reference fit degrades at the coverage edge. Compare with `scripts/gradient_check.py --against` before committing; on M42 (Dec −5°) GraXpert was ~2× flatter across the entire MGC parameter space.
    - **Scale factor** tuning per channel on a preview:
      - If nebula traces remain → increase scale factor
      - If nebula appears inverted → decrease scale factor
@@ -170,6 +174,8 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
      - Hold **Ctrl** to move all sliders simultaneously
 
 **Which to use:** Try both on a preview. Some images respond better to MGC (especially with strong vignetting), others to GraXpert (especially with complex nebula shapes). Results are image-dependent.
+
+> **Decide objectively, not by eye:** save each candidate as a **linear** `.xisf` and run `python3 scripts/gradient_check.py methodB.xisf --against methodA.xisf` — it scores background flatness + **wing preservation** (the over-subtraction failure on frame-filling nebulae) and names a winner. Add `--model bg.xisf` to confirm a background model carries no nebula imprint. See [[Gradient-Check]]. On extended objects (M42/M16/M17), MGC should preserve the outer wings better than GraXpert — this is how you verify it actually did.
 
 ### 2.3 Star Correction
 
@@ -315,9 +321,9 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 1. **Link** channels, AutoStretch — should show the HOO color palette (red Ha, teal OIII)
 2. **Unlink**, AutoStretch — check channel balance
 
-### 3.5 Color Calibration (Optional)
+### 3.5 Color Calibration (required before an HDR/MAS stretch)
 
-After reassembling channels into an HOO composite, SPCC can calibrate the color balance using combined filter curves.
+After reassembling channels into an HOO composite, SPCC calibrates the color balance using combined filter curves. **Optional for a plain stretch, but required if you proceed to [[HDR-Workflow]] (MAS):** MAS amplifies colour, so an un-calibrated image yields the green-cast / washed-out-red failure — calibrate *before* the stretch, not after.
 
 **SPCC** (SpectrophotometricColorCalibration):
 - Filters: **Sony CMOS R/G/B + Antlia Quadband** (combined per-Bayer-channel curves, not narrowband mode)

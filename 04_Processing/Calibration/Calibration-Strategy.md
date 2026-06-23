@@ -41,6 +41,10 @@ Only one calibration frame type depends on the filter:
 
 > **FITS FILTER keyword fix:** with manual filters (no EFW) the ASIAIR leaves the FITS `FILTER` keyword blank — only the filename carries the filter — so WBPP can't auto-match flats and you must hand-load one flat at a time. **Run `python3 scripts/set_filter.py <folder> --apply` on the lights + flats before WBPP** to write `FILTER` from the filename token; WBPP then groups flats by filter automatically. Data-preserving (header-only edit). See `scripts/README.md`.
 
+> ⚠️ **Reprocessing old data — two extra traps (learned 2026-06-22, M42 reprocess):**
+> 1. **Filenames with no filter token.** SFS-`_a.xisf` and other intermediate frames often have no filter in the name (e.g. `Light_M 42_160.0s_..._0001_a.xisf`), so auto-detect finds nothing. **Force it:** `python3 scripts/set_filter.py <Lights> --filter FQuad --recursive --apply`. For `.xisf` this writes the **XISF `Instrument:Filter:Name` property** (what WBPP actually groups `.xisf` by — the FITS keyword is ignored for `.xisf`).
+> 2. **WBPP caches frame metadata at add-time.** If you already added the lights and *then* stamp the filter, WBPP still shows them as `NoFilter` (lights grouped `NoFilter`, flat grouped `FQuad` → flat **silently not applied**). **You must Clear the Lights tab and re-add the frames** for the new filter to take effect. Confirm via the Calibration tab (`Flat ✓` on every light group) or **Show Calibration Diagram** (the `÷ MASTER Flat` node must be present) before you Run.
+
 ---
 
 ## Dark Frame Library Plan
