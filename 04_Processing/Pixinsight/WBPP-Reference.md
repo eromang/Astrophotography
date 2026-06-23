@@ -18,6 +18,20 @@ Complete reference for all WBPP settings. Based on PixInsight 1.9.2+ WBPP script
 
 WBPP has 7 main tabs: **Bias** | **Darks** | **Flats** | **Lights** | **Calibration** | **Post-Calibration** | **Pipeline**
 
+**Panel → tab map** (which settings panel lives in which tab — easy to confuse):
+
+| Panel | Tab(s) | Note |
+|---|---|---|
+| **Image Integration** | Bias · Darks · Flats · **Lights** | Builds the master *per tab*. On Bias/Darks/Flats it's **only used when stacking RAW calibration frames** — ignored when loading pre-built masters. On Lights = the final light stack (this is the one we tune: WSC, Sigma High 1.9, large-scale rejection) |
+| **Overscan** | Bias · Darks · Flats | CCD overscan — **Apply OFF** (the ASI2600 CMOS has none) |
+| **Image Registration** | **Lights only** | StarAlignment (distortion correction, etc.) |
+| **Local Normalization** | **Lights only** | background equalization |
+| **Subframe Weighting / Frame Selection** | **Lights only** | |
+| **Astrometric Solution** | **Lights only** | plate-solve per frame (pixel size 3.76 µm!) |
+| **Drizzle** | **Post-Calibration** | drizzle 2× |
+
+> So **Image Integration appears in 4 tabs** (same option set, different recommended values for calibration vs lights), while **Image Registration / Local Normalization / Astrometric are Lights-only**.
+
 ---
 
 ## Lights Tab
@@ -231,13 +245,20 @@ Holds flat frames for calibrating lights.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| **Image Integration** | | |
+| **Image Integration** (full panel — same option set as Bias/Darks) | | |
 | Combination | Average | Combination method |
 | Rejection algorithm | Auto | Pixel rejection method |
-| Sigma low/high | 4.00 / 3.00 | Sigma clipping thresholds |
+| Percentile low / high | 0.20 / 0.10 | Percentile clipping thresholds |
+| Sigma low / high | 4.00 / 3.00 | Sigma clipping thresholds |
+| Linear fit low / high | 5.00 / 3.50 | Linear fit clipping thresholds |
+| ESD outliers | 0.30 | Generalized ESD outlier fraction |
+| ESD significance | 0.05 | Generalized ESD significance level |
+| RCR limit | 0.10 | Robust Chauvenet rejection limit |
 | Large-scale pixel rejection | Unchecked | Not needed for flats |
-| Large-scale layers | — | — |
-| Large-scale growth | — | — |
+| Large-scale layers | 2 (inactive) | greyed unless large-scale rejection is enabled |
+| Large-scale growth | 2 (inactive) | greyed unless large-scale rejection is enabled |
+
+> Only used when stacking **raw** flats; ignored when loading a pre-built master flat.
 
 ---
 
