@@ -77,7 +77,7 @@ External SSD: `/Volumes/T7/Astrophotography/`
 ## Key Lessons (from processing sessions)
 
 1. **ImageSolver:** Never force values — fails on rotated images. Use sensitivity 0.30, exhaustive matching.
-2. **MGC broadband:** MARS has no R/G/B data — use GraXpert for broadband, MGC only for narrowband.
+2. **MGC broadband:** MARS **DR1** had no R/G/B data for several fields — GraXpert was the broadband fallback. ⚠️ **Re-evaluate on MARS DR2** (installed 2026-06-23, doubles coverage → may now cover broadband fields). Decide per-field by running MGC; verify with `scripts/gradient_check.py`.
 3. **SPCC + DBE conflict:** Disable SPCC Background Neutralization when DBE was used for gradient removal.
 4. **NXT v3:** No Detail parameter (removed from v2). Only Denoise + Iterations.
 5. **Drizzle 2x:** Pixel size halves to 1.88 µm. ImageSolver and WBPP may need manual plate solving on drizzled output.

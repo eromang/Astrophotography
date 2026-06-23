@@ -12,7 +12,9 @@ MGC uses the MARS databases to model and remove gradients from astrophotography 
 
 > **Prerequisite:** Run SPFC (SpectrophotometricFluxCalibration) before MGC. The image must be flux-calibrated.
 
-> **MARS coverage:** MGC requires MARS reference data matching your field and filters. Check coverage first — if MARS lacks data for your field/filters, use **GraXpert** instead. Coverage varies: some broadband fields have R/G/B data (e.g., NGC 7000), some don't (e.g., NGC 5746).
+> **MARS coverage:** MGC requires MARS reference data matching your field and filters. Check coverage first — if MARS lacks data for your field/filters, use **GraXpert** instead. Coverage varies by field and band.
+>
+> ⚠️ **DR2 doubles the coverage (2026-06).** The "no coverage" findings below (NGC 5746, Mel 111, etc.) were all hit on **DR1** — **re-test them on DR2 before assuming GraXpert is still required.** DR2 extends to the entire Northern Hemisphere with improved depth, so previously-uncovered broadband fields may now solve. The empirical test is simply running MGC: if it pulls reference data, you have coverage; if it errors *"No reference data found,"* you don't.
 
 ---
 
@@ -20,12 +22,13 @@ MGC uses the MARS databases to model and remove gradients from astrophotography 
 
 | Setting | Description |
 |---------|-------------|
-| MARS-DR1-1.1.1.xmars | Main MARS database (includes Ha, O-III, L, and some R/G/B broadband) |
-| MARS-DR1-u01-1.0.1.xmars | User-contributed database (additional coverage) |
+| **MARS-DR2-1.0.3-s08.xmars** | **Primary (current, since 2026-06-23).** v1.0.3, 1.64 GiB. Doubles DR1 coverage → entire Northern Hemisphere, improved depth/homogeneity. Includes Ha, O-III, L, and broadband bands. Replaces DR1. |
+| MARS-DR1-u01-1.0.1.xmars | User-contributed database (additional coverage) — supplementary, keep alongside DR2 |
+| MARS-DR1-1.1.1.xmars | Superseded official DR1 — fallback only until DR2 is field-proven |
 
-Load both databases. Set default files in Preferences to avoid reloading each session.
+Load **DR2 + u01**. Set default files in Preferences to avoid reloading each session. (Keep DR1 available as a fallback until DR2 is validated on your fields, then retire it.)
 
-**SSD location:** `/Volumes/T7/Astrophotography/XMARS/`
+**SSD location:** `/Volumes/T7/Astrophotography/XMARS/`  ·  installed + SHA-1 verified 2026-06-23 — see [[../Calibration/Master-Library#Additional SSD Resources]].
 
 ---
 
@@ -73,10 +76,12 @@ Load both databases. Set default files in Preferences to avoid reloading each se
 
 | Scale | Use case |
 |-------|----------|
-| **2048** | Simple, gentle gradients (first try) |
-| **1024** | Default — most images |
-| **512–384** | Complex gradients |
+| **2048** | Simple/gentle gradients **and the safe default for bright, frame-filling nebulae** (M42/M16/M17) |
+| **1024** | Smaller objects on mostly-empty sky |
+| **512–384** | Complex gradients (small objects only) |
 | **256** | Severe gradients, or temporarily for scale factor tuning |
+
+> ⚠️ **Low gradient scale holes bright objects.** On a frame-filling nebula, gradient scale ≤ 1024 lets structure-separation carve a **dark hole at the object core** (verified on M42: gs1024 → model imprint −0.176; closes at **gs2048**, imprint −0.017). For bright extended objects start at **2048**, and confirm the model has no object imprint with `gradient_check.py --model`. See [[Gradient-MGC-vs-GraXpert-M42]].
 | **128** | Extreme cases only (severe LP, failed flats) — very risky, object traces likely |
 
 > **Rule:** Always use the **highest scale that still corrects well** to minimize reference data dependency and object contamination.
@@ -158,10 +163,13 @@ After MGC, the image may need:
 
 | Condition | Use |
 |-----------|-----|
-| MARS has coverage for your field and filters | **MGC** — most accurate |
+| MARS has **deep** coverage (high-northern field) | **MGC** — most accurate on extended objects |
 | MARS lacks coverage (MGC fails or shows garbage) | **GraXpert** (AI mode) |
+| **Near-equatorial field (Dec ≲ 0°)**, even *with* DR2 coverage | **GraXpert** — MGC's reference fit degrades at the coverage edge (~2× less flat); see study below |
 | Color-only gradients (reddish cast on one side) | Try MGC first, fall back to **DBE** if stubborn |
 | Quick processing, no time to tune | **GraXpert** — no manual tuning needed |
+
+> ⚠️ **Coverage ≠ best result.** [[Gradient-MGC-vs-GraXpert-M42|Measured on M42 (Dec −5°, 2026-06-23)]]: DR2 *covered* the field, but across the **entire MGC parameter space** (gradient scale 1024–4096, structure separation 1–2, scale factors 0.3/1.5–0.5/1.8) MGC stayed **~2× less flat than GraXpert** — a reference-fit ceiling near the coverage edge, not a tuning miss. GraXpert won. Verify any MGC-vs-GraXpert choice objectively with `scripts/gradient_check.py` rather than assuming MGC wins because coverage exists.
 
 ---
 
@@ -175,7 +183,7 @@ After MGC, the image may need:
 | Gradients not fully corrected | Gradient scale too high | Lower gradient scale (1024 → 512 → 256) |
 | Star halos in corrected image | Scale factor too high at low gradient scale | Decrease scale factor (try 0.2–0.6) |
 | Residual color cast after MGC | Normal | Apply BackgroundNeutralization |
-| Green tint with MARS-U | MARS-U can introduce color shifts | Use MARS DR1 alone, or adjust |
+| Green tint with MARS-U | MARS-U can introduce color shifts | Use MARS DR2 alone (drop u01), or adjust |
 
 ---
 

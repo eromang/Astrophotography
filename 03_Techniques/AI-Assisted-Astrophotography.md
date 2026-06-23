@@ -147,7 +147,7 @@ AI helps evolve processing workflows over time:
 Critical processing knowledge is preserved across sessions:
 
 - "Never check Force values" — discovered through failed plate solves
-- "MARS broadband coverage varies by field" — learned from NGC 5746 failure vs NGC 7000 success
+- "MARS broadband coverage varies by field" — learned from NGC 5746 failure vs NGC 7000 success (on DR1; **MARS DR2 (2026-06) doubles coverage** — re-test per field)
 - "SPCC BN conflicts with DBE" — identified through color cast issues
 - "Green cast with broadband L-Pro on emission nebulae" — fixed with SCNR/CurvesTransformation
 

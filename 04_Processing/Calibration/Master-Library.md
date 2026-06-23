@@ -165,8 +165,9 @@ Filter-independent. Read noise only — independent of exposure, temperature, an
 
 | Resource | Location | Purpose |
 |----------|----------|---------|
-| MARS DR1 database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-1.1.1.xmars` | MGC gradient correction |
-| MARS-U database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-u01-1.0.1.xmars` | MGC (user contributed) |
+| **MARS DR2 database** (current) | `/Volumes/T7/Astrophotography/XMARS/MARS-DR2-1.0.3-s08.xmars` | MGC gradient correction — **primary**. v1.0.3, 1.64 GiB, released 2026-06-21, installed + SHA-1 verified 2026-06-23 (`9850b1…023438`). Doubles DR1 coverage → entire Northern Hemisphere, improved depth/homogeneity. **Replaces DR1 in MGC.** |
+| MARS DR1 database (superseded) | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-1.1.1.xmars` | Kept as fallback until DR2 proven per-field; remove once DR2 validated |
+| MARS-U database | `/Volumes/T7/Astrophotography/XMARS/MARS-DR1-u01-1.0.1.xmars` | MGC (user contributed) — supplementary, kept alongside DR2 |
 | Gaia DR3/SP catalog | `/Volumes/T7/Astrophotography/Gaia DR3:SP (complete set)/` | **SPCC/SPFC only** — spectrophotometric subset, **do not** plate-solve with it (too sparse → ImageSolver RANSAC failures) |
 | Gaia DR3 astrometric catalog | `/Volumes/T7/Astrophotography/Gaia DR3 (astrometric)/` (`gdr3-1.0.0-01.xpsd` ≤mag 16.59; add `-02` to 17.61 for margin) | **Plate-solving** (ImageSolver / WBPP astrometric step). Register in PixInsight: Process → Gaia → Data release **Gaia DR3** → add the `.xpsd` files. Added 2026-06-01 — see [[../../05_Sessions/2026/Processing/2026-06-01-Astrometric-Diagnosis]] |
 | Antlia Quadband filter curves | `/Volumes/T7/Astrophotography/Filters/Antlia Quadband PI filters/` | SPFC/SPCC |
