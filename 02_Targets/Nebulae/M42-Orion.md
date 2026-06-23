@@ -31,6 +31,11 @@ tags:
 
 # M42 — Orion Nebula
 
+### ASI2600MC Pro (2026-06, natural-colour HDR reprocess) — latest
+
+![[M42-2026-natural.jpg]]
+*100 × 160 s FQuad, **natural-colour** HDR (MAS + HDRMT). See [[#2026-06-23 HDR reprocess — natural colour, completed]].*
+
 ### ASI2600MC Pro (2025, HDR blend)
 
 ![[M42-ASI2600.jpg]]
@@ -87,11 +92,25 @@ tags:
 - 27 lights after SubFrameSelector (Feb 2025 data)
 - March 2025 data pending
 
-#### 2026-06 HDR reprocess (in progress)
+#### 2026-06-23 HDR reprocess — natural colour, completed
 
-- **Restacked** all 100 × 160 s FQuad subs (5 nights, −10 °C) in WBPP 3.0.1 → drizzle-2× master, solved, 1.552 ″/px. All frames passed `psf_image.py` QA (FWHM 6.1–9.0″, ecc ≤0.68, no rejects). Raw-master PSF 4.54 px → **after BXT Correct Only: 2.5 px / ecc 0.27** (CO tightens stars; use **2.5** for the Sharpen pass — measure post-CO, not on the raw master).
-- **Gradient: GraXpert @ Smoothing 0.8** (Subtraction). **MGC+DR2 was tested and lost** — even though DR2 *covers* this Dec −5° field, MGC stayed ~2× less flat than GraXpert across its entire parameter space (gradient scale 1024–4096, structure sep 1–2, scale factors). Full study + numbers: [[../../04_Processing/Pixinsight/Gradient-MGC-vs-GraXpert-M42]].
-- Pipeline from here: BXT (Correct Only → Sharpen 4.54) → SXT → NXT → HOO → [[../../04_Processing/Pixinsight/HDR-Workflow|HDR (MAS + HDRMT)]]. Working set staged at `~/Desktop/Astro/M42_HDR_Reprocess/`.
+Full reprocess of the 100 × 160 s FQuad stack on the **natural-colour (non-HOO)** path → `M42_FINAL_v2`: bright structured Trapezium core (HDR), neutral deep sky, the Running Man's blue reflection, natural Ha/OIII palette.
+
+**Restack:** all 100 subs (5 nights, −10 °C) in WBPP → drizzle-2× master, solved, 1.552 ″/px. Raw-master PSF 4.54 px → **after BXT Correct Only 2.5 px / ecc 0.27** (CO tightens stars; measure the Sharpen PSF post-CO, not on the raw master).
+
+**Pipeline (corrected order):** GraXpert 0.8 → BXT Correct Only → **SPCC (star-full)** → BXT Sharpen (Adjust Star Halos **−0.20**, Sharpen Stars 0.15, PSF 2.5) → SXT (Unscreen off, Large Overlap on) → NXT → **MAS → HDRMT** → BackgroundNeutralization → SCNR → saturation → screen-blend stars → deepen sky.
+
+**Lessons (M42-specific):**
+- 🔴 **Drop HOO for M42.** It's broadband-rich (strong Ha *and* OIII), so the **natural SPCC colour is already vivid**; the HOO remap (R=Ha, G=B=OIII) added **chromatic G=B colour noise for no benefit**. We ran HOO first, hit the noise, and restarted natural-colour — far cleaner. Reserve HOO/Foraxx for *faint dual-narrowband* targets. See [[../../04_Processing/Pixinsight/QuadBand-OSC-Workflow]] Phase 3.
+- **SPCC needs stars → run it before StarXTerminator** (it photometers stars; can't run on the starless). Was a workflow-order bug — fixed at QuadBand §2.4.
+- **HDRMT has an Intensity slider** (default 1.0 = max) — use **~0.5**, and keep **Deringing ~0.05** (the ~0.5 default greys the core to mush). See [[../../04_Processing/Pixinsight/HDR-Workflow]].
+- **MAS low DRC (0.20)** for the bright core (the core is HDRMT's job, not DRC's); Aggressiveness ~0.5; Saturation off (add later).
+- **BXT Adjust Star Halos −0.20** cut the bright-star halos **48.6 %** (measured via `star_halos.py`); the residual is partly inherent (covered at reintegration + targeted cleanup).
+- **GraXpert 0.8 beat MGC+DR2** (retained): [[../../04_Processing/Pixinsight/Gradient-MGC-vs-GraXpert-M42]].
+
+**QA scripts built during this reprocess:** [[../../04_Processing/Pixinsight/Find-Background]], [[../../04_Processing/Pixinsight/Star-Halos]], [[../../04_Processing/Pixinsight/NXT-Advisor]] (+ [[../../04_Processing/Pixinsight/Gradient-Check]]).
+
+**Output:** `M42_FINAL_v2.xisf` / `.jpg` (T7: `…/M42_Orion/2026/`). Working set was staged at `~/Desktop/Astro/M42_HDR_Reprocess/` (intermediates reproducible from the master).
 
 ### D5300
 
