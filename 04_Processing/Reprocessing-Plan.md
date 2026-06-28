@@ -11,6 +11,41 @@ Targets with existing data that would benefit from reprocessing with the current
 
 ---
 
+## New priorities (2026-06-28) — promoted by recent workflow gains
+
+> Promoted from *Not Worth Reprocessing* because three improvements now postdate their last processing: the **BlurX Correct-only → SPCC → Sharpen split** ([[RGB-Workflow]] / [[QuadBand-OSC-Workflow]]), **Multiscale Adaptive Stretch**, and **DBXtract** (clean Ha/OIII without manual crosstalk). Capture inventory verified against the T7 archive 2026-06-28.
+
+### ⭐ Priority A: NGC 7000 — Full reprocess (biggest dataset)
+
+**Effort:** Medium-High | **Gain:** High — 24h of L-Pro under a pre-June-2026 workflow
+
+[[NGC7000-North-America]] — **~24h L-Pro** (8 nights, 2024-07→09, 300s, g100, mostly −10 °C). All 9 prior passes (2025-03 → 2026-04) predate the BlurX/SPCC split and Multiscale Adaptive Stretch. Best ROI of any target.
+
+- **SSD:** `/Volumes/T7/Astrophotography/Objects/Nebuleuses/ASI2600MC-REDCAT51/NGC_7000_North_America_Nebula/2024/`
+- Steps: WBPP (Drizzle 2) → [[RGB-Workflow]] linear with **Correct-only → SPCC → Sharpen** order → **Multiscale Adaptive Stretch** → final.
+- 🟢 **Future HORGB anchor:** L-Pro only today. Once a Quad Band night is added, this becomes the prime [[RGB-Narrowband-Combine-Workflow]] (HORGB) target — natural RGB stars + Ha/OIII boost.
+
+### Priority B: NGC 2244 Rosette — first proper dual-band process
+
+**Effort:** Low-Medium | **Gain:** Medium — emission target, never run through the OSC2/DBXtract path
+
+[[NGC2244-Rosette]] — **Quad Band, 1 night** (2025-03-02, 220s, g100, −10 °C). Strong Ha + OIII (the OSC5 reference target). Modest integration → result will be decent, not deep.
+
+- **SSD:** `/Volumes/T7/Astrophotography/Objects/Nebuleuses/ASI2600MC-REDCAT51/NGC2244_Rosetta_Nebula/2025/Night_1_20250302-g100-220s-10-FQuad/`
+- Steps: WBPP → [[QuadBand-OSC-Workflow]] linear (SPCC star-full) → **DBXtract** (3.1 Option A) → PPP/HOO → **Multiscale Adaptive Stretch** → final. Good candidate to validate the DBXtract integration.
+
+### Priority C: M45 Pleiades — best-effort reprocess (filter caveat)
+
+**Effort:** Low | **Gain:** Low-Medium — limited by a filter mismatch
+
+[[M45-Pleiades]] — **Quad Band, 2 nights** (2024-12-26/27, 180s, −20 °C). ⚠️ M45 is a **reflection** nebula: the Quad Band passes Ha but **blocks the blue continuum** that *is* the Pleiades nebulosity → reprocessing can't recover what the filter didn't transmit.
+
+- **SSD:** `/Volumes/T7/Astrophotography/Objects/Nebuleuses/ASI2600MC-REDCAT51/M45_Pleiades/2024/`
+- Steps: WBPP → current tools (BlurX/NoiseX/StarX + MAS) for a cleaner stars+dust rendition; keep expectations modest.
+- 🔴 **Real fix = recapture in [[Optolong-LPro]]** (broadband) — the reflection nebulosity needs the blue. Log an L-Pro session in the plan.
+
+---
+
 ## ~~Priority 1: M13~~ — Demoted (duplicate data)
 
 > [!warning] SFS analysis confirmed all 3 night folders contain the **same 25 frames** from 2024-06-25. No multi-night data exists. Only 25 unique L-Pro frames (2h 05m). Reprocessing with current workflow would be a modest improvement (MGC, Drizzle 2, SPCC) but not the massive gain originally expected. **Priority: reshoot with L-Pro, 180s subs, target 4–6h integration.**
@@ -179,11 +214,12 @@ No D5300 calibration frames available for these sessions. Process without darks/
 
 | Object | Reason |
 |---|---|
-| NGC 7000 ASI2600 | Already 9 processing passes, 24h. Diminishing returns. |
-| M44/M45 ASI2600 | Wrong filter (Quad Band for clusters). Reprocessing won't fix filter choice. |
+| ~~NGC 7000 ASI2600~~ | **Promoted → Priority A** — BlurX/SPCC split + MAS postdate all passes; future HORGB anchor. |
+| ~~NGC 2244 ASI2600~~ | **Promoted → Priority B** — never run through OSC2/DBXtract; emission target. |
+| ~~M45 ASI2600~~ | **Promoted → Priority C** (best-effort; filter mismatch — reflection nebula needs L-Pro). |
+| M44 ASI2600 | Wrong filter (Quad Band on an open cluster). Reprocessing won't fix filter choice; recapture in L-Pro. |
 | M51 Whirlpool | 17 frames — insufficient data |
 | M27 Dumbbell | 16 frames — insufficient data |
-| NGC 2244 ASI2600 | 28 frames — already processed, marginal gain |
 | M67, M5, M3 | Too few ASI2600 frames or D5300 only with limited data |
 | NGC 2175 D5300 | 154 unprocessed frames — worth a first-pass Siril stack, not a PI reprocess |
 
