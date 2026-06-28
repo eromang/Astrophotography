@@ -12,6 +12,7 @@ Processing workflow for broadband data captured with the [[Optolong-LPro]] filte
 
 > **For open star clusters** (star-dominated fields, no nebulosity), use the [[OpenCluster-Workflow]] instead.
 > **For emission nebulae with the Quad Band filter**, use the [[QuadBand-OSC-Workflow]] instead.
+> **To combine L-Pro RGB *and* Quad Band data on the same target** (natural stars + narrowband nebula), use the [[RGB-Narrowband-Combine-Workflow]].
 
 ## Resources
 

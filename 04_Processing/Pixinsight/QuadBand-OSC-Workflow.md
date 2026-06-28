@@ -10,6 +10,8 @@ tags:
 
 Processing workflow for narrowband data captured with the [[Antlia-FQuad]] filter on the [[ASI2600MCPro]] (color/OSC camera).
 
+> **External reference — astro-photographie.fr OSC2** (`astro-photographie.fr/traitement_pixinsight.html`, diagram v2.9E): the "Simplified processing of OSC dualband Ha-OIII" workflow. Its dedicated-tool chain is integrated below as options — **DBXtract** (3.1 Option A), **Perfect Palette Picker** + **Narrowband Normalization** (3.3), **NBtoRGBStars** (5.3). All four are already installed (see [[Modules.md]]). **Note:** OSC2 omits SPCC (pure-HOO palette path); this workflow keeps the more rigorous **SPCC-first** order (2.4) and treats HOO as optional — see the callout below.
+
 > **Key difference from broadband RGB:** The Quad Band filter passes Ha, OIII, Hb, and SII simultaneously onto a Bayer matrix sensor. SPCC can be used with combined filter curves (Sony CMOS + Antlia Quadband per Bayer channel) — see step 2.4 (run on the star-full image, before star removal). Channel manipulation is required to separate and balance the narrowband signal.
 
 ---
@@ -239,6 +241,8 @@ Plate-solve the image for SPFC/SPCC to work correctly. Required if using **Optio
 
 ### 2.8 Ha Emission Line Separation (Optional)
 
+> 🟢 **Skip this step if you use DBXtract (3.1 Option A)** — DBXtract removes the Ha→OIII crosstalk internally during extraction, so the manual `scale_G`/`scale_B` calibration below is unnecessary. Keep this section only for the manual `ChannelExtraction` path (3.1 Option B).
+
 Remove Ha crosstalk from the green and blue Bayer channels. On the [[ASI2600MCPro]], green and blue pixels are partially sensitive to Ha (656nm), contaminating the OIII signal. This step subtracts the scaled Ha contribution, producing cleaner OIII for channel extraction in Phase 3.
 
 **PixelMath** (uncheck "Use a single expression"):
@@ -278,11 +282,23 @@ This is the critical step unique to Quad Band + OSC processing.
 
 > 🟡 **HOO is optional — and often wrong for *broadband-rich* emission nebulae (M42, M8).** Targets with strong Ha **and** OIII already show rich, balanced colour straight from the SPCC'd natural-colour image (red Ha, teal OIII, blue reflection). Forcing HOO (R=Ha, G=B=OIII) there gains little and **introduces chromatic G=B colour noise**. Reserve HOO/Foraxx for **faint dual-narrowband** targets that need the separation. For M42-class objects, consider **keeping the natural SPCC colour** and getting the Ha/OIII pop from a **saturation curve + SCNR** instead. (M42 reprocess, 2026-06-23 — HOO added noise for no benefit; natural colour was better.)
 
-### 3.1 Channel Extraction
+### 3.1 Channel Extraction (Ha / OIII)
+
+Two ways to get clean Ha and OIII from the dual-band OSC data:
+
+#### Option A: DBXtract (recommended)
+
+**DBXtract** (DualBand Extract — `dbxtract.astrocitas.com`, installed) — purpose-built for OSC dual-band: extracts a clean **Ha** and **OIII** in one pass and **handles the Ha→OIII crosstalk internally**, so you **skip the manual step 2.8** (no `scale_G`/`scale_B` to calibrate).
+- Run on the linear dual-band image (after StarX, on the starless — as in the OSC2 reference).
+- Outputs separate Ha and OIII mono images → feed the palette step (3.3).
+- This is the extraction method of the astro-photographie.fr **OSC2** workflow.
+
+#### Option B: Manual ChannelExtraction
 
 **ChannelExtraction**
 - Color space: RGB
 - Produces three images: R (Ha+SII), G (OIII+Hb), B (OIII)
+- Run the manual Ha-crosstalk removal (step 2.8) **first** for cleaner OIII — this path doesn't deconvolve the crosstalk on its own.
 
 ### 3.2 Evaluate Channels
 
@@ -293,7 +309,12 @@ View each channel independently:
 
 ### 3.3 Channel Combination Strategies
 
-Choose based on desired color palette:
+Choose based on desired color palette. The PixelMath options below give full manual control; for a faster **visual** approach, use a palette tool (both installed):
+
+> 🟢 **Perfect Palette Picker (PPP)** — generates many palette variants (HOO, Foraxx, SHO-style…) from the Ha/OIII images and lets you pick visually. Fastest way to explore Options A–C without hand-writing PixelMath. The OSC2 reference workflow uses PPP for the HOO mix.
+> 🟢 **Narrowband Normalization (NN)** (module) — normalize/balance Ha vs OIII channel strengths (before or after combination) for an even palette, especially when OIII is weak. Tune on a preview.
+
+Manual PixelMath options:
 
 #### Option A: Natural-ish Color (HOO mapping)
 
@@ -421,9 +442,11 @@ Work on the star image saved from step 2.5.
 
 ### 5.3 Star Color
 
-**ColorSaturation**
+🟢 **NBtoRGBStars** (installed) — recommended for natural star colour: maps the narrowband star image toward realistic RGB star colours, fixing the muted/discoloured stars typical of dual-band data. Run on the star image, then fine-tune with ColorSaturation. (The OSC2 reference workflow uses an NB→RGB star-combination tool at this step.)
+
+**ColorSaturation** (alternative / follow-up)
 - Boost star color slightly if desired
-- Narrowband star colors are often muted — this is normal
+- Without NBtoRGBStars, narrowband star colors are often muted — this is normal
 
 ---
 
@@ -462,7 +485,7 @@ This is a **screen blend** — combines the starless nebula with the star field.
 |------|-------------------|-----------|
 | Color calibration | SPCC with G2V reference | SPCC with combined filter curves — see step 2.4 (before star removal) |
 | Gradient removal | SPFC/MGC (PI 1.9) or DBE | GraXpert or SPFC/MGC — see step 2.2 |
-| Channel work | None (natural RGB) | Extract, remap Ha/OIII channels |
+| Channel work | None (natural RGB) | DBXtract (or ChannelExtraction) → PPP / manual remap |
 | Color palette | Natural | HOO / Foraxx / manual |
 | Background neutralization | Before stretch | After stretch |
 | Stretch | Statistical Astro Stretching | GHS or HistogramTransformation |
@@ -482,3 +505,4 @@ All emission nebulae shot with the [[Antlia-FQuad]] filter:
 - Sh2-129 (Flying Bat) — faint, needs deep integration
 
 > **Note:** For galaxies and clusters, switch to the [[Optolong-LPro]] filter and use the [[RGB-Workflow]] instead.
+> **To combine this Quad Band data with an L-Pro RGB stack of the same target** (natural-colour stars + narrowband nebula boost), use the [[RGB-Narrowband-Combine-Workflow]].
