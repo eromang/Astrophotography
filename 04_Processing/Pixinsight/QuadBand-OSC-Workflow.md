@@ -362,12 +362,16 @@ Skip channel extraction entirely. Simply stretch and color-balance manually with
 
 > **HDR targets** (bright core nebulae like M42, M16, M17): Use [[HDR-Workflow]] instead of GHS.
 
-**GeneralizedHyperbolicStretch (GHS)** — recommended for narrowband
+**Option A: Multiscale Adaptive Stretch** (modern, recommended)
+- The PI 2026 method — stretches faint and bright structures at independent scales, lifting nebula detail without crushing bright cores; well-suited to the strong dynamic range of dual-band emission fields. See [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]].
+- Apply to the **starless** HOO composite; tune on a preview, then clean with the final NoiseXTerminator pass (4.4).
+
+**Option B: GeneralizedHyperbolicStretch (GHS)**
 - Offers more control over midtone transfer than HistogramTransformation
 - Start with Symmetry Point (SP) near the histogram peak
 - Apply in small increments
 
-Alternative: **HistogramTransformation**
+**Option C: HistogramTransformation**
 - Drag midtone slider to the right of the histogram peak
 - Multiple small stretches are better than one aggressive stretch
 

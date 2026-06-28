@@ -176,28 +176,17 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 **BlurXTerminator** — Correct Only. ⚠️ **Linear data only** (AI4 deconvolves linear directly; don't run it on stretched data). See [[BlurXTerminator 2.0_AI4 Release]].
 - ⚠️ Correct Only also **tightens** stars (reduces FWHM), not just shape — so re-measure the PSF on this output for the Sharpen pass; don't reuse a pre-BXT value.
-- 🟢 **Best colour order (RC-Astro): Correct Only → SPCC → Sharpen.** Running Correct Only *before* SPCC gives more consistent colour calibration (better R/G, B/G dispersion); do the **Sharpen** pass *after* SPCC. I.e. split the two BXT passes around the colour-calibration step rather than running both back-to-back.
+- 🟢 **Best colour order (RC-Astro): Correct Only → SPCC → Sharpen.** Running Correct Only *before* SPCC gives more consistent colour calibration (better R/G, B/G dispersion); do the **Sharpen** pass *after* SPCC. I.e. split the two BXT passes around the colour-calibration step rather than running both back-to-back. **Steps 2.5–2.8 implement this split** (FindBackground → SPCC → AutoStretch verify → Sharpen), matching [[QuadBand-OSC-Workflow]] step order.
 
-### 2.5 Star Sharpening
-
-**BlurXTerminator**
-- Model: `BlurXTerminator.4.mlpackage`
-- 🔴 **Measure PSF Diameter on the Correct-Only output (step 2.4 result), NOT the raw/drizzle master** — Correct Only roughly halves the FWHM, so the pre-correction value over-sharpens. Use **PSFImage** in PI or offline `python3 scripts/psf_image.py <correct-only.xisf>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]]).
-  - Or use Automatic PSF to skip the long evaluation
-- Configuration:
-  - Sharpen Stars: 0.20
-  - Adjust Star Halos: -0.10
-  - PSF Diameter: **2.30** (or (FWHMx + FWHMy) / 2 from evaluation)
-  - Sharpen Nonstellar: 0.90
-
-### 2.6 Background Reference
+### 2.5 Background Reference
 
 **FindBackground** script
 - Exclude dark nebulosity if necessary
+- Sets the background ROI used by SPCC (next step)
 
-### 2.7 Color Calibration
+### 2.6 Color Calibration
 
-**SPCC** (SpectrophotometricColorCalibration)
+**SPCC** (SpectrophotometricColorCalibration) — run on **star-full** data, after Correct-Only and before the Sharpen pass.
 - Filters: **Optolong L-Pro** (R, G, B individually)
 - QE Curve: **Sony IMX411/455/461/533/571**
 - White reference: **G2V Star** (unless galaxy is the target)
@@ -208,13 +197,25 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 - If dark region available: select as background region of interest
 - Catalog: **Gaia DR3/SP**
 
-### 2.8 AutoStretch After Calibration
+### 2.7 AutoStretch After Calibration
 
 **ScreenTransferFunction** — verify color calibration result.
 
 1. **Link** channels (chain link icon)
 2. AutoStretch (nuclear icon) — image should show natural, balanced colors
 3. If colors look off, SPCC may need adjustment
+
+### 2.8 Star Sharpening
+
+**BlurXTerminator** — the second BXT pass, run **after SPCC** (per the RC-Astro split-around-SPCC order in step 2.4).
+- Model: `BlurXTerminator.4.mlpackage`
+- 🔴 **Measure PSF Diameter on the Correct-Only output (step 2.4 result), NOT the raw/drizzle master** — Correct Only roughly halves the FWHM, so the pre-correction value over-sharpens. SPCC (2.6) only scales colour and leaves the PSF unchanged, so the 2.4 measurement is still valid here. Use **PSFImage** in PI or offline `python3 scripts/psf_image.py <correct-only.xisf>` (see [[../../scripts/README.md#psf_image.py — offline PSF / FWHM measurement (PixInsight PSFImage equivalent)|scripts/README]]).
+  - Or use Automatic PSF to skip the long evaluation
+- Configuration:
+  - Sharpen Stars: 0.20
+  - Adjust Star Halos: -0.10
+  - PSF Diameter: **2.30** (or (FWHMx + FWHMy) / 2 from evaluation)
+  - Sharpen Nonstellar: 0.90
 
 ### 2.9 Star Removal
 
@@ -240,9 +241,16 @@ Plate-solve the image for SPFC/SPCC to work correctly.
 
 ### 3.1 Stretch
 
-> **HDR targets** (bright galaxy nuclei, M31 core): Use [[HDR-Workflow]] instead of Statistical Astro Stretching.
+> **HDR targets** (bright galaxy nuclei, M31 core): Use [[HDR-Workflow]] instead.
 
-**Statistical Astro Stretching** script
+Run the stretch on the **starless** image (stars are stretched separately in Phase 4). Two options:
+
+**Option A: Multiscale Adaptive Stretch** (modern, recommended)
+- The PI 2026 method — stretches faint and bright structures at independent scales, so nebula detail lifts without crushing the core. See [[Multiscale Adaptive Stretch – Das bietet die neue Stretch-Methode mit PixInsight 2026]].
+- This is the stretch used in the astro-photographie.fr OSC1 broadband reference workflow (`astro-photographie.fr/traitement_pixinsight.html`).
+- Tune on a preview; a follow-up NoiseXTerminator pass (3.3) cleans any noise the stretch lifts.
+
+**Option B: Statistical Astro Stretching** script
 - Boost: 0.15
 - Refer to script manual for parameter guidance
 
