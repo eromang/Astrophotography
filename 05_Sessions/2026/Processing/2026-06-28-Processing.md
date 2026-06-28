@@ -50,8 +50,8 @@ Full reprocess of [[NGC7000-North-America]] — **Priority A** in [[Reprocessing
 
 **Phase 1 — WBPP** ([[RGB-Workflow#WBPP (Weighted Batch Pre-Processing)]])
 - [ ] Calibration: Dark `masterDark 300s`, Flat `masterFlat LPro 10ms`, Bias/DarkFlat `masterDarkFlat 0.01s` + `masterBias 0.0ms`
-- [ ] **Decide the mixed-temperature dark** (gotcha below)
-- [ ] Cosmetic Correction: Automatic, High sigma 10 · DeBayer **VNG**
+- [ ] Master Dark **Optimize = OFF** (mixed-temp handling — see detailed section below)
+- [ ] Cosmetic Correction: **Automatic, Hot σ 3.0 · Cold σ 3.0** (tightened for the 41 cold subs) · DeBayer **VNG**
 - [ ] Drizzle **2×**, Drop shrink 0.90, Function Square
 - [ ] Subframe Weighting: PSF Signal Weight · Image Registration + **Distortion Correction** (4000 spline pts) · Local Normalization ON
 - [ ] Integration: Winsorized Sigma Clipping, Sigma High 1.9, Large-Scale rejection High (layers 2, growth 2)
@@ -79,13 +79,29 @@ Full reprocess of [[NGC7000-North-America]] — **Priority A** in [[Reprocessing
 
 | Frame | Master | Status |
 |---|---|---|
-| Dark 300s | `masterDark_..._EXPOSURE-300.00s` | ✅ (temp not in filename — see gotcha) |
+| Dark 300s | `masterDark_..._EXPOSURE-300.00s` | ✅ no temp keyword → assumed −10 °C; Optimize OFF (see mixed-temp section) |
 | Flat L-Pro | `masterFlat_..._FILTER-LPro_..._10ms` | ✅ matches stamped lights |
 | Dark-Flat 10ms | `masterDarkFlat_..._0.01s` | ✅ |
 | Bias | `masterBias_..._0.0ms` | ✅ |
 
 ## Notes
 
-- 🔴 **Mixed-temperature darks.** Only one `masterDark 300s` exists (likely −10 °C). 247/288 subs are at −10 °C; **41 subs** (Night 1 −19.6, Night 3 −16.8) are colder. Options: **(a)** use the single dark for all with WBPP **dark optimization** ON (scales to match — simplest, matches prior passes); **(b)** exclude Nights 1+3 (−3.4h, leaves 20.6h at clean −10) if hot-pixel residuals appear. Start with (a); fall back to (b) if calibration artifacts show on the cold subs.
+### 🔴 Mixed-temperature darks — WBPP settings
+
+Only one `masterDark 300s` exists, with **no temperature keyword** (`frame_info` → `Temp None`) → assumed **−10 °C** (the year-round cooling standard, and 247/288 subs are at −10). The **41 cold subs** (Night 1 −19.6 °C, Night 3 −16.8 °C) are the mismatch: a −10 dark has *more* dark current / hot-pixel signal than a colder sub needs → it **over-subtracts** (leaves dark "holes" at hot-pixel sites).
+
+> **CMOS note:** dark *optimization* (dark scaling) is a CCD-era technique. On the ASI2600 (cooled CMOS, very low dark current, hot-pixel-dominated dark at 300s) it can inject noise and its assumptions break down. **Cosmetic Correction is the right tool here, not optimization.**
+
+**✅ Option A (recommended) — no optimization + Cosmetic Correction**
+- Master Dark `300s`, **Optimize = OFF** (plain Calibrate).
+- **Cosmetic Correction: Automatic** (uses the master dark to detect defects), **Hot σ 3.0 · Cold σ 3.0** — tighter than default; this is what catches residual hot pixels *and* the over-subtraction holes on the cold subs.
+- Integration safety net: Winsorized Sigma Clipping, **Sigma High 1.9 · Sigma Low ~2.5–3.0** (rejects the cold-sub dark holes). With 288 frames the few mis-calibrated pixels are rejected anyway.
+- Rationale: only 41/288 subs affected, CMOS low dark current → triple safety net (CC → integration rejection → low relative weight).
+
+**Option B — dark optimization ON** (only if curious): Master Dark → Optimize ON, threshold ~3.0 (lower = more aggressive). Needs the separate bias (present). ⚠️ Watch for added noise on the cold subs vs Option A (blink-compare).
+
+**Option C — isolate/exclude the cold nights** (cleanest if artifacts appear): exclude **Night 1 + Night 3** (−3.4h → keeps **20.6h** perfectly temp-matched at −10), or process them as a separate calibration group and compare.
+
+**Order of battle:** start with **A** → after calibration, **blink the calibrated Night 1/3 subs**; if dark holes / residual hot pixels show → switch to **C** (exclude). Only try B out of curiosity.
 - Lights are the **SFS-accepted `_a.xisf`** (raw lights cleaned from T7). They already passed SubFrameSelector, so a second SFS pass is optional — WBPP can weight them directly.
 - This is also the future **HORGB** base ([[RGB-Narrowband-Combine-Workflow]]) once a Quad Band night is added — keep the L-Pro master.
